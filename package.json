@@ -1,0 +1,42 @@
+{
+  "name": "scope-tags",
+  "version": "0.0.1",
+  "description": "Output human readable test scope report for QA",
+  "main": "src/index.ts",
+  "types": "src/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "engines": {
+    "node": "^12.16.1 || ^18.17.1",
+    "npm": "^6.13.4 || ^9.6.7"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/matiduda/scope-tags.git"
+  },
+  "keywords": [
+    "tags",
+    "testing",
+    "qa",
+    "automatic",
+    "cli"
+  ],
+  "author": "Mateusz Duda",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/matiduda/scope-tags/issues"
+  },
+  "homepage": "https://github.com/matiduda/scope-tags#readme",
+  "devDependencies": {
+    "@types/node": "^20.8.6",
+    "typescript": "^3.9.10"
+  },
+  "dependencies": {},
+  "bin": {
+    "say-hello": "./src/index.ts"
+  }
+}
