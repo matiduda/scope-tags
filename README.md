@@ -1,5 +1,13 @@
 [![npm version](https://badge.fury.io/js/scope-tags.svg)](https://badge.fury.io/js/scope-tags)
 
+### How to install
+
+From the repository you want to test the package run
+
+```
+npm i scope-tags -D
+```
+
 ### How to verify the package before release
 
 From the repository you want to test the package run
