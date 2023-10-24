@@ -18,6 +18,7 @@ npm link <path to local clone of this repository>
 ### Features to do
 
 - [ ] Import and configure `ts-morph` library
+- [ ] Import and configure https://www.npmjs.com/package/enquirer
 - [ ] Basic command line interface
 - [ ] Basic file to module mapping
 
