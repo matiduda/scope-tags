@@ -17,8 +17,9 @@ npm link <path to local clone of this repository>
 
 ### Features to do
 
-- [ ] Import and configure `ts-morph` library
-- [ ] Import and configure https://www.npmjs.com/package/enquirer
+- [x] Import `ts-morph` library
+    - [ ] Test if it reads the project data correctly
+- [ ] `.scope` metadata initialization
 - [ ] Basic command line interface
 - [ ] Basic file to module mapping
 
@@ -26,6 +27,11 @@ npm link <path to local clone of this repository>
 
 - [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
 - [ ] Github workflows with tests
+
+### To be discussed
+
+- [ ] Testing approach - how each functionality should be tested?
+    - Is creating a separate test git repository for each test a good idea? (too much hustle)
 
 ### Architecture diagram
 
