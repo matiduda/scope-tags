@@ -13,4 +13,5 @@ jobs:
         with:
           node-version: '12.16.1'
       - run: npm ci
+      - run: npx tsc
       - run: npm run test
