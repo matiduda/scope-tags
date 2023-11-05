@@ -8,17 +8,13 @@ From the repository you want to test the package run
 npm i scope-tags -D
 ```
 
-### How to verify the package before release
-
-From the repository you want to test the package run
-```
-npm link <path to local clone of this repository>
-```
-
 ### Features to do
 
 - [x] Import `ts-morph` library
-    - [ ] Test if it reads the project data correctly
+    - [x] Test if it reads the project data correctly
+    - [x] Find relative tsconfig.json
+    - [ ] Add tests for this ?
+    - [ ] Add support for multiple tsconfig.json's
 - [ ] `.scope` metadata initialization
 - [ ] Basic command line interface
 - [ ] Basic file to module mapping

@@ -1,28 +1,26 @@
 #!/usr/bin/env node
-import enquirer from 'enquirer';
+import { Repository } from "nodegit";
+import { getGitProjectRoot } from "./Git/Git";
+export { getGitProjectRoot } from "./Git/Git";
 
-const [, , ...args] = process.argv;
+// import enquirer from 'enquirer';
 
-console.log("scope tags v0.0.3 " + args);
-console.log("----------");
+// const [, , ...args] = process.argv;
 
-enquirer.prompt({
-    type: 'input',
-    name: 'username',
-    message: 'What is your username?'
-}).then((response) => console.log(response)); // { username: 'jonschlinkert' }
+// console.log("scope tags v0.0.243 " + args);
+// console.log("----------");
 
-// ts morph test
-import { Project } from 'ts-morph';
+// enquirer.prompt({
+//     type: 'input',
+//     name: 'username',
+//     message: 'What is your username?'
+// }).then((response) => console.log(response)); // { username: 'jonschlinkert' }
 
-const project = new Project({
-    tsConfigFilePath: "./tsconfig.json"
+export const root = getGitProjectRoot();
+
+Repository.open(root).then(function (repo) {
+    console.log(repo);
+    // Inside of this function we have an open repo
 });
 
-console.log(project);
-
-project.getSourceFiles().forEach((sourceFile) => {
-    console.log(sourceFile);
-});
-
-//
+// if(!fs.existsSync(root + 
