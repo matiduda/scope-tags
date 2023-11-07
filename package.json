@@ -12,8 +12,9 @@
     "npm": ">=6.13.4 || <=9.6.7"
   },
   "scripts": {
-    "local-build": "npx tsc && npm link",
-    "start": "npx tsc && scope",
+    "build": "npx tsc",
+    "local-build": "npm run build && npm link",
+    "start": "npm run build && scope",
     "test": "jest ./test"
   },
   "repository": {

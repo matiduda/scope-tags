@@ -15,9 +15,10 @@ npm i scope-tags -D
     - [x] Test if it reads the project data correctly
     - [x] Find relative tsconfig.json
     - [ ] Add tests for this ?
-    - [ ] Add support for multiple tsconfig.json's
-- [ ] `.scope` metadata initialization
-- [ ] Basic command line interface
+    - [x] Add support for multiple tsconfig.json's
+- [x] `.scope` metadata initialization
+- [ ] Basic command line interface and tag management:
+    - [ ] Adding, deleting, updating tags
 - [ ] Basic file to module mapping
 
 ### Nice to have
@@ -29,7 +30,8 @@ npm i scope-tags -D
 
 - [ ] Testing approach - how each functionality should be tested?
     - Is creating a separate test git repository for each test a good idea? (too much hustle)
-
+- [ ] What actions can be performed on files?
+    - Adding 
 ### Architecture diagram
 
 ![Alt text](img/architecture.png)

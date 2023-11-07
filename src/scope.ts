@@ -1,26 +1,28 @@
 #!/usr/bin/env node
-import { Repository } from "nodegit";
-import { getGitProjectRoot } from "./Git/Git";
-export { getGitProjectRoot } from "./Git/Git";
+import { ConfigFile } from "./ConfigFile/ConfigFile";
+import { GitRepository } from "./Git/GitRepository";
+import { getGitProjectRoot } from "./Git/Project";
 
-// import enquirer from 'enquirer';
+// Will be needed to get output from script
+const [, , ...args] = process.argv;
+console.log("scope tags v0.0.2 " + args);
 
-// const [, , ...args] = process.argv;
+// Find git repository
+const root: string = getGitProjectRoot();
+console.log("Found Git repository in: " + root);
 
-// console.log("scope tags v0.0.243 " + args);
-// console.log("----------");
+// Load configuration file
 
-// enquirer.prompt({
-//     type: 'input',
-//     name: 'username',
-//     message: 'What is your username?'
-// }).then((response) => console.log(response)); // { username: 'jonschlinkert' }
+const config = new ConfigFile(root);
+const repository = new GitRepository(root);
 
-export const root = getGitProjectRoot();
-
-Repository.open(root).then(function (repo) {
-    console.log(repo);
-    // Inside of this function we have an open repo
+repository.getFileDataFromLastCommit().then(data => {
+    console.log("OK:");
+    console.log(data)
 });
 
-// if(!fs.existsSync(root + 
+// getData.then(data => console.log(data));
+
+// tagSelectionPrompt.run()
+//     .then((answer: string) => console.log('Answer:', answer))
+//     .catch(console.error);
