@@ -1,8 +1,7 @@
 import { Repository } from "nodegit";
 import { resolve } from "path";
-import { existsSync, mkdirSync } from "fs";
+import { mkdirSync } from "fs";
 import rimraf from "rimraf";
-import { findProjectRootRecursively } from "../../dist/FileSystemUtils/findProjectRootRecursively";
 const execSync = require('child_process').execSync;
 
 const testRepositoryPath = resolve("./tmp/testRepository");

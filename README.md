@@ -25,6 +25,7 @@ npm i scope-tags -D
 
 - [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
 - [ ] Github workflows with tests
+- [ ] Changes severity using [survey prompt](https://github.com/enquirer/enquirer#scale-prompt)? Severity based on git diffs?
 
 ### To be discussed
 

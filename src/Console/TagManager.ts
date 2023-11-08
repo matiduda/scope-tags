@@ -1,22 +1,20 @@
-import { TagManager } from "./TagManager";
-
 const { Select, Toggle } = require('enquirer')
 
-export class Menu {
+export class TagManager {
 
     constructor() { }
 
     public async start() {
         const prompt = new Select({
             name: 'Menu',
-            message: 'What do you want to do?',
+            message: '[TAG MANAGER]',
             choices: [
                 { name: 'Start', value: this.start },
                 { name: 'Manage tags', value: this._manageTags },
                 { name: 'Manage files', value: this._manageFiles },
                 { name: 'Exit', value: this._exit },
             ],
-            result(value: any) { // This is ugly, but we need it to retrieve the value
+            result(value: any) {
                 const mapped = this.map(value);
                 return mapped[value];
             },
