@@ -9,7 +9,6 @@ import { YesNoMenu } from "./Console/YesNoMenu";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
-console.log("scope tags v0.0.2 " + args);
 
 // Find git repository
 const root: string = getGitProjectRoot();

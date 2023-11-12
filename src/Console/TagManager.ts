@@ -1,4 +1,4 @@
-import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
 const { Select, Toggle } = require('enquirer')
@@ -20,8 +20,8 @@ export class TagManager {
             name: 'Tag manager',
             message: 'Manage tags',
             choices: [
-                { name: 'By name', value: this._manageTagsByName },
-                { name: 'By module', value: this._manageTagsByModule },
+                // { name: 'By name', value: this._manageTagsByName },
+                // { name: 'By module', value: this._manageTagsByModule },
                 { name: "Main menu", value: this._exit }
             ],
             result(value: any) {
@@ -32,6 +32,11 @@ export class TagManager {
 
         const answer = await prompt.run();
         await answer.call(this);
+    }
+
+    public manageTagsFromModule(module: Module) {
+        console.log("Tags of module: " + module.name);
+
     }
 
     private async _exit() {

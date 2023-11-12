@@ -1,10 +1,11 @@
 import { TagManager } from "./TagManager";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { ConfigFile } from "../Scope/ConfigFile";
-import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { ModuleManager } from "./ModuleManager";
 
 const { Select } = require('enquirer')
+
 export class Menu {
 
     private _config: ConfigFile;
@@ -20,7 +21,7 @@ export class Menu {
     public async start() {
         const prompt = new Select({
             name: 'Menu',
-            message: "Scope Tags ",
+            message: "Scope Tags",
             choices: [
                 { name: 'Start', value: this.start },
                 { name: 'Manage tags', value: this._manageTags },
@@ -41,10 +42,16 @@ export class Menu {
         }
     }
 
-    private async _manageTags() {
+    public async _manageTags() {
         const tagManager = new TagManager(this._tags, this);
         await tagManager.start();
     }
+
+    public async manageTagsFromModule(module: Module) {
+        const tagManager = new TagManager(this._tags, this);
+        await tagManager.manageTagsFromModule(module);
+    }
+
 
     private async _manageModules() {
         const tagManager = new ModuleManager(this._tags, this);

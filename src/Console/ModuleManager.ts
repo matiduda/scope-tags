@@ -24,16 +24,18 @@ export class ModuleManager {
 
         const prompt = new Select({
             name: 'Module manager',
-            message: this._getHeaderFromModule(fromModule),
+            message: this._getModulePathAsHeader(fromModule),
             choices: [
                 ...choices,
-                { name: 'New module', value: this._addModule },
-                { name: 'Add tag', value: this._addTagToModule },
-                fromModule ? {
-                    name: "Back to " + fromModule.name, value: this._goBack
-                } : {
-                    name: "Main menu", value: this._exit
-                }
+                { role: 'separator' },
+                { name: 'Add new module here', value: this._addModule },
+                ...fromModule ? [
+                    { name: 'Manage tags of: ' + fromModule.name, value: this._manageTagsFromModule },
+                    { name: 'Delete this module', value: this._deleteModule },
+                    { name: "Back to: " + (fromModule.parent || "root"), value: this._goBack },
+                ] : [
+                    { name: "Back to menu", value: this._exit }
+                ],
             ],
             result(value: any) {
                 const mapped = this.map(value);
@@ -75,11 +77,11 @@ export class ModuleManager {
             },
         });
 
-        const isExclusivePrompt = await new Confirm({
+        const isExclusivePrompt = new Confirm({
             name: "exclusive",
             message: 'Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)',
             question: '2 Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)',
-        }).run();
+        });
 
 
         try {
@@ -105,6 +107,30 @@ export class ModuleManager {
         await this.start.call(this, fromModule);
     }
 
+    private async _deleteModule(fromModule: Module) {
+        let returnModule: string = fromModule.name;
+
+        try {
+            this._tags.deleteModule(fromModule);
+            this._modulesWereModified = true;
+            returnModule = fromModule.parent || "";
+            console.log(`Deleted module ${fromModule.name}`);
+        } catch (e) {
+            console.log((e as Error).message);
+        }
+        await this.start(this._tags.getModuleByName(returnModule));
+    }
+
+    private async _manageTagsFromModule(module?: Module) {
+        if (!module) {
+            console.log("Cannot manage tags of undefined module");
+            return;
+        }
+
+        await this._menu.manageTagsFromModule(module);
+        await this.start(module);
+    }
+
     private async _goBack(fromModule?: Module) {
         if (!fromModule) {
             throw new Error("Can't go back to undefind module");
@@ -126,14 +152,18 @@ export class ModuleManager {
         return modules.map(module => ({ name: module.name, value: module }));
     }
 
-    private _getHeaderFromModule(module: Module): string {
-        if (!module.parent) {
-            return `${module.name}`;
+    private _getModulePathAsHeader(module?: Module): string {
+        let header = "Root >";
+
+        if (!module) {
+            return header;
         }
-        let header = "";
-        const moduleParents = this._tags.getModuleParents(module);
-        moduleParents.forEach(module => header += `${module.name} > `);
-        header += module.name;
+
+        const parentList = this._tags.getModuleParentNames(module);
+
+        parentList.push(module.name);
+        parentList.forEach(parent => header += ` ${parent} >`);
+
         return header;
     }
 }

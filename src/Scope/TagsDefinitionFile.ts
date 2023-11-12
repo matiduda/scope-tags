@@ -84,6 +84,33 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         this._tagsDatabaseData.modules.push(newModule);
     }
 
+    public deleteModule(moduleToDelete: Module) {
+        if (!moduleToDelete) {
+            throw new Error("Can't remove undefined module");
+        }
+        if (moduleToDelete.tags.length) {
+            const tags = moduleToDelete.tags.map(tag => tag.name);
+            throw new Error(`
+                Can't remove module ${moduleToDelete.name} which has tags: ${tags.join(", ")}`
+            );
+        }
+        if (moduleToDelete.children.length) {
+            const children = moduleToDelete.children.join(", ");
+            throw new Error(`
+                Can't remove module ${moduleToDelete.name} with child modules: ${children}`
+            );
+        }
+        const moduleToDeleteIndex = this._tagsDatabaseData.modules.indexOf(moduleToDelete);
+        if (moduleToDeleteIndex === -1) {
+            throw new Error(`Module ${moduleToDelete.name} not found in database`);
+        }
+
+        const parentModule = this.getModuleByName(moduleToDelete.parent);
+        if (parentModule) {
+            parentModule.children.splice(parentModule.children.indexOf(moduleToDelete.name), 1);
+        }
+        this._tagsDatabaseData.modules.splice(moduleToDeleteIndex, 1);
+    }
 
     public getTags(): Set<Tag> {
         return this._allTags;
@@ -111,10 +138,10 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         return this._tagsDatabaseData.modules.filter(module => children.includes(module.name));
     }
 
-    public getModuleParents(module: Module) {
+    public getModuleParentNames(module: Module): Array<string> {
         const parents = [];
-        while (!module.parent) {
-            parents.push(module);
+        while (module.parent) {
+            parents.push(module.parent);
             module = this.getModuleByName(module.parent) || {} as Module;
         }
         return parents;
@@ -127,7 +154,6 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             description: "Default tag added on initialization",
             module: TagsDefinitionFile.getDefaultModule().name,
         };
-
         return defaultTag;
     }
 
@@ -140,7 +166,6 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             parent: null,
             children: [],
         }
-
         return defaultModule;
     }
 }

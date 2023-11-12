@@ -17,14 +17,19 @@ npm i scope-tags -D
     - [x] Add support for multiple tsconfig.json's
     - [ ] Add tests for this ?
 - [x] `.scope` metadata initialization
-    - [ ] `tags.json`
-    - [ ] `database.json`
+    - [x] `tags.json`
+    - [x] `database.json`
 - [ ] Basic command line interface and tag management:
     - [ ] Reading `tags.json`
     - [ ] Adding, deleting, updating tags
 - [x] Basic file to module mapping
 - [ ] Tags should have (possibly nested) categories
 - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
+
+### Assertions to add
+
+- [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
+
 ### Nice to have
 
 - [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
