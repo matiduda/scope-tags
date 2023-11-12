@@ -1,11 +1,12 @@
 export type Tag = {
-    id: number,
     name: string,
+    categoryName: string
 };
 
 export type TagCategory = {
-    id: number,
     name: string;
     exclusive: boolean;
     tags: Array<Tag>
+    parentCategory: string,
+    childCategories: Array<string>,
 };

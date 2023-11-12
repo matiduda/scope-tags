@@ -15,6 +15,7 @@
     "build": "npx tsc",
     "local-build": "npm run build && npm link",
     "start": "npm run build && scope",
+    "clean": "rimraf .scope",
     "test": "jest ./test --verbose"
   },
   "repository": {

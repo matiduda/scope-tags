@@ -1,19 +1,30 @@
 import { TagManager } from "./TagManager";
+import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { ConfigFile } from "../Scope/ConfigFile";
+import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { ModuleManager } from "./ModuleManager";
 
-const { Select, Toggle } = require('enquirer')
-
+const { Select } = require('enquirer')
 export class Menu {
 
-    constructor() { }
+    private _config: ConfigFile;
+    private _tags: TagsDefinitionFile;
+    private _database: FileTagsDatabase;
+
+    constructor(config: ConfigFile, tags: TagsDefinitionFile, database: FileTagsDatabase) {
+        this._config = config;
+        this._tags = tags;
+        this._database = database;
+    }
 
     public async start() {
         const prompt = new Select({
             name: 'Menu',
-            message: 'What do you want to do?',
+            message: "Scope Tags ",
             choices: [
                 { name: 'Start', value: this.start },
                 { name: 'Manage tags', value: this._manageTags },
-                { name: 'Manage files', value: this._manageFiles },
+                { name: 'Manage modules', value: this._manageModules },
                 { name: 'Exit', value: this._exit },
             ],
             result(value: any) { // This is ugly, but we need it to retrieve the value
@@ -22,32 +33,25 @@ export class Menu {
             },
         });
 
-        const answer = await prompt.run();
-        console.log(answer);
-
-        await answer.call(this);
+        try {
+            const answer = await prompt.run();
+            await answer.call(this);
+        } catch (e) {
+            this._exit();
+        }
     }
 
     private async _manageTags() {
-        const tagManager = new TagManager();
+        const tagManager = new TagManager(this._tags, this);
         await tagManager.start();
-        await this.start();
     }
 
-    private async _manageFiles() {
-        const prompt = new Toggle({
-            message: 'Manage files',
-            enabled: 'Yep',
-            disabled: 'Nope'
-        });
-
-        const answer = await prompt.run();
-        console.log(answer);
+    private async _manageModules() {
+        const tagManager = new ModuleManager(this._tags, this);
+        await tagManager.start();
     }
 
     private async _exit() {
-        // Close files and do cleanup stuff
-        console.log("cleanup");
         return Promise.resolve();
     }
 }

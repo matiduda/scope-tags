@@ -1,0 +1,46 @@
+{
+    "modules": [
+        {
+            "name": "Default module",
+            "description": "Module added automatically on script initialization",
+            "exclusive": false,
+            "tags": [
+                {
+                    "name": "Tag",
+                    "description": "Default tag added on initialization",
+                    "module": "Default module"
+                }
+            ],
+            "parent": null,
+            "children": [
+                "Test module"
+            ]
+        },
+        {
+            "name": "Test module",
+            "exclusive": false,
+            "tags": [],
+            "parent": "Default module",
+            "children": [
+                "Test module 2"
+            ],
+            "description": "Child of Default module"
+        },
+        {
+            "name": "Test module 2",
+            "exclusive": false,
+            "tags": [],
+            "parent": "Test module",
+            "children": [],
+            "description": "Child of Test module"
+        },
+        {
+            "name": "Second root module",
+            "exclusive": false,
+            "tags": [],
+            "parent": null,
+            "children": [],
+            "description": "1234"
+        }
+    ]
+}

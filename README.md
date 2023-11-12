@@ -14,18 +14,23 @@ npm i scope-tags -D
 - [x] Import `ts-morph` library
     - [x] Test if it reads the project data correctly
     - [x] Find relative tsconfig.json
-    - [ ] Add tests for this ?
     - [x] Add support for multiple tsconfig.json's
+    - [ ] Add tests for this ?
 - [x] `.scope` metadata initialization
+    - [ ] `tags.json`
+    - [ ] `database.json`
 - [ ] Basic command line interface and tag management:
+    - [ ] Reading `tags.json`
     - [ ] Adding, deleting, updating tags
-- [ ] Basic file to module mapping
-
+- [x] Basic file to module mapping
+- [ ] Tags should have (possibly nested) categories
+- [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
 ### Nice to have
 
 - [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
 - [ ] Github workflows with tests
 - [ ] Changes severity using [survey prompt](https://github.com/enquirer/enquirer#scale-prompt)? Severity based on git diffs?
+- [ ] Use [spinner](https://www.npmjs.com/package/ora) while waiting for async operations (opening repo, ast analysis)
 
 ### To be discussed
 

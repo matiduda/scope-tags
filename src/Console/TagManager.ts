@@ -1,18 +1,28 @@
+import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { Menu } from "./Menu";
+
 const { Select, Toggle } = require('enquirer')
 
 export class TagManager {
 
-    constructor() { }
+    private _tags: TagsDefinitionFile;
+    private _menu: Menu;
+
+    private _tagsWereModified = false;
+
+    constructor(tags: TagsDefinitionFile, menu: Menu) {
+        this._tags = tags;
+        this._menu = menu;
+    }
 
     public async start() {
         const prompt = new Select({
-            name: 'Menu',
-            message: '[TAG MANAGER]',
+            name: 'Tag manager',
+            message: 'Manage tags',
             choices: [
-                { name: 'Start', value: this.start },
-                { name: 'Manage tags', value: this._manageTags },
-                { name: 'Manage files', value: this._manageFiles },
-                { name: 'Exit', value: this._exit },
+                { name: 'By name', value: this._manageTagsByName },
+                { name: 'By module', value: this._manageTagsByModule },
+                { name: "Main menu", value: this._exit }
             ],
             result(value: any) {
                 const mapped = this.map(value);
@@ -21,31 +31,14 @@ export class TagManager {
         });
 
         const answer = await prompt.run();
-        console.log(answer);
-
         await answer.call(this);
     }
 
-    private async _manageTags() {
-        const tagManager = new TagManager();
-        await tagManager.start();
-        await this.start();
-    }
-
-    private async _manageFiles() {
-        const prompt = new Toggle({
-            message: 'Manage files',
-            enabled: 'Yep',
-            disabled: 'Nope'
-        });
-
-        const answer = await prompt.run();
-        console.log(answer);
-    }
-
     private async _exit() {
-        // Close files and do cleanup stuff
-        console.log("cleanup");
-        return Promise.resolve();
+        if (this._tagsWereModified) {
+            this._tags.save();
+            console.log("Tags saved ✅");
+        }
+        await this._menu.start();
     }
 }
