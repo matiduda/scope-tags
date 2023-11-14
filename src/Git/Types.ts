@@ -1,6 +1,8 @@
+export type FilePath = string;
+
 export type FileData = {
-    oldPath: string,
-    newPath: string,
+    oldPath: FilePath,
+    newPath: FilePath,
     change: GitDeltaType
 };
 

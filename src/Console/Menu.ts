@@ -1,6 +1,4 @@
 import { TagManager } from "./TagManager";
-import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
-import { ConfigFile } from "../Scope/ConfigFile";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { ModuleManager } from "./ModuleManager";
 
@@ -8,14 +6,10 @@ const { Select } = require('enquirer')
 
 export class Menu {
 
-    private _config: ConfigFile;
     private _tags: TagsDefinitionFile;
-    private _database: FileTagsDatabase;
 
-    constructor(config: ConfigFile, tags: TagsDefinitionFile, database: FileTagsDatabase) {
-        this._config = config;
+    constructor(tags: TagsDefinitionFile) {
         this._tags = tags;
-        this._database = database;
     }
 
     public async start() {

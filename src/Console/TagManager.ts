@@ -3,35 +3,32 @@ import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
 type TagAsOption = { name: Tag["name"], value: Tag["name"] };
+type RawTagAsOption = { name: Tag["name"], value: Tag };
 
 export class TagManager {
 
     private static MAX_VISIBLE_TAGS = 7;
 
     private _tags: TagsDefinitionFile;
-    private _menu: Menu;
+    private _menu: Menu | undefined;
 
     private _tagsWereModified = false;
 
-    constructor(tags: TagsDefinitionFile, menu: Menu) {
+    constructor(tags: TagsDefinitionFile, menu?: Menu) {
         this._tags = tags;
         this._menu = menu;
     }
 
-    public async start(
-        header = "Select tag",
-        multiple = false,
-    ) {
+    public async start() {
         const tagsToDisplay = this._tags.getTags();
         const tagsMappedToOptions = this._mapTagsToOptions(tagsToDisplay)
 
         const prompt = new AutoComplete({
             name: 'Tag manager',
-            message: header,
+            message: "Select tag",
             footer: "(CTRL + C to cancel)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             initial: 0,
-            multiple: multiple,
             choices: [
                 ...tagsMappedToOptions,
             ],
@@ -48,19 +45,41 @@ export class TagManager {
                 throw new Error(`Could not find tag: ${answer} in database`);
             }
             await this._selectTag.call(this, selectedTag);
-            await this.start.call(this, header, multiple);
+            await this.start.call(this);
         } catch (e) {
             await this._goBack();
         }
+    }
 
+    public async selectMultipleTags(): Promise<Tag[]> {
+        const tagsToDisplay = this._tags.getTags();
+        const tagsMappedToOptions = this._mapRawTagsToOptions(tagsToDisplay)
+
+        const prompt = new AutoComplete({
+            name: "Tag selector",
+            message: "Select appropriate tags",
+            footer: "(CTRL + C to cancel)",
+            limit: TagManager.MAX_VISIBLE_TAGS,
+            multiple: true,
+            choices: [
+                ...tagsMappedToOptions,
+            ],
+            result(value: any) {
+                return this.map(value);
+            },
+        });
+
+        const selected = await prompt.run();
+
+        return Object.values(selected);
     }
 
     private _mapTagsToOptions(tags: Array<Tag>): Array<TagAsOption> {
         return tags.map(tag => ({ name: tag.name, value: tag.name }));
     }
 
-    public async getTagsList() {
-        await this.start("Select matching tags");
+    private _mapRawTagsToOptions(tags: Array<Tag>): Array<RawTagAsOption> {
+        return tags.map(tag => ({ name: tag.name, value: tag }));
     }
 
     private async _selectTag(tag: Tag, module?: Module) {
@@ -222,6 +241,11 @@ export class TagManager {
 
     private async _goBack() {
         this._saveChanges();
-        return this._menu.start();
+
+        if (this._menu) {
+            return this._menu.start();
+        } else {
+            Promise.resolve();
+        }
     }
 }

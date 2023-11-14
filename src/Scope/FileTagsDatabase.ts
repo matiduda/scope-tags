@@ -1,9 +1,8 @@
 import path from "path";
 import fs from "fs";
-import { Tag } from "../Tag";
 import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
-import { TagsDefinitionFile } from "./TagsDefinitionFile";
+import { Tag, TagsDefinitionFile } from "./TagsDefinitionFile";
 
 type FileMetadata = {
     tags: Array<Tag["name"]>;
@@ -66,7 +65,8 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             throw new Error("File not found: " + filePath);
         }
 
-        const tagNames = tags.map(tag => tag.name);
+        const tagNames = [...tags].map(tag => tag.name);
+        console.log(tags);
         const fileMetadata = this._fileTagsDatabaseData.files[filePath];
 
         if (!fileMetadata) {
@@ -75,7 +75,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         }
 
         const currentTags = this._fileTagsDatabaseData.files[filePath]?.tags || [];
-        const newTags = currentTags.concat(tagNames);
+        const newTags = currentTags.concat(tagNames.filter(tagName => !currentTags.includes(tagName)));
 
         this._fileTagsDatabaseData.files[filePath] = { tags: newTags };
     }

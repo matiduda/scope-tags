@@ -1,6 +1,6 @@
 {
   "name": "scope-tags",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Output human readable test scope report for QA",
   "main": "dist/scope.js",
   "types": "dist/scope.d.ts",
@@ -15,6 +15,7 @@
     "build": "npx tsc",
     "local-build": "npm run build && npm link",
     "start": "npm run build && scope",
+    "last-commit": "npm run build && scope --last-commit",
     "clean": "rimraf .scope tmp",
     "test": "jest ./test --verbose"
   },
