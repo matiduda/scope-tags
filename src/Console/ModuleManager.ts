@@ -2,39 +2,50 @@ const { Select, Form, Confirm } = require('enquirer')
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
-type OptionAsModule = { name: Module["name"], value: Module };
+type ModuleAsOption = { name: Module["name"], value: Module };
 
 export class ModuleManager {
 
     private _tags: TagsDefinitionFile;
     private _menu: Menu;
 
-    private _modulesWereModified = false;
+    private _modulesWereModified: boolean;
 
     constructor(tags: TagsDefinitionFile, menu: Menu) {
         this._tags = tags;
         this._menu = menu;
+        this._modulesWereModified = false;
     }
 
     public async start(fromModule?: Module) {
         const modulesToDisplay = fromModule
             ? this._tags.getModulesByNames(fromModule.children) : this._tags.getRootModules();
 
-        const choices = this._mapModulesToOptions(modulesToDisplay)
+        const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay)
+
+        const rootOptions = [
+
+        ];
 
         const prompt = new Select({
             name: 'Module manager',
             message: this._getModulePathAsHeader(fromModule),
             choices: [
-                ...choices,
-                { role: 'separator' },
-                { name: 'Add new module here', value: this._addModule },
+                ...modulesMappedToOptions,
                 ...fromModule ? [
+                    { message: `Name:\t\t${fromModule.name}`, role: "separator" },
+                    { message: `Description:\t${fromModule.description}`, role: "separator" },
+                    { message: `Max 1 tag:\t${fromModule.exclusive}`, role: "separator" },
+                    { message: `Tags:\t\t${this._tags.getModuleTagNames(fromModule).join(", ")}`, role: "separator" },
+                    { role: "separator" },
+                    { name: 'Add new module here', value: this._addModule },
                     { name: 'Manage tags of: ' + fromModule.name, value: this._manageTagsFromModule },
                     { name: 'Delete this module', value: this._deleteModule },
                     { name: "Back to: " + (fromModule.parent || "root"), value: this._goBack },
                 ] : [
-                    { name: "Back to menu", value: this._exit }
+                    { role: 'separator' },
+                    { name: 'Add new module here', value: this._addModule },
+                    { name: 'Back to menu', value: this._exit },
                 ],
             ],
             result(value: any) {
@@ -55,7 +66,7 @@ export class ModuleManager {
     private async _addModule(fromModule?: Module) {
 
         const defaultModuleName = "Module";
-        const defaultModuleDescription = "A module containing functionalities";
+        const defaultModuleDescription = "A module containing multiple functionalities";
 
         const moduleInfoPrompt = new Form({
             name: 'user',
@@ -148,8 +159,8 @@ export class ModuleManager {
         await this._menu.start();
     }
 
-    private _mapModulesToOptions(modules: Array<Module>): Array<OptionAsModule> {
-        return modules.map(module => ({ name: module.name, value: module }));
+    private _mapModulesToOptions(modules: Array<Module>): Array<ModuleAsOption> {
+        return modules.map(module => ({ name: `→ ${module.name}`, value: module }));
     }
 
     private _getModulePathAsHeader(module?: Module): string {

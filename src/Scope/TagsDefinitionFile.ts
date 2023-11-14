@@ -5,7 +5,7 @@ import { IJSONFileDatabase } from "./IJSONFileDatabase";
 export type Tag = {
     name: string,
     description: string,
-    module: Module["name"]
+    module: Module["name"],
 };
 
 export type Module = {
@@ -28,7 +28,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     private _root: string;
     private _tagsDatabaseData: TagsDatabaseType;
 
-    private _allTags = new Set<Tag>();
+    private _allTags = new Array<Tag>();
 
     constructor(root: string) {
         this._root = root;
@@ -53,7 +53,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public load(): TagsDefinitionFile {
         this._tagsDatabaseData = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
-        // this._addTagsFromModules(this._tagsDatabaseData.modules);
+        this._addTagsFromModules(this._tagsDatabaseData.modules);
         return this;
     }
 
@@ -64,7 +64,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     }
 
     private _addTagsFromModules(modules: Array<Module>) {
-        modules.forEach(module => module.tags.forEach(tag => this._allTags.add(tag)));
+        modules.forEach(module => module.tags.forEach(tag => this._allTags.push(tag)));
     }
 
     public addModule(newModule: Module) {
@@ -112,8 +112,23 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         this._tagsDatabaseData.modules.splice(moduleToDeleteIndex, 1);
     }
 
-    public getTags(): Set<Tag> {
+    public addTag(tag: Tag) {
+        const destinationModule = this.getModuleByName(tag.module);
+
+        if (!destinationModule) {
+            throw new Error(`Can't add tag to module ${tag.module}, which does not exist`);
+        }
+
+        destinationModule.tags.push(tag);
+        this._allTags.push(tag);
+    }
+
+    public getTags(): Array<Tag> {
         return this._allTags;
+    }
+
+    public getTagByName(name: string): Tag | undefined {
+        return this._allTags.find(tag => tag.name === name);
     }
 
     public getModules(): Array<Module> {
@@ -147,6 +162,9 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         return parents;
     }
 
+    public getModuleTagNames(module: Module): Array<Tag["name"]> {
+        return module.tags.map(tag => tag.name);
+    }
 
     public static getDefaultTag(): Tag {
         const defaultTag: Tag = {

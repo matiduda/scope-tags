@@ -14,6 +14,14 @@ const [, , ...args] = process.argv;
 const root: string = getGitProjectRoot();
 console.log("Found Git repository in: " + root);
 
+function startCLI() {
+    const configFile = new ConfigFile(root).load();
+    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
+    const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+    new Menu(configFile, tagsDefinitionFile, fileTagsDatabase).start().then(() => console.log("Exit."));
+}
+
 if (!scopeFolderExists(root)) {
     new YesNoMenu().ask("Do you want to create empty configuration?").then(answer => {
         if (answer) {
@@ -27,15 +35,12 @@ if (!scopeFolderExists(root)) {
             console.log("\nInitialized empty configuration at:\n" + scopeFolderPath);
         } else {
             console.log("Exiting.");
+            process.exit(0);
         }
-        process.exit(0);
+        startCLI();
     });
-} else { // Load CLI
-    const configFile = new ConfigFile(root).load();
-    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
-
-    new Menu(configFile, tagsDefinitionFile, fileTagsDatabase).start().then(() => console.log("Exit."));
+} else {
+    startCLI();
 }
 
 if (args[0] === "--report") {

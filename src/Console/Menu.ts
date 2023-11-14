@@ -23,7 +23,6 @@ export class Menu {
             name: 'Menu',
             message: "Scope Tags",
             choices: [
-                { name: 'Start', value: this.start },
                 { name: 'Manage tags', value: this._manageTags },
                 { name: 'Manage modules', value: this._manageModules },
                 { name: 'Exit', value: this._exit },
@@ -54,8 +53,8 @@ export class Menu {
 
 
     private async _manageModules() {
-        const tagManager = new ModuleManager(this._tags, this);
-        await tagManager.start();
+        const moduleManager = new ModuleManager(this._tags, this);
+        await moduleManager.start();
     }
 
     private async _exit() {
