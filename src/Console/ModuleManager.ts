@@ -78,8 +78,6 @@ export class ModuleManager {
             validate: (answer: any) => {
                 if (!answer.name.length
                     || !answer.description.length
-                    || answer.name === defaultModuleName
-                    || answer.description === defaultModuleDescription
                 ) {
                     return "Both name and description are required";
                 } else {

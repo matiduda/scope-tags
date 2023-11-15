@@ -105,7 +105,6 @@ export class TagManager {
     }
 
     private async _editTagFromModule(tag: Tag, module: Module) {
-        console.log("EDIT TAG FROM MODULE");
         if (!module) {
             throw new Error("Cannot get back to undefined module");
         }
@@ -118,7 +117,6 @@ export class TagManager {
     }
 
     private async _editTag(tag: Tag) {
-        console.log("EDIT TAG");
         const editTagPrompt = new Form({
             name: 'user',
             message: 'Enter new tag values:',
@@ -202,8 +200,6 @@ export class TagManager {
             validate: (answer: any) => {
                 if (!answer.name.length
                     || !answer.description.length
-                    || answer.name === defaultTagName
-                    || answer.description === defaultTagDescription
                 ) {
                     return "Both name and description are required";
                 } else {
