@@ -71,6 +71,7 @@ export class GitRepository {
     }
 
     public async verifyCommit(commit: Commit): Promise<void> {
+        // TODO: Remove this
         const repo = await this._getRepository();
         const noteContent = "Scope tags: OK1";
         const noteOID = await Note.create(repo, "refs/notes/commits", commit.author(), commit.committer(), commit.id(), noteContent, 0);

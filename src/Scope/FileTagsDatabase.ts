@@ -66,7 +66,6 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         }
 
         const tagNames = [...tags].map(tag => tag.name);
-        console.log(tags);
         const fileMetadata = this._fileTagsDatabaseData.files[filePath];
 
         if (!fileMetadata) {

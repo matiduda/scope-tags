@@ -118,7 +118,7 @@ export class TagManager {
 
     private async _editTag(tag: Tag) {
         const editTagPrompt = new Form({
-            name: 'user',
+            name: 'Edit tag',
             message: 'Enter new tag values:',
             choices: [
                 { name: 'name', message: 'Name', initial: tag.name },
