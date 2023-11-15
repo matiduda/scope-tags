@@ -64,13 +64,18 @@ export class TagManager {
             choices: [
                 ...tagsMappedToOptions,
             ],
+            validate: (result: any) => {
+                if (!result.length) {
+                    return "You have to select at least one tag";
+                }
+                return true;
+            },
             result(value: any) {
                 return this.map(value);
             },
         });
 
         const selected = await prompt.run();
-
         return Object.values(selected);
     }
 

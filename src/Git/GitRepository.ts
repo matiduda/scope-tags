@@ -1,4 +1,4 @@
-import { Commit, Note, Repository } from "nodegit";
+import { Commit, Repository, Revwalk } from "nodegit";
 import { FileData } from "./Types";
 
 export class GitRepository {
@@ -21,9 +21,40 @@ export class GitRepository {
         return this._repository;
     }
 
+    public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
+        const repository = await this._getRepository();
+        const currentBranch = await repository.getCurrentBranch();
+        const currentBranchName = currentBranch.shorthand();
+        const refs = await repository.getReferences();
+        const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
+        const currentRemote = remoteRefs.find(ref => ref.shorthand() === `origin/${currentBranchName}`);
+
+        if (!currentRemote) {
+            console.log("NO REMOTE FOUND, CHECK ALL COMMITS");
+            // process.exit(0);
+        }
+        const walk = Revwalk.create(repository);
+
+        // When remote branch is not yet pushed, we can't directly compare
+        // which commits are fresh, so we safely compare to origin/HEAD
+
+        walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
+
+        const unpushedCommits = await walk.getCommits(maxCommitCount);
+        if (unpushedCommits.length === maxCommitCount) {
+            console.warn(`Found ${maxCommitCount} commits, which is the limit. Some commits may have been ommited. To remove this warning set higher gitCommitCountLimit in .scope/config.json`);
+        }
+        unpushedCommits.forEach(commit => console.log(commit.message()))
+        return this.getFileDataForCommits(unpushedCommits);
+    }
+
     public async getFileDataFromLastCommit(): Promise<FileData[]> {
         const mostRecentCommit = await this.getLatestCommit();
-        const commitDiffs = await mostRecentCommit.getDiff();
+        return this.getFileDataForCommit(mostRecentCommit);
+    }
+
+    public async getFileDataForCommit(commit: Commit): Promise<FileData[]> {
+        const commitDiffs = await commit.getDiff();
 
         return new Promise<FileData[]>(async (resolve, reject) => {
 
@@ -45,35 +76,24 @@ export class GitRepository {
         });
     }
 
+    public async getFileDataForCommits(commits: Array<Commit>): Promise<FileData[]> {
+        const fileDataForCommits: Array<FileData> = [];
+
+        for (const commit of commits) {
+            const fileDataForCommit = await this.getFileDataForCommit(commit);
+            fileDataForCommit.forEach(fileData => fileDataForCommits.push(fileData));
+        }
+
+        return fileDataForCommits;
+    }
+
+    public async getCommitByHash(hash: string): Promise<Commit> {
+        const repository = await this._getRepository();
+        return repository.getCommit(hash);
+    }
+
     public async getLatestCommit(): Promise<Commit> {
         const repository = await this._getRepository();
         return repository.getHeadCommit();
-    }
-
-    public async markCommitAsDone(commit: Commit): Promise<void> {
-        const repo = await this._getRepository();
-        const userName = (await (await repo.config()).getEntry("user.name")).value();
-
-        await Note.create(
-            repo,
-            "refs/notes/commits",
-            commit.author(),
-            commit.committer(),
-            commit.id(),
-            this._getNoteVerificationContent(userName),
-            0
-        );
-    }
-
-    private _getNoteVerificationContent(author: string): string {
-        const date = new Date();
-        return `[SCOPE TAGS] Successfully tagged by '${author}' on '${date.toLocaleString()}'`;
-    }
-
-    public async verifyCommit(commit: Commit): Promise<void> {
-        // TODO: Remove this
-        const repo = await this._getRepository();
-        const noteContent = "Scope tags: OK1";
-        const noteOID = await Note.create(repo, "refs/notes/commits", commit.author(), commit.committer(), commit.id(), noteContent, 0);
     }
 }

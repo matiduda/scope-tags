@@ -23,8 +23,10 @@ export class FileTagger {
     public async start(fileData: Array<FileData>) {
         const tagManager = new TagManager(this._tags);
 
+        const fileDataNotFoundInDatabase = this._database.filterAlreadyTaggedFiles(fileData);
+
         const tagsMappedToFiles = new Map<FileData, Array<Tag>>();
-        let untaggedFiles: Array<FileData> = [...fileData];
+        let untaggedFiles: Array<FileData> = [...fileDataNotFoundInDatabase];
 
         while (untaggedFiles.length) {
             // Select files
@@ -39,8 +41,8 @@ export class FileTagger {
         }
 
         // Save to database
-        tagsMappedToFiles.forEach((tags: Array<Tag>, fileData: FileData) => {
-            this._database.addMultipleTagsToFile(tags, fileData.newPath);
+        tagsMappedToFiles.forEach((tags: Array<Tag>, data: FileData) => {
+            this._database.addMultipleTagsToFile(tags, data.newPath);
         })
         this._database.save();
     }

@@ -3,17 +3,25 @@ import fs from "fs";
 import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
 import { Tag, TagsDefinitionFile } from "./TagsDefinitionFile";
+import { FileData } from "../Git/Types";
 
 type FileMetadata = {
     tags: Array<Tag["name"]>;
 };
 
 type FileArray = {
-    [dir: string]: FileMetadata
+    [file: string]: FileMetadata
 }
 
 type DirectoryArray = {
-    [file: string]: FileMetadata
+    [dir: string]: FileMetadata
+}
+
+export enum FileStatusInDatabase {
+    NOT_IN_DATABASE = "NOT_IN_DATABASE",
+    UNTAGGED = "UNTAGGED",
+    TAGGED = "TAGGED",
+    IGNORED = "IGNORED",
 }
 
 interface FileTagsDatabaseType {
@@ -22,6 +30,7 @@ interface FileTagsDatabaseType {
 };
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
+
     private static PATH = ".scope/database.json";
 
     private _root: string;
@@ -85,5 +94,46 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             throw new Error("No tags found for: " + path);
         }
         return fileMetadata.tags;
+    }
+
+    public filterAlreadyTaggedFiles(fileData: Array<FileData>) {
+        const allFiles = Object.keys(this._fileTagsDatabaseData.files);
+        return fileData.filter(data => !allFiles.includes(data.newPath));
+    }
+
+    public checkMultipleFileStatusInDatabase(fileData: Array<FileData>): Map<FileData, FileStatusInDatabase> {
+        const filesStatusesInDatabase = new Map<FileData, FileStatusInDatabase>();
+
+        fileData.forEach((data: FileData) => {
+            filesStatusesInDatabase.set(data, this._checkFileStatus(data.newPath));
+        });
+        return filesStatusesInDatabase;
+    }
+
+    private _checkFileStatus(filePath: string): FileStatusInDatabase {
+        const fileDataReference = this._fileTagsDatabaseData.files[filePath];
+        if (!fileDataReference) {
+            return FileStatusInDatabase.NOT_IN_DATABASE;
+        }
+        if (fileDataReference && !fileDataReference.tags.length) {
+            return FileStatusInDatabase.UNTAGGED;
+        }
+        return FileStatusInDatabase.TAGGED;
+        // TODO: Add ignored files statuses
+    }
+
+    public getFileStatusInDatabaseDescription(status: FileStatusInDatabase | undefined): string {
+        // Unused - maybe delete?
+        if (!status) {
+            return `No description for status ${status}`;
+        }
+        const FileStatusInDatabaseReasons = new Map<FileStatusInDatabase, string>([
+            [FileStatusInDatabase.NOT_IN_DATABASE, "File is not present in database"],
+            [FileStatusInDatabase.UNTAGGED, "File is present in database but without any tags"],
+            [FileStatusInDatabase.TAGGED, `File is correctly tagged with`],
+            [FileStatusInDatabase.IGNORED, "File is ignored by scope tags"],
+        ]);
+
+        return FileStatusInDatabaseReasons.get(status) || `No description for status ${status}`;
     }
 }

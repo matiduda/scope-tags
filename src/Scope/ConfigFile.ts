@@ -10,6 +10,7 @@ export type ProjectConfig = {
 
 export type ConfigFileType = {
     projects: Array<ProjectConfig> // tsconfig.json path relative to git project root
+    gitCommitCountLimit: number,
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
@@ -29,7 +30,8 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
                     name: "Project",
                     location: "tsconfig.json"
                 }
-            ]
+            ],
+            gitCommitCountLimit: 20
         };
         JSONFile.niceWrite(this._getPath(), defaultConfig);
     }

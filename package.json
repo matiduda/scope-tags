@@ -15,8 +15,7 @@
     "build": "npx tsc",
     "local-build": "npm run build && npm link",
     "start": "npm run build && scope",
-    "last-commit": "npm run build && scope --last-commit",
-    "clean": "rimraf .scope tmp",
+    "tag": "npm run build && scope --tag-unpushed-commits",
     "test": "jest ./test --verbose"
   },
   "repository": {

@@ -119,6 +119,10 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             throw new Error(`Can't add tag to module ${tag.module}, which does not exist`);
         }
 
+        if (destinationModule.tags.some(moduleTag => moduleTag.name === tag.name)) {
+            throw new Error(`Can't add tag to module ${tag.module}, already contains tag ${tag.name}`);
+        }
+
         destinationModule.tags.push(tag);
         this._allTags.push(tag);
     }
