@@ -28,11 +28,6 @@ export class GitRepository {
         const refs = await repository.getReferences();
         const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
         const currentRemote = remoteRefs.find(ref => ref.shorthand() === `origin/${currentBranchName}`);
-
-        if (!currentRemote) {
-            console.log("NO REMOTE FOUND, CHECK ALL COMMITS");
-            // process.exit(0);
-        }
         const walk = Revwalk.create(repository);
 
         // When remote branch is not yet pushed, we can't directly compare
