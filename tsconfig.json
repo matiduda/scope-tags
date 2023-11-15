@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2019",
+    "strict": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "outDir": "./dist",
+    "baseUrl": ".",
+    "typeRoots": [
+      "node_modules/@types",
+    ],
+    "strictPropertyInitialization": false,
+  },
+  "include": [
+    "src/**/*"
+  ],
+}
