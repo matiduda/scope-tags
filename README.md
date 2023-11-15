@@ -24,7 +24,7 @@ npm i scope-tags -D
     - [x] Adding, deleting, updating tags
 - [x] Basic file to module mapping
 - [x] Tags should have (possibly nested) categories
-- [ ] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
+- [x] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
 - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
 
 ### Assertions to add
