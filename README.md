@@ -24,7 +24,12 @@ npm i scope-tags -D
     - [x] Adding, deleting, updating tags
 - [x] Basic file to module mapping
 - [x] Tags should have (possibly nested) categories
-- [ ] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
+- [x] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
+- [ ] Add scope report generation
+    - [ ] Get fileData for affected files
+    - [ ] Get tags for affected files
+    - [ ] Create report with affected modules
+    - [ ] Add report to task
 - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
 
 ### Assertions to add
@@ -33,10 +38,14 @@ npm i scope-tags -D
 
 ### Nice to have
 
+- [x] Use [spinner](https://www.npmjs.com/package/ora) while waiting for async operations (opening repo, ast analysis) - probably not needed because wait time is short
 - [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
 - [ ] Github workflows with tests
 - [ ] Changes severity using [survey prompt](https://github.com/enquirer/enquirer#scale-prompt)? Severity based on git diffs?
-- [ ] Use [spinner](https://www.npmjs.com/package/ora) while waiting for async operations (opening repo, ast analysis)
+- [ ] Add keyboard shortcut hints when selecting tags and files -> https://github.com/enquirer/enquirer#select-choices
+- [ ] Add groups on select prompt:
+    - [ ] Group files based on common path (files from same directory sould be grouped)
+    - [ ] Group tags based on parent modules
 
 ### To be discussed
 

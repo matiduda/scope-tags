@@ -23,7 +23,6 @@ export enum FileStatusInDatabase {
 interface FileTagsDatabaseType {
     files: FileArray,
     ignoredFiles: Array<string>,
-    ignoredDirectories: Array<string>,
 };
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
@@ -45,7 +44,6 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         const defaultFileTagsDatabase: FileTagsDatabaseType = {
             files: {},
             ignoredFiles: [],
-            ignoredDirectories: []
         };
 
         JSONFile.niceWrite(this._getPath(), defaultFileTagsDatabase);
@@ -119,7 +117,14 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public filterAlreadyTaggedFiles(fileData: Array<FileData>) {
         const allFiles = Object.keys(this._fileTagsDatabaseData.files);
-        return fileData.filter(data => !allFiles.includes(data.newPath));
+        return fileData.filter(data => {
+            if (this._fileTagsDatabaseData.ignoredFiles.includes(data.newPath)) {
+                return false;
+            } else if (allFiles.includes(data.newPath)) {
+                return false
+            }
+            return true;
+        });
     }
 
     public checkMultipleFileStatusInDatabase(fileData: Array<FileData>): Map<FileData, FileStatusInDatabase> {
@@ -158,10 +163,14 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         return FileStatusInDatabaseReasons.get(status) || `No description for status ${status}`;
     }
 
-    public addIgnoredFile(file: string) {
+    public addIgnoredFile(file: string): void {
         if (this._fileTagsDatabaseData.ignoredFiles.includes(file)) {
             throw new Error(`Cannot ignore file ${file} as it is already ignored`);
         }
         this._fileTagsDatabaseData.ignoredFiles.push(file);
+    }
+
+    public isIgnored(file: string): boolean {
+        return this._fileTagsDatabaseData.ignoredFiles.includes(file);
     }
 }

@@ -37,18 +37,17 @@ export class FileTagger {
             const selectedTags: Array<Tag> = await tagManager.selectMultipleTags();
 
             for (const file of selectedFiles) {
-                if (!selectedFiles.length) {
-                    // Files are ignored
-                    this._database.addIgnoredFile(file.newPath);
-                } else {
-                    tagsMappedToFiles.set(file, selectedTags);
-                }
+                tagsMappedToFiles.set(file, selectedTags);
             }
         }
 
         // Save to database
         tagsMappedToFiles.forEach((tags: Array<Tag>, data: FileData) => {
-            this._database.addMultipleTagsToFile(tags, data.newPath);
+            if (!tags.length) {
+                this._database.addIgnoredFile(data.newPath);
+            } else {
+                this._database.addMultipleTagsToFile(tags, data.newPath);
+            }
         })
         this._database.save();
     }
