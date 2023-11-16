@@ -2,7 +2,7 @@ import path from "path";
 import fs from "fs";
 import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
-import { Tag, TagsDefinitionFile } from "./TagsDefinitionFile";
+import { Tag } from "./TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 
 type FileMetadata = {
@@ -13,10 +13,6 @@ type FileArray = {
     [file: string]: FileMetadata
 }
 
-type DirectoryArray = {
-    [dir: string]: FileMetadata
-}
-
 export enum FileStatusInDatabase {
     NOT_IN_DATABASE = "NOT_IN_DATABASE",
     UNTAGGED = "UNTAGGED",
@@ -25,8 +21,9 @@ export enum FileStatusInDatabase {
 }
 
 interface FileTagsDatabaseType {
-    directories: DirectoryArray,
     files: FileArray,
+    ignoredFiles: Array<string>,
+    ignoredDirectories: Array<string>,
 };
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
@@ -46,11 +43,11 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public initDefault() {
         const defaultFileTagsDatabase: FileTagsDatabaseType = {
-            directories: {},
-            files: {}
+            files: {},
+            ignoredFiles: [],
+            ignoredDirectories: []
         };
 
-        defaultFileTagsDatabase.directories[".scope"] = { tags: [TagsDefinitionFile.getDefaultTag().name] };
         JSONFile.niceWrite(this._getPath(), defaultFileTagsDatabase);
     }
 
@@ -71,7 +68,10 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public addMultipleTagsToFile(tags: Array<Tag>, filePath: string) {
         if (!fs.existsSync(filePath)) {
-            throw new Error("File not found: " + filePath);
+            throw new Error(`File not found: ${filePath}`);
+        }
+        if (!tags.length) {
+            throw new Error("Tags array is empty");
         }
 
         const tagNames = [...tags].map(tag => tag.name);
@@ -86,6 +86,27 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         const newTags = currentTags.concat(tagNames.filter(tagName => !currentTags.includes(tagName)));
 
         this._fileTagsDatabaseData.files[filePath] = { tags: newTags };
+    }
+
+    private _isDirectory(path: string) {
+        return fs.lstatSync(path).isDirectory();
+    }
+
+    public addSingleTagToAllFilesInDirectory(tag: Tag, directoryPath: string, recursive: boolean = false) {
+        if (!this._isDirectory(directoryPath)) {
+            throw new Error(`File '${directoryPath}' is not a directory`);
+        }
+
+        fs.readdir(directoryPath, (err, files) => {
+            if (files.some(file => this._isDirectory(file)) && !recursive) {
+                console.log(`Cannot tag directory '${directoryPath}', as it consists of directory is not a directory`);
+
+            }
+
+            files.forEach(file => {
+                console.log(file);
+            });
+        });
     }
 
     public getTagNamesForFile(path: string): Array<Tag["name"]> {
@@ -135,5 +156,12 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         ]);
 
         return FileStatusInDatabaseReasons.get(status) || `No description for status ${status}`;
+    }
+
+    public addIgnoredFile(file: string) {
+        if (this._fileTagsDatabaseData.ignoredFiles.includes(file)) {
+            throw new Error(`Cannot ignore file ${file} as it is already ignored`);
+        }
+        this._fileTagsDatabaseData.ignoredFiles.push(file);
     }
 }

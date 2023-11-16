@@ -21,11 +21,7 @@ export class ModuleManager {
         const modulesToDisplay = fromModule
             ? this._tags.getModulesByNames(fromModule.children) : this._tags.getRootModules();
 
-        const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay)
-
-        const rootOptions = [
-
-        ];
+        const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay);
 
         const prompt = new Select({
             name: 'Module manager',
@@ -45,7 +41,7 @@ export class ModuleManager {
                 ] : [
                     { role: 'separator' },
                     { name: 'Add new module here', value: this._addModule },
-                    { name: 'Back to menu', value: this._exit },
+                    { name: this._modulesWereModified ? "Save and return to menu" : "Return to menu", value: this._exit },
                 ],
             ],
             result(value: any) {

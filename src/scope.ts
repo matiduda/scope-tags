@@ -13,15 +13,15 @@ import { Commit } from "nodegit";
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
 
-console.log("args:", args);
-
 // Find git repository
 const root: string = getGitProjectRoot();
-console.log("Found Git repository in: " + root);
+if (!root) {
+    console.error("Git repository not found.");
+    process.exit(1);
+}
 
 switch (args[0]) {
     case "--tag-unpushed-commits": {
-
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {
 
@@ -38,6 +38,8 @@ switch (args[0]) {
         break;
     }
     case "--verify": {
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+
         // Checks if all files from the commit are present in database (or excluded)
         const commitHash = args[1];
         if (!commitHash) {
@@ -46,26 +48,27 @@ switch (args[0]) {
         }
 
         const repository = new GitRepository(root);
-        repository.getCommitByHash(commitHash).then((commit: Commit) => {
 
-            repository.getFileDataForCommit(commit).then(fileDataArray => {
-                console.log(`Checking files for commit '${commit.message().trim()}'`)
-                const fileTagsDatabase = new FileTagsDatabase(root).load();
+        repository.getCommitByHash(commitHash).then(async (commit: Commit) => {
+            await verifyCommit(commit, fileTagsDatabase, repository);
+        });
+        break;
+    }
+    case "--verify-unpushed-commits": {
+        // Checks if all files from unpushed commits are present in database (or excluded)
 
-                const statusMap = fileTagsDatabase.checkMultipleFileStatusInDatabase(fileDataArray);
+        const repository = new GitRepository(root);
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
 
-                const filesNotPresentInDatabase = fileDataArray.filter(fileData => {
-                    statusMap.get(fileData) !== FileStatusInDatabase.NOT_IN_DATABASE;
-                });
+        repository.getUnpushedCommits().then(async (commits: Commit[]) => {
+            if (!commits.length) {
+                console.log("No commits found that can be verified");
+                process.exit(0);
+            }
 
-                if (filesNotPresentInDatabase.length) {
-                    console.log("Commit not verified, no tags found for required files:");
-                    filesNotPresentInDatabase.forEach(console.log);
-                    process.exit(2);
-                } else {
-                    console.log("Commit not verified, no tags found for required files:");
-                }
-            });
+            for (const commit of commits) {
+                await verifyCommit(commit, fileTagsDatabase, repository);
+            }
         });
         break;
     }
@@ -104,4 +107,22 @@ function startCLI() {
     const fileTagsDatabase = new FileTagsDatabase(root).load();
 
     new Menu(tagsDefinitionFile).start().then(() => console.log("Exit."));
+}
+
+async function verifyCommit(commit: Commit, database: FileTagsDatabase, repository: GitRepository) {
+    const fileDataArray = await repository.getFileDataForCommit(commit);
+    const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray);
+
+    const filesNotPresentInDatabase = fileDataArray.filter(fileData => {
+        return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;
+    });
+
+
+    if (filesNotPresentInDatabase.length) {
+        console.log("Commit not verified, no tags found for required files:\n");
+        filesNotPresentInDatabase.forEach(file => console.log(`- ${file.newPath}`));
+        console.log("\nPlease run\n\npx scope --tag-unpushed-commits\n\nto tag them");
+
+        process.exit(1);
+    }
 }

@@ -58,7 +58,7 @@ export class TagManager {
         const prompt = new AutoComplete({
             name: "Tag selector",
             message: "Select appropriate tags",
-            footer: "(CTRL + C to cancel)",
+            footer: "(CTRL + C to ignore)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             multiple: true,
             choices: [
@@ -75,7 +75,12 @@ export class TagManager {
             },
         });
 
-        const selected = await prompt.run();
+        let selected: any;
+        try {
+            selected = await prompt.run();
+        } catch (e) {
+            return [];
+        }
         return Object.values(selected);
     }
 
@@ -97,7 +102,7 @@ export class TagManager {
                 { message: `Module:\t${tag.module}`, role: "separator" },
                 { role: "separator" },
                 { name: 'Edit', value: module ? this._editTagFromModule : this._editTag },
-                { name: 'Go back', value: () => Promise.resolve() },
+                { name: this._tagsWereModified ? 'Save' : 'Go back', value: () => Promise.resolve() },
             ],
             result(value: any) {
                 const mapped = this.map(value);
@@ -161,7 +166,7 @@ export class TagManager {
                 { role: "separator" },
                 { name: 'Add tag', value: this._addTagToModule },
                 {
-                    name: `Back to tag manager`, value: () => {
+                    name: this._tagsWereModified ? 'Save and return to module' : `Return to module`, value: () => {
                         this._saveChanges();
                         Promise.resolve()
                     }

@@ -34,9 +34,15 @@ export class FileTagger {
             untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
 
             // Select tags
-            const selectedTagssadf: Array<Tag> = await tagManager.selectMultipleTags();
+            const selectedTags: Array<Tag> = await tagManager.selectMultipleTags();
+
             for (const file of selectedFiles) {
-                tagsMappedToFiles.set(file, selectedTagssadf);
+                if (!selectedFiles.length) {
+                    // Files are ignored
+                    this._database.addIgnoredFile(file.newPath);
+                } else {
+                    tagsMappedToFiles.set(file, selectedTags);
+                }
             }
         }
 
@@ -57,6 +63,12 @@ export class FileTagger {
             choices: fileDataAsOptions,
             result(value: any) {
                 return this.map(value);
+            },
+            validate: (result: any) => {
+                if (!result.length) {
+                    return "You have to select at least one file";
+                }
+                return true;
             },
         });
 

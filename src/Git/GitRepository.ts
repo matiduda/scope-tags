@@ -22,6 +22,12 @@ export class GitRepository {
     }
 
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
+        const unpushedCommits = await this.getUnpushedCommits(maxCommitCount);
+        unpushedCommits.forEach(commit => console.log(commit.message()))
+        return this.getFileDataForCommits(unpushedCommits);
+    }
+
+    public async getUnpushedCommits(maxCommitCount: number = 20): Promise<Commit[]> {
         const repository = await this._getRepository();
         const currentBranch = await repository.getCurrentBranch();
         const currentBranchName = currentBranch.shorthand();
@@ -35,12 +41,11 @@ export class GitRepository {
 
         walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
 
-        const unpushedCommits = await walk.getCommits(maxCommitCount);
-        if (unpushedCommits.length === maxCommitCount) {
+        const commits = await walk.getCommits(maxCommitCount);
+        if (commits.length === maxCommitCount) {
             console.warn(`Found ${maxCommitCount} commits, which is the limit. Some commits may have been ommited. To remove this warning set higher gitCommitCountLimit in .scope/config.json`);
         }
-        unpushedCommits.forEach(commit => console.log(commit.message()))
-        return this.getFileDataForCommits(unpushedCommits);
+        return commits;
     }
 
     public async getFileDataFromLastCommit(): Promise<FileData[]> {
