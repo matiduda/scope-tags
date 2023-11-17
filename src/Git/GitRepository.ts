@@ -87,9 +87,27 @@ export class GitRepository {
         return fileDataForCommits;
     }
 
+    public async getFileDataForCommitHashes(hashes: Array<string>): Promise<FileData[]> {
+        const commits: Array<Commit> = [];
+        for (const hash of hashes) {
+            const commit = await this.getCommitByHash(hash);
+            commits.push(commit);
+        }
+        return this.getFileDataForCommits(commits);
+    }
+
     public async getCommitByHash(hash: string): Promise<Commit> {
         const repository = await this._getRepository();
         return repository.getCommit(hash);
+    }
+
+    public async getCommitsByHashes(commitHashes: string[]): Promise<Commit[]> {
+        const commits: Commit[] = [];
+        for (const hash of commitHashes) {
+            const commit = await this.getCommitByHash(hash);
+            commits.push(commit);
+        }
+        return commits;
     }
 
     public async getLatestCommit(): Promise<Commit> {

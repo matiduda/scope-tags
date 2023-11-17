@@ -1,7 +1,6 @@
 import fs from "fs";
 
 export class JSONFile {
-
     public static loadFrom<T>(path: string): T {
         if (!fs.existsSync(path)) {
             throw new Error("File not found at: " + path);

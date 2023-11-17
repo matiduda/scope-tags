@@ -9,6 +9,7 @@ import { YesNoMenu } from "./Console/YesNoMenu";
 import { GitRepository } from "./Git/GitRepository";
 import { FileTagger } from "./Console/FileTagger";
 import { Commit } from "nodegit";
+import { ReportGenerator } from "./Report/ReportGenerator";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -43,7 +44,7 @@ switch (args[0]) {
         // Checks if all files from the commit are present in database (or excluded)
         const commitHash = args[1];
         if (!commitHash) {
-            console.log("--verify requires commit hash, usa: scope --verify <hash>");
+            console.log("--verify requires commit hash, use: scope --verify <hash>");
             process.exit(1);
         }
 
@@ -72,8 +73,32 @@ switch (args[0]) {
         });
         break;
     }
-    case "--report": {
+    case "--report-for-commit": {
         // TODO: Run tag analysis
+        break;
+    }
+    case "--report-for-commit-list": {
+        // Checks if all files from the commit are present in database (or excluded)
+        const commitListFile = args[1];
+        if (!commitListFile) {
+            console.log("--report-for-commit-list requires a path to file, use: --verify <hash>");
+            process.exit(1);
+        }
+
+        const repository = new GitRepository(root);
+        const configFile = new ConfigFile(root).load();
+        const tagsDefinitionFile = new TagsDefinitionFile(root).load();
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+        const generator = new ReportGenerator(commitListFile, configFile, tagsDefinitionFile, fileTagsDatabase, repository);
+        generator.notifyAllAffectedTickets().then(() => {
+            console.log("[Scope tags] All tasks updated");
+        })
+
+        break;
+    }
+    case "--debug": {
+        // TODO: Add verbose mode
         break;
     }
     default: {

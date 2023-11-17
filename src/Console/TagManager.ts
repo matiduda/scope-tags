@@ -26,7 +26,7 @@ export class TagManager {
         const prompt = new AutoComplete({
             name: 'Tag manager',
             message: "Select tag",
-            footer: "(CTRL + C to cancel)",
+            footer: `(CTRL + C to ${this._tagsWereModified ? "save" : "exit"})`,
             limit: TagManager.MAX_VISIBLE_TAGS,
             initial: 0,
             choices: [
