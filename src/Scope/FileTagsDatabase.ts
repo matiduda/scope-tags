@@ -110,7 +110,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public getTagNamesForFile(path: string): Array<Tag["name"]> {
         const fileMetadata = this._fileTagsDatabaseData.files[path];
         if (!fileMetadata) {
-            throw new Error("No tags found for: " + path);
+            return [];
         }
         return fileMetadata.tags;
     }

@@ -9,6 +9,36 @@ From the repository you want to test the package run
 npm i scope-tags -D
 ```
 
+### Configuration
+
+- Option `--report-for-commit-list` is used to update Jira issues, and requires additional metadata in this format:
+
+```
+{
+    "buildTag": "current-build-tag",
+    "commits": [
+        {
+            "hash": "commit hash in long format",
+            "issue": "JIRA-KEY"
+        },
+        ...
+    ]
+}
+```
+
+- Option `projects.externalImportMap` requires additional metadata in this format:
+
+```
+[
+    {
+        "file": "/path/to/file",
+        "imports": [
+            "path/to/imported/file"
+        ]
+    }
+]
+```
+
 ### Features to do
 
 - [x] Import `ts-morph` library
@@ -53,6 +83,7 @@ npm i scope-tags -D
     - Is creating a separate test git repository for each test a good idea? (too much hustle)
 - [ ] What actions can be performed on files?
     - Adding 
+
 ### Architecture diagram
 
 ![Alt text](img/architecture.png)

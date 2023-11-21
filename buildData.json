@@ -1,0 +1,13 @@
+{
+    "buildTag": "e3-jenkins-3244",
+    "commits": [
+        {
+            "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
+            "issue": "VGF-16236"
+        },
+        {
+            "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
+            "issue": "VGF-12345"
+        }
+    ]
+}

@@ -120,7 +120,14 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         }
 
         if (destinationModule.tags.some(moduleTag => moduleTag.name === tag.name)) {
-            throw new Error(`Can't add tag to module ${tag.module}, already contains tag ${tag.name}`);
+            throw new Error(`Can't add tag to module ${tag.module}, as it already contains tag ${tag.name}`);
+        }
+
+        const moduleWithTag = this._tagsDatabaseData.modules.find(
+            module => module.tags.some(moduleTag => moduleTag.name === tag.name
+            ));
+        if (moduleWithTag) {
+            throw new Error(`Can't add tag ${tag.name}, because it already exists in module ${moduleWithTag?.name}`);
         }
 
         destinationModule.tags.push(tag);
@@ -133,6 +140,19 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public getTagByName(name: string): Tag | undefined {
         return this._allTags.find(tag => tag.name === name);
+    }
+
+    public getTagsByNames(tagNames: string[]): Array<Tag> {
+        const foundTags: Array<Tag> = [];
+
+        tagNames.forEach(tagName => {
+            const tag = this._allTags.find(tag => tag.name === tagName);
+            if (!tag) {
+                throw new Error(`Could not find tag of name '${tagName}'`);
+            }
+            foundTags.push(tag);
+        })
+        return foundTags
     }
 
     public getModules(): Array<Module> {
@@ -168,6 +188,14 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public getModuleTagNames(module: Module): Array<Tag["name"]> {
         return module.tags.map(tag => tag.name);
+    }
+
+    public getTagModule(tag: Tag): Module {
+        const moduleWithTag = this._tagsDatabaseData.modules.find(module => module.tags.includes(tag));
+        if (!moduleWithTag) {
+            throw new Error(`Cannot find module for tag ${tag}`);
+        }
+        return moduleWithTag;
     }
 
     public static getDefaultTag(): Tag {

@@ -10,6 +10,10 @@ import { GitRepository } from "./Git/GitRepository";
 import { FileTagger } from "./Console/FileTagger";
 import { Commit } from "nodegit";
 import { ReportGenerator } from "./Report/ReportGenerator";
+import { BuildIntegration } from "./Report/BuildIntegration";
+import { TSReferenceFinder } from "./References/TSReferenceFinder";
+import { IReferenceFinder } from "./References/IReferenceFinder";
+import { ExternalMapReferenceFinder } from "./References/ExternalMapReferenceFinder";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -26,7 +30,6 @@ switch (args[0]) {
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {
 
-            const configFile = new ConfigFile(root).load();
             const tagsDefinitionFile = new TagsDefinitionFile(root).load();
             const fileTagsDatabase = new FileTagsDatabase(root).load();
 
@@ -53,6 +56,7 @@ switch (args[0]) {
         repository.getCommitByHash(commitHash).then(async (commit: Commit) => {
             await verifyCommit(commit, fileTagsDatabase, repository);
         });
+        console.log("Scope tags: All commits verified");
         break;
     }
     case "--verify-unpushed-commits": {
@@ -71,34 +75,106 @@ switch (args[0]) {
                 await verifyCommit(commit, fileTagsDatabase, repository);
             }
         });
+        console.log("Scope tags: All commits verified");
         break;
     }
     case "--report-for-commit": {
-        // TODO: Run tag analysis
+        // Checks if all files from the commit are present in database (or excluded)
+        const hash = args[1];
+        if (!hash) {
+            console.log("--report-for-commit requires commit hash, use: --report-for-commit <hash>");
+            process.exit(1);
+        }
+
+        const repository = new GitRepository(root);
+        const tagsDefinitionFile = new TagsDefinitionFile(root).load();
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+        const configFile = new ConfigFile(root).load();
+
+        const referenceFinders: Array<IReferenceFinder> = [];
+
+        const projects = configFile.getProjects();
+        projects.forEach(project => {
+            referenceFinders.push(new TSReferenceFinder(root, project.location, project.supportedFiles));
+            if (project.useExternalImportMap) {
+                if (!project.supportedFiles) {
+                    throw new Error(
+                        `You have to specify supported file extenstions for project ${project.name}: add 'supportedFiles: [".extension"]' to config file`
+                    );
+                }
+                referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
+            }
+        })
+
+        const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
+
+        repository.getCommitByHash(hash).then(async (commit: Commit) => {
+            // console.log("Commit: " + commit.message().trim());
+
+            const report = await generator.generateReportForCommit(commit);
+            generator.printReportAsTable(report);
+
+            // report.allModules.forEach(module => console.log(module.module, module.files))
+        });
         break;
     }
     case "--report-for-commit-list": {
         // Checks if all files from the commit are present in database (or excluded)
-        const commitListFile = args[1];
-        if (!commitListFile) {
-            console.log("--report-for-commit-list requires a path to file, use: --verify <hash>");
+        const buildDataFile = args[1];
+        if (!buildDataFile) {
+            console.log("--report-for-commit-list requires a path to build metadata, use: --report-for-commit-list <file>");
             process.exit(1);
         }
-
         const repository = new GitRepository(root);
         const configFile = new ConfigFile(root).load();
         const tagsDefinitionFile = new TagsDefinitionFile(root).load();
         const fileTagsDatabase = new FileTagsDatabase(root).load();
 
-        const generator = new ReportGenerator(commitListFile, configFile, tagsDefinitionFile, fileTagsDatabase, repository);
-        generator.notifyAllAffectedTickets().then(() => {
-            console.log("[Scope tags] All tasks updated");
+        const referenceFinders: Array<IReferenceFinder> = [];
+
+        const projects = configFile.getProjects();
+        projects.forEach(project => {
+            referenceFinders.push(new TSReferenceFinder(root, project.location, project.supportedFiles));
+            if (project.useExternalImportMap) {
+                if (!project.supportedFiles) {
+                    throw new Error(
+                        `You have to specify supported file extenstions for project ${project.name}: add 'supportedFiles: [".extension"]' to config file`
+                    );
+                }
+                referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
+            }
         })
+
+        const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
+
+        const buildIntegration = new BuildIntegration(buildDataFile, repository);
+        const uniqueIssues = buildIntegration.getUniqueIssues();
+
+        uniqueIssues.forEach(issue => {
+            const commitHashes = buildIntegration.getIssueCommitsHashes(issue);
+
+            repository.getCommitsByHashes(commitHashes).then(async (commits: Commit[]) => {
+                const report = await generator.generateReportForCommits(commits);
+                await buildIntegration.updateIssue(issue, report);
+            });
+        })
+
 
         break;
     }
     case "--debug": {
         // TODO: Add verbose mode
+        break;
+    }
+    case "--find-references": {
+        const filePath = args[1];
+        if (!filePath) {
+            console.log("--report-for-commit-list requires a path to build metadata, use: --report-for-commit-list <file>");
+            process.exit(1);
+        }
+
+        const tsReferenceFinder = new TSReferenceFinder(root, "tsconfig.json");
+        tsReferenceFinder.findReferences(filePath);
         break;
     }
     default: {
@@ -127,10 +203,7 @@ switch (args[0]) {
 }
 
 function startCLI() {
-    const configFile = new ConfigFile(root).load();
     const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
-
     new Menu(tagsDefinitionFile).start().then(() => console.log("Exit."));
 }
 
@@ -142,12 +215,10 @@ async function verifyCommit(commit: Commit, database: FileTagsDatabase, reposito
         return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;
     });
 
-
     if (filesNotPresentInDatabase.length) {
-        console.log("Commit not verified, no tags found for required files:\n");
+        console.log(`Commit '${commit.message().trim()}' not verified, no tags found for required files:\n`);
         filesNotPresentInDatabase.forEach(file => console.log(`- ${file.newPath}`));
-        console.log("\nPlease run\n\npx scope --tag-unpushed-commits\n\nto tag them");
-
+        console.log("\nPlease run\n\n\tnpx scope --tag-unpushed-commits\n\nto tag them");
         process.exit(1);
     }
 }

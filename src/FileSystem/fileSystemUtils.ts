@@ -14,3 +14,11 @@ export function ensureScopeFolderExists(root: string): string {
 	}
 	return scopeFolderPath;
 }
+
+export function getExtension(filePath: string): string {
+	return path.extname(filePath);
+}
+
+export function getFileBaseName(filePath: string): string {
+	return path.basename(filePath);
+}

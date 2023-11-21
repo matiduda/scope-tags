@@ -68,6 +68,8 @@ export class GitRepository {
                         oldPath: patch.oldFile().path(),
                         newPath: patch.newFile().path(),
                         change: patch.status(),
+                        linesAdded: patch.lineStats().total_additions,
+                        linesRemoved: patch.lineStats().total_deletions,
                     };
                     fileDataArray.push(fileData);
                 }

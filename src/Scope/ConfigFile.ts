@@ -5,7 +5,9 @@ import { IJSONFileDatabase } from "./IJSONFileDatabase";
 export type ProjectConfig = {
     name: string
     location: string,
-    ignore?: Array<string>
+    ignore?: Array<string>,
+    useExternalImportMap?: string,
+    supportedFiles?: Array<string>,
 };
 
 export type ConfigFileType = {
@@ -28,7 +30,7 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
             projects: [
                 {
                     name: "Project",
-                    location: "tsconfig.json"
+                    location: "tsconfig.json",
                 }
             ],
             gitCommitCountLimit: 20
@@ -49,5 +51,9 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
         const savedFilePath = this._getPath();
         JSONFile.niceWrite(savedFilePath, this._config);
         return savedFilePath;
+    }
+
+    public getProjects(): Array<ProjectConfig> {
+        return this._config.projects;
     }
 }

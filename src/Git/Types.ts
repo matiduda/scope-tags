@@ -3,7 +3,9 @@ export type FilePath = string;
 export type FileData = {
     oldPath: FilePath,
     newPath: FilePath,
-    change: GitDeltaType
+    change: GitDeltaType,
+    linesAdded: number,
+    linesRemoved: number,
 };
 
 /**
