@@ -19,7 +19,7 @@ export type FileData = {
  * in the option flags (otherwise type changes will be split into ADDED /
  * DELETED pairs).
  */
-enum GitDeltaType {
+export enum GitDeltaType {
     UNMODIFIED = 0,  /**< no changes */
     ADDED = 1,	   /**< entry does not exist in old version */
     DELETED = 2,	   /**< entry does not exist in new version */

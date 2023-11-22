@@ -3,7 +3,7 @@ import fs from "fs";
 import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
 import { Tag } from "./TagsDefinitionFile";
-import { FileData } from "../Git/Types";
+import { FileData, GitDeltaType } from "../Git/Types";
 
 type FileMetadata = {
     tags: Array<Tag["name"]>;
@@ -52,6 +52,10 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public load(): FileTagsDatabase {
         this._fileTagsDatabaseData = JSONFile.loadFrom<FileTagsDatabaseType>(this._getPath());
         return this;
+    }
+
+    public isFileInDatabase(file: string): boolean {
+        return !!this._fileTagsDatabaseData.files[file];
     }
 
     public save(): string {
@@ -170,7 +174,43 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         this._fileTagsDatabaseData.ignoredFiles.push(file);
     }
 
+    private _updateFilePath(oldPath: string, newPath: string): void {
+        const entry = this._fileTagsDatabaseData.files[oldPath];
+        if (!entry) {
+            throw new Error(`Cannot update file ${oldPath} which is not in database`);
+        }
+        this._fileTagsDatabaseData.files[newPath] = { ...entry };
+        delete this._fileTagsDatabaseData.files[oldPath];
+    }
+
     public isIgnored(file: string): boolean {
         return this._fileTagsDatabaseData.ignoredFiles.includes(file);
+    }
+
+    private _updateIgnoredFilePath(oldPath: string, newPath: string): void {
+        const ignoredFileIndex = this._fileTagsDatabaseData.ignoredFiles.indexOf(oldPath);
+        if (!ignoredFileIndex || ignoredFileIndex === -1) {
+            throw new Error(`Cannot update ignored file ${oldPath} which is not in database`);
+        }
+        this._fileTagsDatabaseData.ignoredFiles[ignoredFileIndex] = newPath;
+    }
+
+    // Returns files to be tagged
+    public updateDatabaseBasedOnChanges(fileDataArray: FileData[]): FileData[] {
+        fileDataArray.forEach(fileData => {
+            // If file renamed - update corresponding entry
+            if (fileData.change === GitDeltaType.RENAMED) {
+                if (this.isFileInDatabase(fileData.oldPath)) {
+                    this._updateFilePath(fileData.oldPath, fileData.newPath);
+                } else if (this.isIgnored(fileData.oldPath)) {
+                    this._updateIgnoredFilePath(fileData.oldPath, fileData.newPath);
+                }
+            }
+            // If file deleted - remove from database
+            if (fileData.change === GitDeltaType.DELETED) {
+
+            }
+        });
+        return fileDataArray.filter(fileData => fileData.change !== GitDeltaType.DELETED);
     }
 }

@@ -26,6 +26,31 @@ if (!root) {
 }
 
 switch (args[0]) {
+    case "--tag-commit": {
+        // Checks if all files from the commit are present in database (or excluded)
+        const commitHash = args[1];
+        if (!commitHash) {
+            console.log("--tag-commit requires commit hash, use: scope --tag-commit <hash>");
+            process.exit(1);
+        }
+
+        const repository = new GitRepository(root);
+        repository.getCommitByHash(commitHash).then(async commit => {
+
+            const tagsDefinitionFile = new TagsDefinitionFile(root).load();
+            const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+            const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
+            const fileData = await repository.getFileDataForCommit(commit);
+
+            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData);
+
+            fileTagger.start(fileDataToTag).then(() => {
+                console.log("All files tagged");
+            });
+        });
+        break;
+    }
     case "--tag-unpushed-commits": {
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {

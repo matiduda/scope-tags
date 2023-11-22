@@ -4,7 +4,7 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder } from "../References/IReferenceFinder";
-import { getExtension, getFileBaseName } from "../FileSystem/fileSystemUtils";
+import { fileExists, getExtension, getFileBaseName } from "../FileSystem/fileSystemUtils";
 
 export type ModuleReport = {
     module: Module["name"],
@@ -66,7 +66,7 @@ export class ReportGenerator {
     }
 
     public async generateReportForCommits(commits: Array<Commit>): Promise<Report> {
-        const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits)
+        const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits);
 
         return new Promise<Report>(async (resolve, reject) => {
 
@@ -133,6 +133,10 @@ export class ReportGenerator {
     private _getFileReferences(file: string): Array<FileReference> {
         const references: Array<FileReference> = [];
 
+        if (!fileExists(file)) {
+            return references;
+        }
+
         this._referenceFinders.forEach(referenceFinder => {
             if (!referenceFinder.getSupportedFilesExtension().includes(getExtension(file))) {
                 return;
@@ -164,14 +168,15 @@ export class ReportGenerator {
                 "Lines": this._nicePrintLines(moduleReport),
                 "Date": report.date.toLocaleDateString(),
                 "Build": report.buildId,
-                "Used in": this._nicePrintUsedIn(moduleReport)
+                "Used in": this._nicePrintUsedIn(moduleReport),
             }
             return entry;
         });
-        console.table(tableEntries);
+        // console.table(tableEntries);
+        console.log(JSON.stringify(tableEntries));
     }
 
-    private _nicePrintTags(moduleReport: ModuleReport): string {
+    private _nicePrintTags(moduleReport: ModuleReport, addFiles: boolean = false): string {
         let output = "";
 
         const allTags: Array<Tag> = [];
@@ -184,10 +189,14 @@ export class ReportGenerator {
             })
         })
 
-        allTags.forEach(tag => {
-            const filesMatchingTag = moduleReport.files.filter(file => file.tags.includes(tag));
-            output += `${tag.name} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
-        })
+        if (addFiles) {
+            allTags.forEach(tag => {
+                const filesMatchingTag = moduleReport.files.filter(file => file.tags.includes(tag));
+                output += `${tag.name} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
+            })
+        } else {
+            output = allTags.map(tag => tag.name).join(', ');
+        }
 
         return output;
     }
@@ -226,8 +235,8 @@ export class ReportGenerator {
             })
         })
 
-        console.log("all referenced modules:");
-        console.log(allReferencedModules.map(module => module.name));
+        // console.log("all referenced modules:");
+        // console.log(allReferencedModules.map(module => module.name));
 
         allReferencedModules.forEach((referencedModule, i) => {
             output += `${referencedModule.name} - `;
