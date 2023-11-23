@@ -56,13 +56,8 @@ export class GitRepository {
     public async getFileDataForCommit(commit: Commit): Promise<FileData[]> {
         // Ignore whitespaces using flag GIT_DIFF_IGNORE_WHITESPACE = (1u << 22) === 0x40 0000
         // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42
-        const commitDiffs = await commit.getDiffWithOptions({ flags: 0x400000 } as any);
-
-
-
-
-
-
+        // const commitDiffs = await commit.getDiff();
+        const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
 
         return new Promise<FileData[]>(async (resolve, reject) => {
 
