@@ -72,6 +72,10 @@ export class GitRepository {
                 const diffPatches = await diff.patches();
 
                 for (const patch of diffPatches) {
+                    console.log("file: " + patch.oldFile().path());
+                    console.log("lines added: " + patch.lineStats().total_additions);
+                    console.log("lines removed: " + patch.lineStats().total_deletions);
+
                     const fileData: FileData = {
                         oldPath: patch.oldFile().path(),
                         newPath: patch.newFile().path(),
