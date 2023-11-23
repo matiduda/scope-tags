@@ -61,6 +61,11 @@ export class GitRepository {
 
         return new Promise<FileData[]>(async (resolve, reject) => {
 
+
+
+
+
+
             const fileDataArray: FileData[] = [];
 
             for (const diff of commitDiffs) {
