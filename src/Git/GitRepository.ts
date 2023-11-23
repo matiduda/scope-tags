@@ -34,18 +34,18 @@ export class GitRepository {
         const refs = await repository.getReferences();
         const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
         const currentRemote = remoteRefs.find(ref => ref.shorthand() === `origin/${currentBranchName}`);
-        const walk = Revwalk.create(repository);
+        const    walk = Revwalk.create(repository);
 
         // When remote branch is not yet pushed, we can't directly compare
         // which commits are fresh, so we safely compare to origin/HEAD
 
-        walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
+        walk.pushRange(currentRemote?`${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
 
         const commits = await walk.getCommits(maxCommitCount);
         if (commits.length === maxCommitCount) {
             console.warn(`Found ${maxCommitCount} commits, which is the limit. Some commits may have been ommited. To remove this warning set higher gitCommitCountLimit in .scope/config.json`);
         }
-        return commits;
+        return    commits;
     }
 
     public async getFileDataFromLastCommit(): Promise<FileData[]> {
