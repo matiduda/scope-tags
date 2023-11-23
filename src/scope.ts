@@ -182,8 +182,8 @@ switch (args[0]) {
             repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
                 const report = await generator.generateReportForCommits(commits);
 
-                generator.printReportAsTable(report);
-                // await buildIntegration.updateIssue(issue, report);
+                generator.printReportAsTable(report); // TODO: Remove
+                await buildIntegration.updateIssue(issue, report);
             });
         })
 
