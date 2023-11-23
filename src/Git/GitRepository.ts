@@ -58,6 +58,12 @@ export class GitRepository {
         // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42
         const commitDiffs = await commit.getDiffWithOptions({ flags: 0x400000 } as any);
 
+
+
+
+
+
+
         return new Promise<FileData[]>(async (resolve, reject) => {
 
             const fileDataArray: FileData[] = [];
