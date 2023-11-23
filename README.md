@@ -41,29 +41,32 @@ npm i scope-tags -D
 
 ### Features to do
 
-- [x] Import `ts-morph` library
-    - [x] Test if it reads the project data correctly
-    - [x] Find relative tsconfig.json
-    - [x] Add support for multiple tsconfig.json's
-    - [ ] Add tests for this ?
-- [x] `.scope` metadata initialization
-    - [x] `tags.json`
-    - [x] `database.json`
-- [x] Basic command line interface and tag management:
-    - [x] Reading `tags.json`
-    - [x] Adding, deleting, updating tags
-- [x] Basic file to module mapping
-- [x] Tags should have (possibly nested) categories
-- [x] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
-- [x] Add scope report generation
-    - [x] Get fileData for affected files
-    - [x] Get tags for affected files
-    - [x] Create report with affected modules
-    - [ ] Add report to task (build integration)
-- [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
-- [x] Wywalić build tag bo jest zbędny
+        - [x] Import `ts-morph` library
+            - [x] Test if it reads the project data correctly
+            - [x] Find relative tsconfig.json
+            - [x] Add support for multiple tsconfig.json's
+            - [ ] Add tests for this ?
+        - [x] `.scope` metadata initialization
+            - [x] `tags.json`
+            - [x] `database.json`
+        - [x] Basic command line interface and tag management:
+            - [x] Reading `tags.json`
+            - [x] Adding, deleting, updating tags
+        - [x] Basic file to module mapping
+        - [x] Tags should have (possibly nested) categories
+        - [x] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
+        - [x] Add scope report generation
+            - [x] Get fileData for affected files
+            - [x] Get tags for affected files
+            - [x] Create report with affected modules
+            - [ ] Add report to task (build integration)
+        - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
+        - [x] Wywalić build tag bo jest zbędny
 
 ### Assertions to add
+
+
+
 
 - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
 
