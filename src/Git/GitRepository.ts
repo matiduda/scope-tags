@@ -34,18 +34,18 @@ export class GitRepository {
         const refs = await repository.getReferences();
         const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
         const currentRemote = remoteRefs.find(ref => ref.shorthand() === `origin/${currentBranchName}`);
-        const    walk = Revwalk.create(repository);
+        const walk = Revwalk.create(repository);
 
         // When remote branch is not yet pushed, we can't directly compare
         // which commits are fresh, so we safely compare to origin/HEAD
 
-        walk.pushRange(currentRemote?`${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
+        walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
 
         const commits = await walk.getCommits(maxCommitCount);
         if (commits.length === maxCommitCount) {
             console.warn(`Found ${maxCommitCount} commits, which is the limit. Some commits may have been ommited. To remove this warning set higher gitCommitCountLimit in .scope/config.json`);
         }
-        return    commits;
+        return commits;
     }
 
     public async getFileDataFromLastCommit(): Promise<FileData[]> {
@@ -57,14 +57,10 @@ export class GitRepository {
         // Ignore whitespaces using flag GIT_DIFF_IGNORE_WHITESPACE = (1u << 22) === 0x40 0000
         // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42
         // const commitDiffs = await commit.getDiff();
-        const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
+        // const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
+        const commitDiffs = await commit.getDiff();
 
         return new Promise<FileData[]>(async (resolve, reject) => {
-
-
-
-
-
 
             const fileDataArray: FileData[] = [];
 
