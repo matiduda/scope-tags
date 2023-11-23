@@ -14,16 +14,16 @@ npm i scope-tags -D
 - Option `--report-for-commit-list` is used to update Jira issues, and requires additional metadata in this format:
 
 ```
-{
-    "buildTag": "current-build-tag",
-    "commits": [
+[
         {
             "hash": "commit hash in long format",
             "issue": "JIRA-KEY"
         },
-        ...
-    ]
-}
+        {
+            "hash": "commit hash in long format",
+            "issue": "JIRA-KEY"
+        }
+]
 ```
 
 - Option `projects.externalImportMap` requires additional metadata in this format:
@@ -55,12 +55,13 @@ npm i scope-tags -D
 - [x] Basic file to module mapping
 - [x] Tags should have (possibly nested) categories
 - [x] Instead of git notes, which are not shared by default, we should check commit based on if any of the files is not present in database
-- [ ] Add scope report generation
-    - [ ] Get fileData for affected files
-    - [ ] Get tags for affected files
-    - [ ] Create report with affected modules
-    - [ ] Add report to task
+- [x] Add scope report generation
+    - [x] Get fileData for affected files
+    - [x] Get tags for affected files
+    - [x] Create report with affected modules
+    - [ ] Add report to task (build integration)
 - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
+- [x] Wywalić build tag bo jest zbędny
 
 ### Assertions to add
 

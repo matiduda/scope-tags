@@ -147,9 +147,10 @@ switch (args[0]) {
         // Checks if all files from the commit are present in database (or excluded)
         const buildDataFile = args[1];
         if (!buildDataFile) {
-            console.log("--report-for-commit-list requires a path to build metadata, use: --report-for-commit-list <file>");
+            console.log("--report-for-commit-list requires a path to a file with commit list, use: --report-for-commit-list <file>");
             process.exit(1);
         }
+
         const repository = new GitRepository(root);
         const configFile = new ConfigFile(root).load();
         const tagsDefinitionFile = new TagsDefinitionFile(root).load();
@@ -176,11 +177,13 @@ switch (args[0]) {
         const uniqueIssues = buildIntegration.getUniqueIssues();
 
         uniqueIssues.forEach(issue => {
-            const commitHashes = buildIntegration.getIssueCommitsHashes(issue);
+            const commits = buildIntegration.getIssueCommits(issue);
 
-            repository.getCommitsByHashes(commitHashes).then(async (commits: Commit[]) => {
+            repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
                 const report = await generator.generateReportForCommits(commits);
-                await buildIntegration.updateIssue(issue, report);
+
+                generator.printReportAsTable(report);
+                // await buildIntegration.updateIssue(issue, report);
             });
         })
 

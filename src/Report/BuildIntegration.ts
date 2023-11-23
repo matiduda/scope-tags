@@ -7,46 +7,49 @@ type CommitData = {
     issue: string,
 };
 
-type BuildData = {
-    buildTag: string, // TODO: Add current date when appending report
-    commits: Array<CommitData>,
-}
-
 export class BuildIntegration {
 
     private _repository: GitRepository;
-    private _buildData: BuildData;
+
+    private _allCommits: Array<CommitData>;
+    private _issueKeyToCommitsMap: Map<string, Array<CommitData>>;
 
     constructor(
-        buildDataFile: string,
+        commitListFile: string,
         repository: GitRepository,
     ) {
-        this._buildData = this._loadBuildData(buildDataFile);
         this._repository = repository;
+        this._issueKeyToCommitsMap = new Map();
+
+        this._allCommits = this._loadCommitList(commitListFile);
+
+        this.getUniqueIssues().forEach(uniqueIssue => {
+            const commitsMatchingIssue = this._allCommits.filter(commitData => commitData.issue === uniqueIssue);
+            this._issueKeyToCommitsMap.set(uniqueIssue, commitsMatchingIssue);
+        });
+
+        console.log(this._issueKeyToCommitsMap);
     }
 
-    private _loadBuildData(path: string): BuildData {
-        return JSONFile.loadFrom<BuildData>(path);
+    private _loadCommitList(path: string): Array<CommitData> {
+        return JSONFile.loadFrom<Array<CommitData>>(path);
     }
 
     public getUniqueIssues(): Array<string> {
-        if (!this._buildData) {
-            throw new Error("Build metadata not loaded!");
+        if (!this._allCommits || !this._allCommits.length) {
+            throw new Error("Commit list cannot be empty!");
         }
-        const allTickets = this._buildData.commits.map(commit => commit.issue);
-        return allTickets.filter((value, index, array) => array.indexOf(value) === index);
+
+        const allIssues = this._allCommits.map(commit => commit.issue);
+        return allIssues.filter((value, index, array) => array.indexOf(value) === index);
     }
 
-    public getIssueCommitsHashes(issueKey: string): string[] {
-        if (!this._buildData) {
-            throw new Error("Build metadata not loaded!");
-        }
-        return this._buildData.commits
-            .filter(commit => commit.issue === issueKey)
-            .map(commit => commit.hash);
+    public getIssueCommits(issueKey: string): Array<CommitData> {
+        return this._issueKeyToCommitsMap.get(issueKey) || [];
     }
 
-    public async updateIssue(key: string, report: Report): Promise<void> {
-        console.log(`[Scope tags] Generating report for issue ${key}`);
+    public async updateIssue(issueKey: string, report: Report): Promise<void> {
+        console.log("Updating issue of key " + issueKey);
+
     }
 }

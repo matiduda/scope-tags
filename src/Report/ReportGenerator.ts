@@ -29,7 +29,6 @@ type FileReference = {
 export type Report = {
     allModules: Array<ModuleReport>
     date: Date,
-    buildId: string
 };
 
 type ReportTableEntry = {
@@ -37,7 +36,6 @@ type ReportTableEntry = {
     "Affected tags": string,
     "Lines": string,
     "Date": string,
-    "Build": string,
     "Used in": string,
 }
 
@@ -76,7 +74,6 @@ export class ReportGenerator {
             const report: Report = {
                 allModules: [],
                 date: new Date(),
-                buildId: "-"
             };
 
             for (const module of affectedModules) {
@@ -167,7 +164,6 @@ export class ReportGenerator {
                 "Affected tags": this._nicePrintTags(moduleReport),
                 "Lines": this._nicePrintLines(moduleReport),
                 "Date": report.date.toLocaleDateString(),
-                "Build": report.buildId,
                 "Used in": this._nicePrintUsedIn(moduleReport),
             }
             return entry;

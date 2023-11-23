@@ -1,13 +1,14 @@
-{
-    "buildTag": "e3-jenkins-3244",
-    "commits": [
-        {
-            "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
-            "issue": "VGF-16236"
-        },
-        {
-            "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
-            "issue": "VGF-12345"
-        }
-    ]
-}
+[
+    {
+        "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
+        "issue": "VGF-12345"
+    },
+    {
+        "hash": "969fde1160724a3d452662b96f543924a1ed0ca1",
+        "issue": "VGF-12345"
+    },
+    {
+        "hash": "bb1c1f29028d263b845b6d76aee3288169116a6a",
+        "issue": "VGF-00123"
+    }
+]
