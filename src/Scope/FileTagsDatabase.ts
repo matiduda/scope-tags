@@ -2,11 +2,16 @@ import path from "path";
 import fs from "fs";
 import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
-import { Tag } from "./TagsDefinitionFile";
+import { Module, Tag } from "./TagsDefinitionFile";
 import { FileData, GitDeltaType } from "../Git/Types";
 
+export type TagIdentifier = {
+    tag: Tag["name"];
+    module: Module["name"];
+}
+
 type FileMetadata = {
-    tags: Array<Tag["name"]>;
+    tags: Array<TagIdentifier>;
 };
 
 type FileArray = {
@@ -64,36 +69,44 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         return savedFilePath;
     }
 
-    public addSingleTagToFile(tag: Tag, filePath: string) {
-        this.addMultipleTagsToFile([tag], filePath);
+    public addSingleTagToFile(tagIdentifier: TagIdentifier, filePath: string) {
+        this.addMultipleTagsToFile([tagIdentifier], filePath);
     }
 
-    public addMultipleTagsToFile(tags: Array<Tag>, filePath: string) {
+    public addMultipleTagsToFile(tagsIdentifierArray: Array<TagIdentifier>, filePath: string) {
         if (!fs.existsSync(filePath)) {
             throw new Error(`File not found: ${filePath}`);
         }
-        if (!tags.length) {
+        if (!tagsIdentifierArray.length) {
             throw new Error("Tags array is empty");
         }
 
-        const tagNames = [...tags].map(tag => tag.name);
         const fileMetadata = this._fileTagsDatabaseData.files[filePath];
 
         if (!fileMetadata) {
-            this._fileTagsDatabaseData.files[filePath] = { tags: tagNames };
+            this._fileTagsDatabaseData.files[filePath] = { tags: tagsIdentifierArray };
             return;
         }
 
         const currentTags = this._fileTagsDatabaseData.files[filePath]?.tags || [];
-        const newTags = currentTags.concat(tagNames.filter(tagName => !currentTags.includes(tagName)));
 
-        this._fileTagsDatabaseData.files[filePath] = { tags: newTags };
+        // Check if any of the tag is already assigned
+        tagsIdentifierArray.forEach(tagIdentifier => {
+            currentTags.forEach(currentTag => {
+                if (tagIdentifier.module === currentTag.module && tagIdentifier.tag === currentTag.tag) {
+                    throw new Error(`Tag ${tagIdentifier} already exists in tags of ${filePath}`);
+                }
+            })
+            // If not - push the new identifier
+            this._fileTagsDatabaseData.files[filePath].tags.push(tagIdentifier);
+        })
     }
 
     private _isDirectory(path: string) {
         return fs.lstatSync(path).isDirectory();
     }
 
+    // Unused - use this when adding --tag option to directory
     public addSingleTagToAllFilesInDirectory(tag: Tag, directoryPath: string, recursive: boolean = false) {
         if (!this._isDirectory(directoryPath)) {
             throw new Error(`File '${directoryPath}' is not a directory`);
@@ -102,16 +115,14 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         fs.readdir(directoryPath, (err, files) => {
             if (files.some(file => this._isDirectory(file)) && !recursive) {
                 console.log(`Cannot tag directory '${directoryPath}', as it consists of directory is not a directory`);
-
             }
-
             files.forEach(file => {
                 console.log(file);
             });
         });
     }
 
-    public getTagNamesForFile(path: string): Array<Tag["name"]> {
+    public getTagIdentifiersForFile(path: string): Array<TagIdentifier> {
         const fileMetadata = this._fileTagsDatabaseData.files[path];
         if (!fileMetadata) {
             return [];
@@ -121,7 +132,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public filterAlreadyTaggedFiles(fileData: Array<FileData>) {
         const allFiles = Object.keys(this._fileTagsDatabaseData.files);
-        return fileData.filter(data => {
+        const fileDataNotFoundInDatabase = fileData.filter(data => {
             if (this._fileTagsDatabaseData.ignoredFiles.includes(data.newPath)) {
                 return false;
             } else if (allFiles.includes(data.newPath)) {
@@ -129,6 +140,13 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             }
             return true;
         });
+
+        // Remove duplicates
+        const uniquefileDataNotFoundInDatabase = fileDataNotFoundInDatabase.filter((value, index, array) => {
+            return array.findIndex(data => data.newPath === array[index].newPath) === index;
+        });
+
+        return uniquefileDataNotFoundInDatabase;
     }
 
     public checkMultipleFileStatusInDatabase(fileData: Array<FileData>): Map<FileData, FileStatusInDatabase> {

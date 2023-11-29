@@ -62,6 +62,9 @@ npm i scope-tags -D
             - [ ] Add report to task (build integration)
         - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
         - [x] Wywalić build tag bo jest zbędny
+        - [ ] Custom import map for `.yaml` files
+            - [ ] Read external import map if configured
+            - [ ] Test if it correctly identifies imported yaml file
 
 ### Assertions to add
 

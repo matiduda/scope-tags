@@ -38,6 +38,7 @@
   "homepage": "https://github.com/matiduda/scope-tags#readme",
   "devDependencies": {
     "@types/jest": "^23.3.14",
+    "@types/node-fetch": "^2.6.9",
     "@types/nodegit": "^0.27.10",
     "@types/rimraf": "^3.0.2",
     "@typescript-eslint/eslint-plugin": "^6.9.1",
@@ -49,6 +50,7 @@
   },
   "dependencies": {
     "enquirer": "^2.4.1",
+    "node-fetch": "^2.7.0",
     "nodegit": "^0.27.0",
     "ts-morph": "^18.0.0"
   },

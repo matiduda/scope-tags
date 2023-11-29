@@ -1,5 +1,6 @@
 import { Commit, Repository, Revwalk } from "nodegit";
-import { FileData } from "./Types";
+import { FileData, GitDeltaType } from "./Types";
+import path from "path";
 
 export class GitRepository {
 
@@ -21,9 +22,14 @@ export class GitRepository {
         return this._repository;
     }
 
+    private _normalizePath(filePath: string) {
+        const definitelyPosix = filePath.split(path.sep).join(path.posix.sep);
+        return definitelyPosix;
+    }
+
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
         const unpushedCommits = await this.getUnpushedCommits(maxCommitCount);
-        unpushedCommits.forEach(commit => console.log(commit.message()))
+        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message().trim()}`));
         return this.getFileDataForCommits(unpushedCommits);
     }
 
@@ -98,6 +104,20 @@ export class GitRepository {
             commits.push(commit);
         }
         return this.getFileDataForCommits(commits);
+    }
+
+
+    public convertFilesToFileData(files: Array<string>): Array<FileData> {
+        return files.map(file => {
+            const normalizedPath = this._normalizePath(file);
+            return {
+                oldPath: normalizedPath,
+                newPath: normalizedPath,
+                change: GitDeltaType.ADDED,
+                linesAdded: 0,
+                linesRemoved: 0,
+            }
+        })
     }
 
     public async getCommitByHash(hash: string): Promise<Commit> {

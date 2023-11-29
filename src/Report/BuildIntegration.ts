@@ -1,6 +1,8 @@
 import { JSONFile } from "../FileSystem/JSONFile";
 import { GitRepository } from "../Git/GitRepository";
+import { ConfigFile } from "../Scope/ConfigFile";
 import { Report } from "./ReportGenerator";
+import fetch from "node-fetch";
 
 type CommitData = {
     hash: string,
@@ -10,6 +12,7 @@ type CommitData = {
 export class BuildIntegration {
 
     private _repository: GitRepository;
+    private _config: ConfigFile;
 
     private _allCommits: Array<CommitData>;
     private _issueKeyToCommitsMap: Map<string, Array<CommitData>>;
@@ -17,8 +20,10 @@ export class BuildIntegration {
     constructor(
         commitListFile: string,
         repository: GitRepository,
+        config: ConfigFile,
     ) {
         this._repository = repository;
+        this._config = config;
         this._issueKeyToCommitsMap = new Map();
 
         this._allCommits = this._loadCommitList(commitListFile);
@@ -49,7 +54,17 @@ export class BuildIntegration {
     }
 
     public async updateIssue(issueKey: string, report: Report): Promise<void> {
-        console.log("Updating issue of key " + issueKey);
+        const updateURL = this._config.getUpdateIssueURL();
+        if (!updateURL) {
+            console.warn(
+                `Cannot update issue ${issueKey} because there is no 'updateIssueURL' set for projects: ${this._config.getProjects().map(project => project.name).join(", ")}
+            `);
+        }
 
+        const response = await fetch('https://gs-client.testowaplatforma123.net/pr-merged/scope-tags?task=VGF-16672');
+        const data = await response.json();
+
+        console.log("Updating issue of key " + issueKey);
+        console.log(data);
     }
 }

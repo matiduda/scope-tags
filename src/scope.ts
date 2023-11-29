@@ -2,7 +2,7 @@
 import { getGitProjectRoot } from "./Git/Project";
 import { ConfigFile } from "./Scope/ConfigFile";
 import { FileStatusInDatabase, FileTagsDatabase } from "./Scope/FileTagsDatabase";
-import { ensureScopeFolderExists, scopeFolderExists } from "./FileSystem/fileSystemUtils";
+import { ensureScopeFolderExists, fileExists, getAllFilesFromDirectory, isDirectory, scopeFolderExists } from "./FileSystem/fileSystemUtils";
 import { TagsDefinitionFile } from "./Scope/TagsDefinitionFile";
 import { Menu } from "./Console/Menu";
 import { YesNoMenu } from "./Console/YesNoMenu";
@@ -26,11 +26,40 @@ if (!root) {
 }
 
 switch (args[0]) {
-    case "--tag-commit": {
+    case "--tag": {
+        const path = args[1];
+        if (!path) {
+            console.log("--tag option requires path to file or folder, use: scope --tag <path>");
+            process.exit(1);
+        } else if (!fileExists(path)) {
+            console.log(`File or directory ${path} does not exist`);
+            process.exit(1);
+        }
+
+        const filesToTag = isDirectory(path) ? getAllFilesFromDirectory(path) : [path];
+
+        if (!filesToTag.length) {
+            console.log(`There are no files to tag for ${path}`);
+        }
+
+        const repository = new GitRepository(root);
+        const tagsDefinitionFile = new TagsDefinitionFile(root).load();
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+        const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
+
+        const fileData = repository.convertFilesToFileData(filesToTag);
+
+        fileTagger.start(fileData).then(() => {
+            console.log("All files tagged");
+        });
+        break;
+    }
+    case "--commit": {
         // Checks if all files from the commit are present in database (or excluded)
         const commitHash = args[1];
         if (!commitHash) {
-            console.log("--tag-commit requires commit hash, use: scope --tag-commit <hash>");
+            console.log("--commit option requires complete git commit hash, use: scope --commit <hash>");
             process.exit(1);
         }
 
@@ -51,18 +80,19 @@ switch (args[0]) {
         });
         break;
     }
-    case "--tag-unpushed-commits": {
+    case "--unpushed": {
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {
 
             const tagsDefinitionFile = new TagsDefinitionFile(root).load();
             const fileTagsDatabase = new FileTagsDatabase(root).load();
-
             const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 
-            fileTagger.start(fileData).then(() => {
+            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData);
+
+            fileTagger.start(fileDataToTag).then(() => {
                 console.log("All files tagged");
-            });
+            }).catch(e => console.log("Canceled")); // TODO: Save already tagged files
         });
         break;
     }
@@ -120,7 +150,7 @@ switch (args[0]) {
 
         const projects = configFile.getProjects();
         projects.forEach(project => {
-            referenceFinders.push(new TSReferenceFinder(root, project.location, project.supportedFiles));
+            referenceFinders.push(new TSReferenceFinder(root, project.location));
             if (project.useExternalImportMap) {
                 if (!project.supportedFiles) {
                     throw new Error(
@@ -160,7 +190,7 @@ switch (args[0]) {
 
         const projects = configFile.getProjects();
         projects.forEach(project => {
-            referenceFinders.push(new TSReferenceFinder(root, project.location, project.supportedFiles));
+            referenceFinders.push(new TSReferenceFinder(root, project.location));
             if (project.useExternalImportMap) {
                 if (!project.supportedFiles) {
                     throw new Error(
@@ -173,7 +203,7 @@ switch (args[0]) {
 
         const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
 
-        const buildIntegration = new BuildIntegration(buildDataFile, repository);
+        const buildIntegration = new BuildIntegration(buildDataFile, repository, configFile);
         const uniqueIssues = buildIntegration.getUniqueIssues();
 
         uniqueIssues.forEach(issue => {
@@ -185,9 +215,7 @@ switch (args[0]) {
                 generator.printReportAsTable(report); // TODO: Remove
                 await buildIntegration.updateIssue(issue, report);
             });
-        })
-
-
+        });
         break;
     }
     case "--debug": {
@@ -206,6 +234,10 @@ switch (args[0]) {
         break;
     }
     default: {
+        if (args[1]) {
+            throw new Error(`Unsupported option: '${args[1]}'`);
+        }
+
         if (!scopeFolderExists(root)) {
             new YesNoMenu().ask("Do you want to create empty configuration?").then(answer => {
                 if (answer) {
@@ -246,7 +278,7 @@ async function verifyCommit(commit: Commit, database: FileTagsDatabase, reposito
     if (filesNotPresentInDatabase.length) {
         console.log(`Commit '${commit.message().trim()}' not verified, no tags found for required files:\n`);
         filesNotPresentInDatabase.forEach(file => console.log(`- ${file.newPath}`));
-        console.log("\nPlease run\n\n\tnpx scope --tag-unpushed-commits\n\nto tag them");
+        console.log("\nPlease run\n\n\tnpx scope --unpushed\n\nto tag them");
         process.exit(1);
     }
 }

@@ -1,7 +1,7 @@
 import { GitRepository } from "../Git/GitRepository";
 import { FileData } from "../Git/Types";
-import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
-import { Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
+import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { TagManager } from "./TagManager";
 
 const { MultiSelect } = require('enquirer');
@@ -25,16 +25,21 @@ export class FileTagger {
 
         const fileDataNotFoundInDatabase = this._database.filterAlreadyTaggedFiles(fileData);
 
-        const tagsMappedToFiles = new Map<FileData, Array<Tag>>();
+        const tagsMappedToFiles = new Map<FileData, Array<TagIdentifier>>();
         let untaggedFiles: Array<FileData> = [...fileDataNotFoundInDatabase];
 
         while (untaggedFiles.length) {
             // Select files
             const selectedFiles = await this._selectFiles(untaggedFiles);
+
+            if (!selectedFiles.length) {
+                throw new Error("Canceled");
+            }
+
             untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
 
             // Select tags
-            const selectedTags: Array<Tag> = await tagManager.selectMultipleTags();
+            const selectedTags: Array<TagIdentifier> = await tagManager.selectMultipleTagIdentifiers();
 
             for (const file of selectedFiles) {
                 tagsMappedToFiles.set(file, selectedTags);
@@ -42,7 +47,7 @@ export class FileTagger {
         }
 
         // Save to database
-        tagsMappedToFiles.forEach((tags: Array<Tag>, data: FileData) => {
+        tagsMappedToFiles.forEach((tags: Array<TagIdentifier>, data: FileData) => {
             if (!tags.length) {
                 this._database.addIgnoredFile(data.newPath);
             } else {
@@ -71,8 +76,12 @@ export class FileTagger {
             },
         });
 
-        const selected = await prompt.run();
-        return Object.values(selected);
+        try {
+            const selected = await prompt.run();
+            return Object.values(selected);
+        } catch (e) {
+            return [];
+        }
     }
 
     private _mapFileDataToOptions(fileData: Array<FileData>): Array<FileAsOption> {

@@ -1,9 +1,10 @@
 const { Select, Form, AutoComplete } = require('enquirer')
+import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
-type TagAsOption = { name: Tag["name"], value: Tag["name"] };
-type RawTagAsOption = { name: Tag["name"], value: Tag };
+type TagAsOption = { name: string, value: Tag };
+type TagIdentifierAsOption = { name: string, value: TagIdentifier };
 
 export class TagManager {
 
@@ -20,40 +21,18 @@ export class TagManager {
     }
 
     public async start() {
-        const tagsToDisplay = this._tags.getTags();
-        const tagsMappedToOptions = this._mapTagsToOptions(tagsToDisplay)
-
-        const prompt = new AutoComplete({
-            name: 'Tag manager',
-            message: "Select tag",
-            footer: `(CTRL + C to ${this._tagsWereModified ? "save" : "exit"})`,
-            limit: TagManager.MAX_VISIBLE_TAGS,
-            initial: 0,
-            choices: [
-                ...tagsMappedToOptions,
-            ],
-            result(value: any) {
-                const mapped = this.map(value);
-                return mapped[value];
-            },
-        })
-
         try {
-            const answer = await prompt.run();
-            const selectedTag = this._tags.getTagByName(answer);
-            if (!selectedTag) {
-                throw new Error(`Could not find tag: ${answer} in database`);
-            }
-            await this._selectTag.call(this, selectedTag);
+            const answer = await this._selectSingleTag(undefined, true);
+            await this._selectTag.call(this, answer);
             await this.start.call(this);
         } catch (e) {
             await this._goBack();
         }
     }
 
-    public async selectMultipleTags(): Promise<Tag[]> {
-        const tagsToDisplay = this._tags.getTags();
-        const tagsMappedToOptions = this._mapRawTagsToOptions(tagsToDisplay)
+    public async selectMultipleTagIdentifiers(): Promise<TagIdentifier[]> {
+        const allModules = this._tags.getModules();
+        const tagsMappedToOptions = this._mapTagsToIdentifiers(allModules);
 
         const prompt = new AutoComplete({
             name: "Tag selector",
@@ -85,23 +64,52 @@ export class TagManager {
     }
 
     private _mapTagsToOptions(tags: Array<Tag>): Array<TagAsOption> {
-        return tags.map(tag => ({ name: tag.name, value: tag.name }));
-    }
-
-    private _mapRawTagsToOptions(tags: Array<Tag>): Array<RawTagAsOption> {
         return tags.map(tag => ({ name: tag.name, value: tag }));
     }
 
+    private _mapTagsToIdentifiers(allModules: Array<Module>): Array<TagIdentifierAsOption> {
+        const allTagsAsIdentifiers: Array<TagIdentifierAsOption> = [];
+
+        allModules.forEach(module => {
+            module.tags.forEach(tagName => {
+                const option: TagIdentifierAsOption = {
+                    name: this._getTagAbsolutePath(tagName, module),
+                    value: {
+                        tag: tagName,
+                        module: module.name
+                    }
+                };
+                allTagsAsIdentifiers.push(option);
+            });
+        });
+
+        return allTagsAsIdentifiers;
+    }
+
+    private _getTagAbsolutePath(tagName: string, module: Module): any {
+        let path = "";
+
+        const parentList = this._tags.getModuleParentNames(module);
+
+        parentList.push(module.name);
+        parentList.forEach(parent => path += `${parent} > `);
+
+        return path + `${tagName}`;
+    }
+
     private async _selectTag(tag: Tag, module?: Module) {
+        const tagModulesNames = this._tags.getTagModules(tag).map(m => m.name).join(', ');
+
         const prompt = new Select({
             name: 'Tag info',
             message: "Tag info: ",
             choices: [
                 { message: `Name:\t\t${tag.name}`, role: "separator" },
                 { message: `Description:\t${tag.description}`, role: "separator" },
-                { message: `Module:\t${tag.module}`, role: "separator" },
+                { message: `Modules:\t${tagModulesNames}`, role: "separator" },
                 { role: "separator" },
                 { name: 'Edit', value: module ? this._editTagFromModule : this._editTag },
+                { name: 'Delete', value: module ? this._deleteTagFromModule : this._deleteTag },
                 { name: this._tagsWereModified ? 'Save' : 'Go back', value: () => Promise.resolve() },
             ],
             result(value: any) {
@@ -110,8 +118,14 @@ export class TagManager {
             },
         });
 
-        const answer = await prompt.run();
-        await answer.call(this, tag, module);
+        try {
+            const answer = await prompt.run();
+            await answer.call(this, tag, module);
+        } catch (e) {
+            if (e instanceof Error) {
+                console.log(e.message);
+            }
+        }
     }
 
     private async _editTagFromModule(tag: Tag, module: Module) {
@@ -145,17 +159,38 @@ export class TagManager {
             },
         });
 
-        const tagInfoAnswer = await editTagPrompt.run();
+        const answer = await editTagPrompt.run();
 
-        tag.name = tagInfoAnswer.name;
-        tag.description = tagInfoAnswer.description;
+        this._tags.editTag(tag, answer.name, answer.description);
 
         this._tagsWereModified = true;
     }
 
+    private _deleteTagFromModule(tag: Tag, module: Module) {
+        if (!module) {
+            throw new Error("Cannot delete tag of undefined module");
+        }
+        if (!tag) {
+            throw new Error("Cannot delete tag which is undefined");
+        }
+        this._tags.removeTagFromModule(tag, module);
+    }
+
+    private async _deleteTag(tag: Tag) {
+        if (!tag) {
+            throw new Error("Cannot delete tag which is undefined");
+        }
+        const modulesWithTag = this._tags.getTagModules(tag);
+        if (modulesWithTag.length) {
+            throw new Error(`Cannot delete tag which is used by modules ${modulesWithTag.map(m => m.name).join(", ")}`);
+        }
+
+        this._tags.removeTag(tag);
+    }
+
     public async manageTagsFromModule(module: Module) {
-        const tagsToDisplay = module.tags;
-        const tagsMappedToOptions = this._mapTagsToOptions(tagsToDisplay)
+        const tagsToDisplay = this._tags.getModuleTags(module);
+        const tagsMappedToOptions = this._mapTagsToOptions(tagsToDisplay);
 
         const prompt = new Select({
             name: 'Tag manager started from module',
@@ -180,12 +215,8 @@ export class TagManager {
 
         const answer = await prompt.run();
 
-        if (tagsToDisplay.some(tag => tag.name === answer)) { // typeof answer === Tag
-            const selectedTag = this._tags.getTagByName(answer);
-            if (!selectedTag) {
-                throw new Error(`Could not find tag: ${answer} in database`);
-            }
-            await this._selectTag(selectedTag);
+        if (tagsToDisplay.includes(answer)) { // typeof answer === Tag
+            await this._selectTag(answer, module);
             await this.manageTagsFromModule.call(this, module);
         } else {
             await answer.call(this, module);
@@ -197,6 +228,63 @@ export class TagManager {
             throw new Error("Cannot add tag to undefined module");
         }
 
+        const prompt = new Select({
+            name: 'Select tag adding method',
+            message: "Select tag adding method: ",
+            choices: [
+                { name: 'Select from list', value: this._selectSingleTag },
+                { name: 'Add new', value: this._createNewTag },
+            ],
+            result(value: any) {
+                const mapped = this.map(value);
+                return mapped[value];
+            },
+        });
+
+        const answer = await prompt.run();
+        const tagToAdd = await answer.call(this, module);
+
+        if (answer.value === this._selectSingleTag) {
+            this._tags.addTag(tagToAdd);
+        }
+
+        this._tags.assignTagToModule(tagToAdd, module);
+
+        this._tagsWereModified = true;
+
+        await this.manageTagsFromModule.call(this, module);
+    }
+
+    private async _selectSingleTag(module?: Module, displayFooter: boolean = false): Promise<Tag> {
+        const tagsToDisplay = this._tags.getTags();
+        const tagsMappedToOptions = this._mapTagsToOptions(tagsToDisplay)
+
+        const prompt = new AutoComplete({
+            name: 'Tag manager',
+            message: "Select tag",
+            limit: TagManager.MAX_VISIBLE_TAGS,
+            initial: 0,
+            footer: displayFooter ? `(CTRL + C to ${this._tagsWereModified ? "save" : "exit"})` : undefined,
+            choices: [
+                ...tagsMappedToOptions,
+            ],
+            result(value: any) {
+                const mapped = this.map(value);
+                return mapped[value];
+            },
+            validate: (answer: any) => {
+                if (module && module.tags.some(tag => tag === answer.value.name)) {
+                    return `Module ${module.name} already contains tag ${answer.value.name}`;
+                } else {
+                    return true;
+                }
+            },
+        })
+
+        return prompt.run();
+    }
+
+    private async _createNewTag(module: Module): Promise<Tag> {
         const defaultTagName = "Tag";
         const defaultTagDescription = "A tag describing a single functionality";
 
@@ -218,24 +306,24 @@ export class TagManager {
             },
         });
 
+        let tagInfoAnswer;
+
         try {
-            const moduleInfoAnswer = await addTagPrompt.run();
-
-            const newTag: Tag = {
-                name: moduleInfoAnswer.name,
-                description: moduleInfoAnswer.description,
-                module: module.name
-            };
-
-            this._tags.addTag(newTag);
-
-            console.log("Successfuly added tag: " + newTag.name);
+            tagInfoAnswer = await addTagPrompt.run();
         } catch (e) {
             console.log("Cannot add tag, reason: " + e);
         }
 
-        this._tagsWereModified = true;
-        await this.manageTagsFromModule.call(this, module);
+        const newTag: Tag = {
+            name: tagInfoAnswer.name,
+            description: tagInfoAnswer.description,
+        };
+
+        console.log("Successfuly added tag: " + newTag.name);
+
+        this._tags.addTag(newTag);
+
+        return newTag;
     }
 
     private _saveChanges() {

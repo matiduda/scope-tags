@@ -10,7 +10,7 @@ export class TSReferenceFinder implements IReferenceFinder {
     private _project: Project
     private _supportedFileExtensions: Array<string>
 
-    constructor(root: string, tsConfigPath: string, supportedFileExtensions?: Array<string>) {
+    constructor(root: string, tsConfigPath: string) {
         this._root = root;
         this._tsConfigPath = tsConfigPath;
 
@@ -18,7 +18,7 @@ export class TSReferenceFinder implements IReferenceFinder {
             tsConfigFilePath: path.join(root, this._tsConfigPath),
         });
 
-        this._supportedFileExtensions = supportedFileExtensions || [".ts"];
+        this._supportedFileExtensions = [".ts", ".tsx"];
     }
 
     public getSupportedFilesExtension(): Array<string> {
@@ -48,7 +48,6 @@ export class TSReferenceFinder implements IReferenceFinder {
                 }
             }
         }
-
 
         return referenceList.map(reference => {
             const relativePath = path.relative(this._root, reference);

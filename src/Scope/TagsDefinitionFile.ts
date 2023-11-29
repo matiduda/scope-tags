@@ -5,30 +5,27 @@ import { IJSONFileDatabase } from "./IJSONFileDatabase";
 export type Tag = {
     name: string,
     description: string,
-    module: Module["name"],
 };
 
 export type Module = {
     name: string;
     description: string,
     exclusive: boolean;
-    tags: Array<Tag>
+    tags: Array<Tag["name"]>
     parent: Module["name"] | null,
     children: Array<Module["name"]>,
 };
 
 type TagsDatabaseType = {
     modules: Array<Module>;
+    tags: Array<Tag>;
 }
 
 export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile> {
-
     private static PATH = ".scope/tags.json";
 
     private _root: string;
     private _tagsDatabaseData: TagsDatabaseType;
-
-    private _allTags = new Array<Tag>();
 
     constructor(root: string) {
         this._root = root;
@@ -42,29 +39,52 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         const defaultTag: Tag = TagsDefinitionFile.getDefaultTag();
         const defaultModule: Module = TagsDefinitionFile.getDefaultModule();
 
-        defaultModule.tags.push(defaultTag);
+        defaultModule.tags.push(defaultTag.name);
 
         const defaultDatabase: TagsDatabaseType = {
-            modules: [defaultModule]
+            modules: [defaultModule],
+            tags: [defaultTag]
         }
 
         JSONFile.niceWrite<TagsDatabaseType>(this._getPath(), defaultDatabase);
     }
 
     public load(): TagsDefinitionFile {
-        this._tagsDatabaseData = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
-        this._addTagsFromModules(this._tagsDatabaseData.modules);
+        const loadedDatabase = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
+        this._validateDatabase(loadedDatabase);
+        this._tagsDatabaseData = loadedDatabase;
         return this;
+    }
+
+    private _validateDatabase(loadedDatabase: TagsDatabaseType) {
+        loadedDatabase.modules.forEach(module => {
+            // Check if any modules are duplicated
+            const moduleWithSameName = loadedDatabase.modules.filter(m => m.name === module.name);
+            if (moduleWithSameName.length > 1) {
+                throw new Error(`Cannot have more than one module named ${module.name}, every module needs unique name`);
+            }
+
+            // Check if all tags are defined in 'tags' array
+            module.tags.forEach(tag => {
+                if (!loadedDatabase.tags.some(definedTag => definedTag.name === tag)) {
+                    throw new Error(`Module ${module.name} has tag ${tag}, which is not defined in 'tags' array`);
+                }
+            });
+        });
+
+        // Check if any tags are duplicated
+        loadedDatabase.tags.forEach(tag => {
+            const tagsWithSameName = loadedDatabase.tags.filter(m => m.name === tag.name);
+            if (tagsWithSameName.length > 1) {
+                throw new Error(`Cannot have more than one module named ${tag.name}, every module needs unique name`);
+            }
+        });
     }
 
     public save(): string {
         const savedFilePath = this._getPath();
         JSONFile.niceWrite<TagsDatabaseType>(savedFilePath, this._tagsDatabaseData);
         return savedFilePath;
-    }
-
-    private _addTagsFromModules(modules: Array<Module>) {
-        modules.forEach(module => module.tags.forEach(tag => this._allTags.push(tag)));
     }
 
     public addModule(newModule: Module) {
@@ -88,12 +108,6 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         if (!moduleToDelete) {
             throw new Error("Can't remove undefined module");
         }
-        if (moduleToDelete.tags.length) {
-            const tags = moduleToDelete.tags.map(tag => tag.name);
-            throw new Error(`
-                Can't remove module ${moduleToDelete.name} which has tags: ${tags.join(", ")}`
-            );
-        }
         if (moduleToDelete.children.length) {
             const children = moduleToDelete.children.join(", ");
             throw new Error(`
@@ -112,41 +126,80 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         this._tagsDatabaseData.modules.splice(moduleToDeleteIndex, 1);
     }
 
+    public assignTagToModule(tag: Tag, module: Module) {
+        if (!module) {
+            throw new Error(`Can't add tag to undefined module`);
+        }
+
+        if (module.tags.some(moduleTag => moduleTag === tag.name)) {
+            throw new Error(`Can't add tag to module ${module.name}, as it already contains tag ${tag.name}`);
+        }
+
+        module.tags.push(tag.name);
+    }
+
     public addTag(tag: Tag) {
-        const destinationModule = this.getModuleByName(tag.module);
+        if (this._tagsDatabaseData.tags.some(databaseTag => databaseTag.name === tag.name)) {
+            throw new Error(`Can't add tag ${tag.name}, because it already exists`);
+        }
+        this._tagsDatabaseData.tags.push(tag);
+    }
 
-        if (!destinationModule) {
-            throw new Error(`Can't add tag to module ${tag.module}, which does not exist`);
+    public isTagNameInDatabase(tagName: string) {
+        return this._tagsDatabaseData.tags.some(tag => tag.name === tagName);
+    }
+
+    public isTagInDatabase(tag: Tag) {
+        return this._tagsDatabaseData.tags.includes(tag);
+    }
+
+
+    public removeTagFromModule(tag: Tag, module: Module) {
+        const index = module.tags.indexOf(tag.name);
+        if (index === -1) {
+            throw new Error(`Could not find tag ${tag.name} in module ${module.name}`);
+        }
+        module.tags.splice(index, 1);
+    }
+
+    public removeTag(tag: Tag) {
+        const index = this._tagsDatabaseData.tags.findIndex(tagToCheck => tagToCheck.name === tag.name);
+        if (index === -1) {
+            throw new Error(`Could not find tag ${tag.name} in database`);
         }
 
-        if (destinationModule.tags.some(moduleTag => moduleTag.name === tag.name)) {
-            throw new Error(`Can't add tag to module ${tag.module}, as it already contains tag ${tag.name}`);
+        this._tagsDatabaseData.tags.splice(index, 1);
+
+        this._tagsDatabaseData.modules.forEach(module => {
+            if (module.tags.includes(tag.name)) {
+                this.removeTagFromModule(tag, module);
+            }
+        })
+    }
+
+    public editTag(tag: Tag, newName: string, newDescription: string) {
+        if (!this.isTagInDatabase(tag)) {
+            throw new Error(`[getTagByName] Tag '${tag.name}' does not exist in database`);
         }
 
-        const moduleWithTag = this._tagsDatabaseData.modules.find(
-            module => module.tags.some(moduleTag => moduleTag.name === tag.name
-            ));
-        if (moduleWithTag) {
-            throw new Error(`Can't add tag ${tag.name}, because it already exists in module ${moduleWithTag?.name}`);
-        }
+        this._tagsDatabaseData.modules.filter(module => module.tags.includes(tag.name)).forEach(module => {
+            const index = module.tags.indexOf(tag.name);
+            module.tags[index] = newName;
+        });
 
-        destinationModule.tags.push(tag);
-        this._allTags.push(tag);
+        tag.name = newName;
+        tag.description = newDescription;
     }
 
     public getTags(): Array<Tag> {
-        return this._allTags;
-    }
-
-    public getTagByName(name: string): Tag | undefined {
-        return this._allTags.find(tag => tag.name === name);
+        return this._tagsDatabaseData.tags;
     }
 
     public getTagsByNames(tagNames: string[]): Array<Tag> {
         const foundTags: Array<Tag> = [];
 
         tagNames.forEach(tagName => {
-            const tag = this._allTags.find(tag => tag.name === tagName);
+            const tag = this.getTagByName(tagName);
             if (!tag) {
                 throw new Error(`Could not find tag of name '${tagName}'`);
             }
@@ -187,22 +240,29 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     }
 
     public getModuleTagNames(module: Module): Array<Tag["name"]> {
-        return module.tags.map(tag => tag.name);
+        return module.tags;
     }
 
-    public getTagModule(tag: Tag): Module {
-        const moduleWithTag = this._tagsDatabaseData.modules.find(module => module.tags.includes(tag));
-        if (!moduleWithTag) {
-            throw new Error(`Cannot find module for tag ${tag}`);
+    public getModuleTags(module: Module): Array<Tag> {
+        return module.tags.map(tag => this.getTagByName(tag));
+    }
+
+    public getTagByName(tagName: string): Tag {
+        const found = this._tagsDatabaseData.tags.find(tag => tag.name === tagName);
+        if (!found) {
+            throw new Error(`[getTagByName] Tag '${tagName}' does not exist in database`);
         }
-        return moduleWithTag;
+        return found;
+    }
+
+    public getTagModules(tag: Tag): Array<Module> {
+        return this._tagsDatabaseData.modules.filter(module => module.tags.includes(tag.name));
     }
 
     public static getDefaultTag(): Tag {
         const defaultTag: Tag = {
             name: "Tag",
             description: "Default tag added on initialization",
-            module: TagsDefinitionFile.getDefaultModule().name,
         };
         return defaultTag;
     }

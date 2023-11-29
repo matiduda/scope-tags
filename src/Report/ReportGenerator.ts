@@ -1,6 +1,6 @@
 import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
-import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder } from "../References/IReferenceFinder";
@@ -13,8 +13,7 @@ export type ModuleReport = {
 
 type FileInfo = {
     file: string,
-    tags: Array<Tag>,
-    modules: Array<Module>,
+    tagIdentifiers: Array<TagIdentifier>,
     linesAdded: number,
     linesRemoved: number,
     usedIn: Array<FileReference>
@@ -22,8 +21,7 @@ type FileInfo = {
 
 type FileReference = {
     file: string,
-    tags: Array<Tag>,
-    modules: Array<Module>,
+    tagIdentifiers: Array<TagIdentifier>,
 }
 
 export type Report = {
@@ -77,7 +75,9 @@ export class ReportGenerator {
             };
 
             for (const module of affectedModules) {
-                const fileInfoMatchingModule = fileInfoArray.filter(fileInfo => fileInfo.modules.includes(module));
+                const fileInfoMatchingModule = fileInfoArray.filter(
+                    fileInfo => fileInfo.tagIdentifiers.some(identifier => identifier.module === module.name)
+                );
 
                 const moduleReport: ModuleReport = {
                     module: module.name,
@@ -96,14 +96,9 @@ export class ReportGenerator {
         const fileInfoArray: Array<FileInfo> = [];
 
         for (const fileData of fileDataArray) {
-            const fileTagNames = this._fileTagsDatabase.getTagNamesForFile(fileData.newPath);
-            const fileTags = this._tagsDefinitionFile.getTagsByNames(fileTagNames);
-            const fileModules: Module[] = fileTags.map(tag => this._tagsDefinitionFile.getTagModule(tag));
-
             const fileInfo: FileInfo = {
                 file: fileData.newPath,
-                tags: fileTags,
-                modules: fileModules,
+                tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(fileData.newPath),
                 linesAdded: fileData.linesAdded,
                 linesRemoved: fileData.linesRemoved,
                 usedIn: this._getFileReferences(fileData.newPath),
@@ -115,16 +110,17 @@ export class ReportGenerator {
     }
 
     private _getAffectedModules(fileInfoArray: Array<FileInfo>): Array<Module> {
-        const modules: Array<Module> = [];
+        const moduleNames: Array<string> = [];
 
         for (const fileInfo of fileInfoArray) {
-            fileInfo.modules.forEach(module => {
-                if (!modules.includes(module)) {
-                    modules.push(module);
+            fileInfo.tagIdentifiers.forEach(identifier => {
+                if (!moduleNames.includes(identifier.module)) {
+                    moduleNames.push(identifier.module);
                 };
-            });
+            })
         }
-        return modules;
+
+        return this._tagsDefinitionFile.getModulesByNames(moduleNames);
     }
 
     private _getFileReferences(file: string): Array<FileReference> {
@@ -141,15 +137,9 @@ export class ReportGenerator {
             const foundReferences = referenceFinder.findReferences(file);
 
             foundReferences.forEach(reference => {
-
-                const referenceTagsNames = this._fileTagsDatabase.getTagNamesForFile(reference);
-
-                const referenceTags = this._tagsDefinitionFile.getTagsByNames(referenceTagsNames);
-                const referenceTagsModules = referenceTags.map(tag => this._tagsDefinitionFile.getTagModule(tag));
                 const fileReference: FileReference = {
                     file: reference,
-                    modules: referenceTagsModules,
-                    tags: referenceTags,
+                    tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(reference),
                 };
                 references.push(fileReference);
             });
@@ -175,23 +165,23 @@ export class ReportGenerator {
     private _nicePrintTags(moduleReport: ModuleReport, addFiles: boolean = false): string {
         let output = "";
 
-        const allTags: Array<Tag> = [];
+        const allTags: Array<Tag["name"]> = [];
 
         moduleReport.files.forEach(file => {
-            file.tags.forEach(tag => {
-                if (!allTags.includes(tag)) {
-                    allTags.push(tag);
+            file.tagIdentifiers.forEach(tagIdentifier => {
+                if (!allTags.includes(tagIdentifier.tag)) {
+                    allTags.push(tagIdentifier.tag);
                 }
             })
         })
 
         if (addFiles) {
             allTags.forEach(tag => {
-                const filesMatchingTag = moduleReport.files.filter(file => file.tags.includes(tag));
-                output += `${tag.name} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
+                const filesMatchingTag = moduleReport.files.filter(file => file.tagIdentifiers.some(identifier => identifier.tag === tag));
+                output += `${tag} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
             })
         } else {
-            output = allTags.map(tag => tag.name).join(', ');
+            output = allTags.map(tag => tag).join(', ');
         }
 
         return output;
@@ -219,42 +209,40 @@ export class ReportGenerator {
     private _nicePrintUsedIn(moduleReport: ModuleReport): string {
         let output = "";
 
-        const allReferencedModules: Array<Module> = [];
+        // const allReferencedModules: Array<Module["name"]> = [];
 
-        moduleReport.files.forEach(file => {
-            file.usedIn.forEach(ref => {
-                ref.modules.forEach(module => {
-                    if (module.name !== moduleReport.module && !allReferencedModules.includes(module)) {
-                        allReferencedModules.push(module);
-                    }
-                })
-            })
-        })
+        // moduleReport.files.forEach(file => {
+        //     file.usedIn.forEach(ref => {
+        //         ref.tagIdentifiers.forEach(identifier => {
+        //             if (identifier.module !== moduleReport.module && !allReferencedModules.includes(identifier.module)) {
+        //                 allReferencedModules.push(identifier.module);
+        //             }
+        //         })
+        //     })
+        // })
 
-        // console.log("all referenced modules:");
-        // console.log(allReferencedModules.map(module => module.name));
+        // allReferencedModules.forEach((referencedModule, i) => {
+        //     output += `${referencedModule} - `;
 
-        allReferencedModules.forEach((referencedModule, i) => {
-            output += `${referencedModule.name} - `;
+        //     const matchingTagIdentifiers: Array<TagIdentifier> = [];
 
-            const matchingTags: Array<Tag> = [];
+        //     moduleReport.files.forEach(file => {
+        //         file.usedIn.forEach(ref => {
+        //             const matchingIdentifiers = ref.tagIdentifiers.filter(identifier => identifier.module === referencedModule);
+        //             ref.tags.forEach(tag => {
+        //                 if (referencedModule.tags.includes(tag) && !matchingTags.includes(tag)) {
+        //                     matchingTags.push(tag);
+        //                 }
+        //             })
+        //         })
+        //     });
 
-            moduleReport.files.forEach(file => {
-                file.usedIn.forEach(ref => {
-                    ref.tags.forEach(tag => {
-                        if (referencedModule.tags.includes(tag) && !matchingTags.includes(tag)) {
-                            matchingTags.push(tag);
-                        }
-                    })
-                })
-            });
+        //     output += `(${matchingTags.map(tag => tag.name).join(', ')})`;
 
-            output += `(${matchingTags.map(tag => tag.name).join(', ')})`;
-
-            if (i !== allReferencedModules.length - 1) {
-                output += ", ";
-            }
-        })
+        //     if (i !== allReferencedModules.length - 1) {
+        //         output += ", ";
+        //     }
+        // })
 
         return output;
     };

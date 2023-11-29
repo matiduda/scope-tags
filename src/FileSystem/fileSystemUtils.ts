@@ -26,3 +26,18 @@ export function getFileBaseName(filePath: string): string {
 export function fileExists(filePath: string): boolean {
 	return fs.existsSync(filePath);
 }
+
+export function isDirectory(filePath: string): boolean {
+	if (!fileExists(filePath)) {
+		throw new Error(`File '${filePath} does not exist'`);
+	}
+	return fs.lstatSync(filePath).isDirectory()
+}
+
+export function getAllFilesFromDirectory(directoryPath: string): Array<string> {
+	if (!isDirectory(directoryPath)) {
+		throw new Error(`Directory '${directoryPath} is a file'`);
+	}
+
+	return fs.readdirSync(directoryPath).filter(file => !isDirectory(file));
+}

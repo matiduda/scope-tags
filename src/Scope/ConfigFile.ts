@@ -13,6 +13,7 @@ export type ProjectConfig = {
 export type ConfigFileType = {
     projects: Array<ProjectConfig> // tsconfig.json path relative to git project root
     gitCommitCountLimit: number,
+    updateIssueURL?: string,
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
@@ -55,5 +56,9 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
 
     public getProjects(): Array<ProjectConfig> {
         return this._config.projects;
+    }
+
+    public getUpdateIssueURL(): string | undefined {
+        return this._config.updateIssueURL;
     }
 }
