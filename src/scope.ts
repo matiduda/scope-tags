@@ -42,17 +42,33 @@ switch (args[0]) {
             console.log(`There are no files to tag for ${path}`);
         }
 
+
         const repository = new GitRepository(root);
         const tagsDefinitionFile = new TagsDefinitionFile(root).load();
         const fileTagsDatabase = new FileTagsDatabase(root).load();
 
         const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 
-        const fileData = repository.convertFilesToFileData(filesToTag);
+        const filesInDatabase = filesToTag.filter(file => fileTagsDatabase.isFileInDatabase(file));
 
-        fileTagger.start(fileData).then(() => {
-            console.log("All files tagged");
-        });
+        if (filesInDatabase.length) {
+            // Ask the user if they want to re-tag selected files
+            fileTagger.selectFilesToAppend(filesInDatabase).then(async selectedFiles => {
+
+                fileTagsDatabase.removeTagsForFiles(selectedFiles);
+
+                const fileData = repository.convertFilesToFileData(filesToTag);
+
+                await fileTagger.start(fileData);
+                console.log("All files tagged");
+            });
+        } else {
+            const fileData = repository.convertFilesToFileData(filesToTag);
+
+            fileTagger.start(fileData).then(() => {
+                console.log("All files tagged");
+            });
+        }
         break;
     }
     case "--commit": {

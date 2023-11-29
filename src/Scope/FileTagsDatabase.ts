@@ -102,6 +102,12 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         })
     }
 
+    public removeTagsForFiles(selectedFiles: string[]) {
+        selectedFiles.forEach(file => {
+            delete this._fileTagsDatabaseData.files[file];
+        })
+    }
+
     private _isDirectory(path: string) {
         return fs.lstatSync(path).isDirectory();
     }

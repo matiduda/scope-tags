@@ -23,7 +23,8 @@ export class GitRepository {
     }
 
     private _normalizePath(filePath: string) {
-        const definitelyPosix = filePath.split(path.sep).join(path.posix.sep);
+        const relativePath = path.relative(this._root, filePath);
+        const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
         return definitelyPosix;
     }
 
@@ -137,5 +138,20 @@ export class GitRepository {
     public async getLatestCommit(): Promise<Commit> {
         const repository = await this._getRepository();
         return repository.getHeadCommit();
+    }
+
+    public getMostRecentChangeDateFromCommitList(commits: Commit[]): Date {
+        if (!commits.length) {
+            throw new Error("[getMostRecentChangeDateFromCommitList] Commit list is empty");
+        }
+
+        let date = commits[0].date();
+
+        for (let i = 1; i < commits.length; i++) {
+            if (commits[i].date() > date) {
+                date = commits[i].date();
+            }
+        }
+        return date;
     }
 }

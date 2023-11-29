@@ -57,14 +57,36 @@ export class FileTagger {
         this._database.save();
     }
 
-    private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
-        const fileDataAsOptions = this._mapFileDataToOptions(fileData);
+    public async selectFilesToAppend(fileNames: Array<string>): Promise<Array<string>> {
+        const fileNamesAsAnswers = fileNames.map(fileName => {
+            return { name: fileName, value: fileName }
+        });
 
+        const prompt = new MultiSelect({
+            name: 'value',
+            message: 'Found these files in database, select files to override',
+            limit: 7,
+            choices: fileNamesAsAnswers,
+            result(value: any) {
+                return this.map(value);
+            },
+        });
+
+        try {
+            const selectedFileNames = await prompt.run();
+            console.log(selectedFileNames);
+            return Object.values(selectedFileNames);
+        } catch (e) {
+            return [];
+        }
+    }
+
+    private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
         const prompt = new MultiSelect({
             name: 'value',
             message: 'Select files to tag',
             limit: 7,
-            choices: fileDataAsOptions,
+            choices: this._mapFileDataToOptions(fileData),
             result(value: any) {
                 return this.map(value);
             },

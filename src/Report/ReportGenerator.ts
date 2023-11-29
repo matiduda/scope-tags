@@ -33,7 +33,7 @@ type ReportTableEntry = {
     "Affected module": string,
     "Affected tags": string,
     "Lines": string,
-    "Date": string,
+    "Modified": string,
     "Used in": string,
 }
 
@@ -71,7 +71,7 @@ export class ReportGenerator {
 
             const report: Report = {
                 allModules: [],
-                date: new Date(),
+                date: this._repository.getMostRecentChangeDateFromCommitList(commits),
             };
 
             for (const module of affectedModules) {
@@ -144,6 +144,9 @@ export class ReportGenerator {
                 references.push(fileReference);
             });
         });
+
+        console.log(references);
+
         return references;
     }
 
@@ -153,12 +156,11 @@ export class ReportGenerator {
                 "Affected module": moduleReport.module,
                 "Affected tags": this._nicePrintTags(moduleReport),
                 "Lines": this._nicePrintLines(moduleReport),
-                "Date": report.date.toLocaleDateString(),
+                "Modified": report.date.toLocaleDateString(),
                 "Used in": this._nicePrintUsedIn(moduleReport),
             }
             return entry;
         });
-        // console.table(tableEntries);
         console.log(JSON.stringify(tableEntries));
     }
 
@@ -166,6 +168,7 @@ export class ReportGenerator {
         let output = "";
 
         const allTags: Array<Tag["name"]> = [];
+        const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
 
         moduleReport.files.forEach(file => {
             file.tagIdentifiers.forEach(tagIdentifier => {
@@ -181,7 +184,7 @@ export class ReportGenerator {
                 output += `${tag} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
             })
         } else {
-            output = allTags.map(tag => tag).join(', ');
+            output = allTags.filter(tag => currentModule?.tags.includes(tag)).map(tag => tag).join(', ');
         }
 
         return output;
@@ -209,41 +212,39 @@ export class ReportGenerator {
     private _nicePrintUsedIn(moduleReport: ModuleReport): string {
         let output = "";
 
-        // const allReferencedModules: Array<Module["name"]> = [];
+        const uniqueReferencedModules: Array<Module["name"]> = [];
 
-        // moduleReport.files.forEach(file => {
-        //     file.usedIn.forEach(ref => {
-        //         ref.tagIdentifiers.forEach(identifier => {
-        //             if (identifier.module !== moduleReport.module && !allReferencedModules.includes(identifier.module)) {
-        //                 allReferencedModules.push(identifier.module);
-        //             }
-        //         })
-        //     })
-        // })
+        moduleReport.files.forEach(fileInfo => {
+            fileInfo.usedIn.forEach(reference => {
+                reference.tagIdentifiers.forEach(identifier => {
+                    if (!uniqueReferencedModules.includes(identifier.module)) {
+                        uniqueReferencedModules.push(identifier.module);
+                    }
+                })
+            })
+        });
 
-        // allReferencedModules.forEach((referencedModule, i) => {
-        //     output += `${referencedModule} - `;
+        uniqueReferencedModules.forEach((referencedModule, index) => {
+            output += `${referencedModule} (`
 
-        //     const matchingTagIdentifiers: Array<TagIdentifier> = [];
+            const tagsMatchingAnyReference: Array<Tag["name"]> = [];
 
-        //     moduleReport.files.forEach(file => {
-        //         file.usedIn.forEach(ref => {
-        //             const matchingIdentifiers = ref.tagIdentifiers.filter(identifier => identifier.module === referencedModule);
-        //             ref.tags.forEach(tag => {
-        //                 if (referencedModule.tags.includes(tag) && !matchingTags.includes(tag)) {
-        //                     matchingTags.push(tag);
-        //                 }
-        //             })
-        //         })
-        //     });
+            moduleReport.files.forEach(fileInfo => {
+                fileInfo.usedIn.forEach(reference => {
+                    reference.tagIdentifiers.forEach(identifier => {
+                        if (identifier.module === referencedModule && !tagsMatchingAnyReference.includes(identifier.tag)) {
+                            tagsMatchingAnyReference.push(identifier.tag);
+                        }
+                    })
+                })
+            });
 
-        //     output += `(${matchingTags.map(tag => tag.name).join(', ')})`;
+            output += tagsMatchingAnyReference.join(", ") + ")";
 
-        //     if (i !== allReferencedModules.length - 1) {
-        //         output += ", ";
-        //     }
-        // })
-
+            if (index !== uniqueReferencedModules.length - 1) {
+                output += ", ";
+            }
+        })
         return output;
     };
 }

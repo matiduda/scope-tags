@@ -232,8 +232,8 @@ export class TagManager {
             name: 'Select tag adding method',
             message: "Select tag adding method: ",
             choices: [
-                { name: 'Select from list', value: this._selectSingleTag },
                 { name: 'Add new', value: this._createNewTag },
+                { name: 'Search from available tags', value: this._selectSingleTag },
             ],
             result(value: any) {
                 const mapped = this.map(value);
