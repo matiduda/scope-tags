@@ -96,7 +96,7 @@ switch (args[0]) {
         });
         break;
     }
-    case "--unpushed": {
+    case "--addtags": {
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {
 
@@ -106,9 +106,13 @@ switch (args[0]) {
 
             const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData);
 
-            fileTagger.start(fileDataToTag).then(() => {
+            fileTagger.start(fileDataToTag).then(async () => {
                 console.log("All files tagged");
-            }).catch(e => console.log("Canceled")); // TODO: Save already tagged files
+
+                await repository.amendFileToMostRecentCommit(fileTagsDatabase.getPath());
+
+            }); // TODO: Save already tagged files
+            // }).catch(e => console.log("Canceled")); // TODO: Save already tagged files
         });
         break;
     }
@@ -280,7 +284,8 @@ switch (args[0]) {
 
 function startCLI() {
     const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    new Menu(tagsDefinitionFile).start().then(() => console.log("Exit."));
+    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    new Menu(tagsDefinitionFile, fileTagsDatabase).start().then(() => console.log("Exit."));
 }
 
 async function verifyCommit(commit: Commit, database: FileTagsDatabase, repository: GitRepository) {

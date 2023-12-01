@@ -31,7 +31,6 @@ interface FileTagsDatabaseType {
 };
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
-
     private static PATH = ".scope/database.json";
 
     private _root: string;
@@ -136,6 +135,29 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         return fileMetadata.tags;
     }
 
+    public countFilesWithTag(tag: Tag, module?: Module): number {
+        return this.getFilesWithTag(tag, module).length;
+    }
+
+    public getFilesWithTag(tag: Tag, module?: Module) {
+        return Object.entries(this._fileTagsDatabaseData.files).filter(entry => {
+            if (module) {
+                return entry[1].tags.some(tagIdentifier => tagIdentifier.tag === tag.name && tagIdentifier.module === module.name);
+            }
+            return entry[1].tags.some(tagIdentifier => tagIdentifier.tag === tag.name);
+        })
+    }
+
+    public countFilesWithModule(module: Module): number {
+        return this.getFilesWithModule(module).length;
+    }
+
+    public getFilesWithModule(module: Module) {
+        return Object.entries(this._fileTagsDatabaseData.files).filter(entry => {
+            return entry[1].tags.some(tagIdentifier => tagIdentifier.module === module.name);
+        })
+    }
+
     public filterAlreadyTaggedFiles(fileData: Array<FileData>) {
         const allFiles = Object.keys(this._fileTagsDatabaseData.files);
         const fileDataNotFoundInDatabase = fileData.filter(data => {
@@ -165,7 +187,13 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     }
 
     private _checkFileStatus(filePath: string): FileStatusInDatabase {
+        const isFileIgnored = this._fileTagsDatabaseData.ignoredFiles.includes(filePath);
+        if (isFileIgnored) {
+            return FileStatusInDatabase.IGNORED
+        }
+
         const fileDataReference = this._fileTagsDatabaseData.files[filePath];
+
         if (!fileDataReference) {
             return FileStatusInDatabase.NOT_IN_DATABASE;
         }
@@ -173,7 +201,6 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             return FileStatusInDatabase.UNTAGGED;
         }
         return FileStatusInDatabase.TAGGED;
-        // TODO: Add ignored files statuses
     }
 
     public getFileStatusInDatabaseDescription(status: FileStatusInDatabase | undefined): string {
@@ -236,5 +263,9 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             }
         });
         return fileDataArray.filter(fileData => fileData.change !== GitDeltaType.DELETED);
+    }
+
+    public getPath(): string {
+        return FileTagsDatabase.PATH;
     }
 }

@@ -1,5 +1,5 @@
 const { Select, Form, AutoComplete } = require('enquirer')
-import { TagIdentifier } from "../Scope/FileTagsDatabase";
+import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
@@ -11,12 +11,15 @@ export class TagManager {
     private static MAX_VISIBLE_TAGS = 7;
 
     private _tags: TagsDefinitionFile;
+    private _database: FileTagsDatabase;
+
     private _menu: Menu | undefined;
 
     private _tagsWereModified = false;
 
-    constructor(tags: TagsDefinitionFile, menu?: Menu) {
+    constructor(tags: TagsDefinitionFile, database: FileTagsDatabase, menu?: Menu) {
         this._tags = tags;
+        this._database = database;
         this._menu = menu;
     }
 
@@ -99,17 +102,21 @@ export class TagManager {
 
     private async _selectTag(tag: Tag, module?: Module) {
         const tagModulesNames = this._tags.getTagModules(tag).map(m => m.name).join(', ');
+        const filesWithTagCount = this._database.countFilesWithTag(tag, module);
 
         const prompt = new Select({
             name: 'Tag info',
-            message: "Tag info: ",
+            message: `Tag info: `,
             choices: [
-                { message: `Name:\t\t${tag.name}`, role: "separator" },
-                { message: `Description:\t${tag.description}`, role: "separator" },
-                { message: `Modules:\t${tagModulesNames}`, role: "separator" },
+                { message: `Name:\t\t${module ? "\t" : ""}${tag.name}`, role: "separator" },
+                { message: `Files ${module ? `(${module.name})` : ""}:\t${filesWithTagCount}`, role: "separator" },
+                { message: `Modules:\t${module ? "\t" : ""}${tagModulesNames}`, role: "separator" },
                 { role: "separator" },
                 { name: 'Edit', value: module ? this._editTagFromModule : this._editTag },
                 { name: 'Delete', value: module ? this._deleteTagFromModule : this._deleteTag },
+                ...(filesWithTagCount ? [
+                    { name: 'List files', value: this._listFilesForTag },
+                ] : []),
                 { name: this._tagsWereModified ? 'Save' : 'Go back', value: () => Promise.resolve() },
             ],
             result(value: any) {
@@ -146,7 +153,6 @@ export class TagManager {
             message: 'Enter new tag values:',
             choices: [
                 { name: 'name', message: 'Name', initial: tag.name },
-                { name: 'description', message: 'Description', initial: tag.description },
             ],
             validate: (answer: any) => {
                 if (!answer.name.length
@@ -161,7 +167,7 @@ export class TagManager {
 
         const answer = await editTagPrompt.run();
 
-        this._tags.editTag(tag, answer.name, answer.description);
+        this._tags.editTag(tag, answer.name);
 
         this._tagsWereModified = true;
     }
@@ -174,6 +180,14 @@ export class TagManager {
             throw new Error("Cannot delete tag which is undefined");
         }
         this._tags.removeTagFromModule(tag, module);
+    }
+
+    private async _listFilesForTag(tag: Tag, module: Module) {
+        const matchingFiles = this._database.getFilesWithTag(tag, module);
+        matchingFiles.forEach(entry => {
+            console.log(`${entry[0]} -> ${entry[1].tags.map(id => `${id.module}/${id.tag}`).join(', ')}`);
+        })
+        await this._selectTag.call(this, tag, module);
     }
 
     private async _deleteTag(tag: Tag) {
@@ -273,8 +287,9 @@ export class TagManager {
                 return mapped[value];
             },
             validate: (answer: any) => {
-                if (module && module.tags.some(tag => tag === answer.value.name)) {
-                    return `Module ${module.name} already contains tag ${answer.value.name}`;
+                console.log(answer);
+                if (module && module.tags.some(tag => tag === answer.name)) {
+                    return `Module ${module.name} already contains tag ${answer.name}`;
                 } else {
                     return true;
                 }
@@ -286,20 +301,17 @@ export class TagManager {
 
     private async _createNewTag(module: Module): Promise<Tag> {
         const defaultTagName = "Tag";
-        const defaultTagDescription = "A tag describing a single functionality";
 
         const addTagPrompt = new Form({
             name: 'user',
             message: 'Fill in details about the new module:',
             choices: [
                 { name: 'name', message: 'Name', initial: defaultTagName },
-                { name: 'description', message: 'Description', initial: defaultTagDescription },
             ],
             validate: (answer: any) => {
                 if (!answer.name.length
-                    || !answer.description.length
                 ) {
-                    return "Both name and description are required";
+                    return "Tag name is required";
                 } else {
                     return true;
                 }
@@ -316,7 +328,6 @@ export class TagManager {
 
         const newTag: Tag = {
             name: tagInfoAnswer.name,
-            description: tagInfoAnswer.description,
         };
 
         console.log("Successfuly added tag: " + newTag.name);

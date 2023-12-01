@@ -1,15 +1,18 @@
 import { TagManager } from "./TagManager";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { ModuleManager } from "./ModuleManager";
+import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 
 const { Select } = require('enquirer')
 
 export class Menu {
 
     private _tags: TagsDefinitionFile;
+    private _database: FileTagsDatabase;
 
-    constructor(tags: TagsDefinitionFile) {
+    constructor(tags: TagsDefinitionFile, database: FileTagsDatabase) {
         this._tags = tags;
+        this._database = database;
     }
 
     public async start() {
@@ -36,18 +39,18 @@ export class Menu {
     }
 
     public async _manageTags() {
-        const tagManager = new TagManager(this._tags, this);
+        const tagManager = new TagManager(this._tags, this._database, this);
         await tagManager.start();
     }
 
     public async manageTagsFromModule(module: Module) {
-        const tagManager = new TagManager(this._tags, this);
+        const tagManager = new TagManager(this._tags, this._database, this);
         await tagManager.manageTagsFromModule(module);
     }
 
 
     private async _manageModules() {
-        const moduleManager = new ModuleManager(this._tags, this);
+        const moduleManager = new ModuleManager(this._tags, this._database, this);
         await moduleManager.start();
     }
 

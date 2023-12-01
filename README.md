@@ -45,7 +45,6 @@ npm i scope-tags -D
             - [x] Test if it reads the project data correctly
             - [x] Find relative tsconfig.json
             - [x] Add support for multiple tsconfig.json's
-            - [ ] Add tests for this ?
         - [x] `.scope` metadata initialization
             - [x] `tags.json`
             - [x] `database.json`
@@ -59,30 +58,30 @@ npm i scope-tags -D
             - [x] Get fileData for affected files
             - [x] Get tags for affected files
             - [x] Create report with affected modules
-            - [ ] Add report to task (build integration)
-        - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
+            - [x] Add report to task (build integration)
         - [x] Wywalić build tag bo jest zbędny
-        - [ ] Custom import map for `.yaml` files
-            - [ ] Read external import map if configured
-            - [ ] Test if it correctly identifies imported yaml file
+        - [x] Custom import map for `.yaml` files
+            - [x] Read external import map if configured
+            - [x] Test if it correctly identifies imported yaml file
+        - [ ] Unit tests for common actions:
+            - [ ] Testing if files are correstly updated in database depending on changes in git
+        - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
 
 ### Assertions to add
-
-
-
 
 - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
 
 ### Nice to have
 
 - [x] Use [spinner](https://www.npmjs.com/package/ora) while waiting for async operations (opening repo, ast analysis) - probably not needed because wait time is short
-- [ ] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report.
-- [ ] Github workflows with tests
+- [-] If eslint available, compare changed files before and after linting. Then, ommit files which only have these changes from scope report - won't be needed because of git option to discard whitespaces and empty lines
+- [x] Github workflows with tests
 - [ ] Changes severity using [survey prompt](https://github.com/enquirer/enquirer#scale-prompt)? Severity based on git diffs?
 - [ ] Add keyboard shortcut hints when selecting tags and files -> https://github.com/enquirer/enquirer#select-choices
 - [ ] Add groups on select prompt:
     - [ ] Group files based on common path (files from same directory sould be grouped)
     - [ ] Group tags based on parent modules
+- [ ] Add remove hanging tags option to tag manager - search for tags not assignes to any module and ask the user if they want to delete them
 
 ### To be discussed
 

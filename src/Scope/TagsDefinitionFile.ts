@@ -4,7 +4,6 @@ import { IJSONFileDatabase } from "./IJSONFileDatabase";
 
 export type Tag = {
     name: string,
-    description: string,
 };
 
 export type Module = {
@@ -177,7 +176,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         })
     }
 
-    public editTag(tag: Tag, newName: string, newDescription: string) {
+    public editTag(tag: Tag, newName: string) {
         if (!this.isTagInDatabase(tag)) {
             throw new Error(`[getTagByName] Tag '${tag.name}' does not exist in database`);
         }
@@ -188,7 +187,6 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         });
 
         tag.name = newName;
-        tag.description = newDescription;
     }
 
     public getTags(): Array<Tag> {
@@ -262,7 +260,6 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     public static getDefaultTag(): Tag {
         const defaultTag: Tag = {
             name: "Tag",
-            description: "Default tag added on initialization",
         };
         return defaultTag;
     }

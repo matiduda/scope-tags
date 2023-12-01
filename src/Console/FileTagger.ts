@@ -21,7 +21,7 @@ export class FileTagger {
     }
 
     public async start(fileData: Array<FileData>) {
-        const tagManager = new TagManager(this._tags);
+        const tagManager = new TagManager(this._tags, this._database);
 
         const fileDataNotFoundInDatabase = this._database.filterAlreadyTaggedFiles(fileData);
 

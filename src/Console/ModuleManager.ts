@@ -1,4 +1,5 @@
 const { Select, Form, Confirm } = require('enquirer')
+import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
@@ -7,14 +8,15 @@ type ModuleAsOption = { name: Module["name"], value: Module };
 export class ModuleManager {
 
     private _tags: TagsDefinitionFile;
+    private _database: FileTagsDatabase;
     private _menu: Menu;
 
     private _modulesWereModified: boolean;
 
-    constructor(tags: TagsDefinitionFile, menu: Menu) {
+    constructor(tags: TagsDefinitionFile, database: FileTagsDatabase, menu: Menu) {
         this._tags = tags;
+        this._database = database;
         this._menu = menu;
-        this._modulesWereModified = false;
     }
 
     public async start(fromModule?: Module) {
@@ -22,27 +24,36 @@ export class ModuleManager {
             ? this._tags.getModulesByNames(fromModule.children) : this._tags.getRootModules();
 
         const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay);
+        const filesWithModuleCount = fromModule ? this._database.countFilesWithModule(fromModule) : 0;
 
         const prompt = new Select({
             name: 'Module manager',
             message: this._getModulePathAsHeader(fromModule),
             choices: [
-                ...modulesMappedToOptions,
-                ...fromModule ? [
+                ...(fromModule ? [
                     { message: `Name:\t\t${fromModule.name}`, role: "separator" },
                     { message: `Description:\t${fromModule.description}`, role: "separator" },
+                    { message: `Files:\t${filesWithModuleCount}`, role: "separator" },
                     { message: `Max 1 tag:\t${fromModule.exclusive}`, role: "separator" },
                     { message: `Tags:\t\t${this._tags.getModuleTagNames(fromModule).join(", ")}`, role: "separator" },
+                    ...(modulesMappedToOptions.length ?
+                        [{ message: `─────`, role: "separator" },
+                        ...modulesMappedToOptions,
+                        ] : []),
                     { role: "separator" },
                     { name: 'Add new module here', value: this._addModule },
                     { name: 'Manage tags of: ' + fromModule.name, value: this._manageTagsFromModule },
+                    ...(filesWithModuleCount ? [
+                        { name: 'List files', value: this._listFilesForModule },
+                    ] : []),
                     { name: 'Delete this module', value: this._deleteModule },
                     { name: "Back to: " + (fromModule.parent || "root"), value: this._goBack },
                 ] : [
+                    ...modulesMappedToOptions,
                     { role: 'separator' },
                     { name: 'Add new module here', value: this._addModule },
                     { name: this._modulesWereModified ? "Save and return to menu" : "Return to menu", value: this._exit },
-                ],
+                ]),
             ],
             result(value: any) {
                 const mapped = this.map(value);
@@ -151,6 +162,14 @@ export class ModuleManager {
             console.log("Modules saved ✅");
         }
         await this._menu.start();
+    }
+
+    private async _listFilesForModule(module: Module) {
+        const matchingFiles = this._database.getFilesWithModule(module);
+        matchingFiles.forEach(entry => {
+            console.log(`${entry[0]} -> ${entry[1].tags.map(id => `${id.module}/${id.tag}`).join(', ')}`);
+        })
+        await this.start.call(this, module);
     }
 
     private _mapModulesToOptions(modules: Array<Module>): Array<ModuleAsOption> {

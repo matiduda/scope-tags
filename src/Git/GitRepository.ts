@@ -154,4 +154,29 @@ export class GitRepository {
         }
         return date;
     }
+
+    public async amendFileToMostRecentCommit(file: string) {
+
+        const repository = await this._getRepository();
+        const index = await repository.refreshIndex();
+
+        const commit = await repository.getHeadCommit();
+
+        await index.addByPath(file);
+
+        // await index.write();
+
+        const oid = await index.writeTree();
+
+        await commit.amend(
+            "HEAD",
+            commit.author(),
+            commit.committer(),
+            "UTF-8",
+            commit.message().trim(),
+            oid,
+        );
+
+        await index.write();
+    }
 }
