@@ -32,7 +32,7 @@ switch (args[0]) {
             console.log("--tag option requires path to file or folder, use: scope --tag <path>");
             process.exit(1);
         } else if (!fileExists(path)) {
-            console.log(`File or directory ${path} does not exist`);
+            console.log(`File or directory '${path}' does not exist`);
             process.exit(1);
         }
 
@@ -51,24 +51,122 @@ switch (args[0]) {
 
         const filesInDatabase = filesToTag.filter(file => fileTagsDatabase.isFileInDatabase(file));
 
-        if (filesInDatabase.length) {
-            // Ask the user if they want to re-tag selected files
-            fileTagger.selectFilesToAppend(filesInDatabase).then(async selectedFiles => {
+        const ignoredFilesInDatabase = filesToTag.filter(file => fileTagsDatabase.isIgnored(file));
 
-                fileTagsDatabase.removeTagsForFiles(selectedFiles);
-
-                const fileData = repository.convertFilesToFileData(filesToTag);
-
-                await fileTagger.start(fileData);
-                console.log("All files tagged");
-            });
-        } else {
+        if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
             const fileData = repository.convertFilesToFileData(filesToTag);
 
             fileTagger.start(fileData).then(() => {
                 console.log("All files tagged");
             });
+        } else {
+            // Ask the user if they want to re-tag selected files
+            fileTagger.selectFilesToAppend(filesInDatabase, ignoredFilesInDatabase).then(async selectedFiles => {
+
+                // Remove selected ignore status from selected ignored files
+                selectedFiles.forEach(selectedFile => {
+                    console.log(selectedFile.ignored);
+                    if (selectedFile.ignored) {
+                        fileTagsDatabase.unIgnoreFile(selectedFile.path);
+                    }
+                });
+
+                // Map files to be compatible with git-based file tagger
+                const fileData = repository.convertFilesToFileData(selectedFiles.map(selectedFile => selectedFile.path));
+
+                await fileTagger.start(fileData);
+                console.log("All files tagged");
+            });
         }
+        break;
+    }
+    case "--see": {
+        const path = args[1];
+        if (!path) {
+            console.log("--see option requires path to file or folder, use: scope --see <path>");
+            process.exit(1);
+        } else if (!fileExists(path)) {
+            console.log(`File or directory '${path}' does not exist`);
+            process.exit(1);
+        }
+
+        const filesToSee = isDirectory(path) ? getAllFilesFromDirectory(path) : [path];
+
+        // if (!filesToSee.length) {
+        //     console.log(`There are no files to untag for ${path}`);
+        // }
+
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+        const filesInDatabase = filesToSee.filter(file => fileTagsDatabase.isFileInDatabase(file));
+        const ignoredFilesInDatabase = filesToSee.filter(file => fileTagsDatabase.isIgnored(file));
+
+        if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
+            console.log("No info about files found in database");
+        } else {
+            if (filesInDatabase.length) {
+                console.log("\n── Tagged files ──\n");
+                filesInDatabase.forEach(file => {
+                    const tagsForFile = fileTagsDatabase.getTagIdentifiersForFile(file);
+                    console.log(`${file}\t→ ${tagsForFile.map(tagIdentifier => `${tagIdentifier.tag}`).join(", ")}`)
+                })
+            }
+            if (ignoredFilesInDatabase.length) {
+                console.log("\n── Ignored files ──\n");
+                ignoredFilesInDatabase.forEach(file => console.log(`${file}`));
+            }
+        }
+        break;
+    }
+    case "--untag": {
+        const path = args[1];
+        if (!path) {
+            console.log("--untag option requires path to file or folder, use: scope --untag <path>");
+            process.exit(1);
+        } else if (!fileExists(path)) {
+            console.log(`File or directory '${path}' does not exist`);
+            process.exit(1);
+        }
+
+        const filesToUntag = isDirectory(path) ? getAllFilesFromDirectory(path) : [path];
+
+        if (!filesToUntag.length) {
+            console.log(`There are no files to untag for ${path}`);
+        }
+
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+
+        const filesInDatabase = filesToUntag.filter(file => fileTagsDatabase.isFileInDatabase(file));
+        const ignoredFilesInDatabase = filesToUntag.filter(file => fileTagsDatabase.isIgnored(file));
+
+        if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
+            console.log("No info about files found in database");
+        } else {
+            if (filesInDatabase.length) {
+                console.log("\n── Tagged files ──\n");
+                filesInDatabase.forEach(file => {
+                    const tagsForFile = fileTagsDatabase.getTagIdentifiersForFile(file);
+                    console.log(`${file}\t→ ${tagsForFile.map(tagIdentifier => `${tagIdentifier.tag}`).join(", ")}`)
+                })
+            }
+            if (ignoredFilesInDatabase.length) {
+                console.log("\n── Ignored files ──\n");
+                ignoredFilesInDatabase.forEach(file => console.log(`${file}`));
+            }
+
+            const confirm = new YesNoMenu();
+            confirm.ask("Are you sure you want to remove these files from database? (tagged and ignored)").then(value => {
+                if (value) {
+                    fileTagsDatabase.removeTagsForFiles(filesInDatabase);
+                    ignoredFilesInDatabase.forEach(file => fileTagsDatabase.unIgnoreFile(file));
+                    fileTagsDatabase.save();
+                    console.log("Info about files removed.");
+                } else {
+                    console.log("Files were not touched.");
+                }
+            })
+        }
+
         break;
     }
     case "--commit": {
@@ -238,10 +336,6 @@ switch (args[0]) {
         });
         break;
     }
-    case "--debug": {
-        // TODO: Add verbose mode
-        break;
-    }
     case "--find-references": {
         const filePath = args[1];
         if (!filePath) {
@@ -253,9 +347,41 @@ switch (args[0]) {
         tsReferenceFinder.findReferences(filePath);
         break;
     }
+    case "--help": {
+        console.log(`
+    scope\t\t\tStarts command line interface, which enables you to add and remove tags and modules, and assign tags between modules
+
+Definitions:
+
+    "tag"
+    
+        Represents the most basic unit of functionality from user perspective. Typically cannot be divided into smaller parts. eg. "Start button"
+    
+    "module"
+    
+        Represents a collection of tags, which can corelate to a behaviour, single view or an action from user perspective. eg. "Main menu"
+    
+Options:
+        
+    --tag\t\t\tEnables to tag specific files or directories, usage: scope --tag <path>
+    --untag\t\t\tRemoves tags for files (single or directory) in database, also removes 'ignored' status, usage: scope --untag <path>
+    --see\t\t\tPrints the tags assigned to file or directory, usage: scope --see <path>
+    
+    --addtags\t\t\tLists files which were modified in commits, which are not yet pushed to remote, and tags them
+    --commit\t\t\tLists files which were modified by a specific commit and tags them, usage: scope --commit <commit hash, long format>
+    
+    --verify\t\t\tReturns 0 if all files modified by a commit were tagged or ignored and 1 otherwise, usage: scope --verify <commit hash, long format>
+    --verify-unpushed-commits\tWorks similar to --verify, but checks for commits no yet pushed to remote, returns 0 or 1 analogous to --verify
+    
+    --report-for-commit\t\tGenerates human readable report with statistics for files modified in a commit, usage: --report-for-commit <commit hash, long format>
+    --report-for-commit-list\tSimilar to --report-for-commit, but enables Jira issue norification - see README.md for configuration details.
+    `);
+        break;
+    }
     default: {
-        if (args[1]) {
-            throw new Error(`Unsupported option: '${args[1]}'`);
+        if (args[0]) {
+            console.log(`Unsupported option: '${args[0]}', to see available options use 'scope --help'`);
+            break;
         }
 
         if (!scopeFolderExists(root)) {

@@ -31,6 +31,7 @@ interface FileTagsDatabaseType {
 };
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
+
     private static PATH = ".scope/database.json";
 
     private _root: string;
@@ -225,6 +226,14 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         this._fileTagsDatabaseData.ignoredFiles.push(file);
     }
 
+    public unIgnoreFile(selectedFile: string) {
+        const ignoredFileIndex = this._fileTagsDatabaseData.ignoredFiles.indexOf(selectedFile);
+        if (ignoredFileIndex === -1) {
+            throw new Error(`Cannot remove ignored file ${selectedFile} which is not in database`);
+        }
+        this._fileTagsDatabaseData.ignoredFiles.splice(ignoredFileIndex, 1);
+    }
+
     private _updateFilePath(oldPath: string, newPath: string): void {
         const entry = this._fileTagsDatabaseData.files[oldPath];
         if (!entry) {
@@ -240,7 +249,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     private _updateIgnoredFilePath(oldPath: string, newPath: string): void {
         const ignoredFileIndex = this._fileTagsDatabaseData.ignoredFiles.indexOf(oldPath);
-        if (!ignoredFileIndex || ignoredFileIndex === -1) {
+        if (ignoredFileIndex === -1) {
             throw new Error(`Cannot update ignored file ${oldPath} which is not in database`);
         }
         this._fileTagsDatabaseData.ignoredFiles[ignoredFileIndex] = newPath;

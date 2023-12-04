@@ -25,6 +25,7 @@ export class ModuleManager {
 
         const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay);
         const filesWithModuleCount = fromModule ? this._database.countFilesWithModule(fromModule) : 0;
+        const tagNames = fromModule ? this._tags.getModuleTagNames(fromModule) : [];
 
         const prompt = new Select({
             name: 'Module manager',
@@ -35,7 +36,7 @@ export class ModuleManager {
                     { message: `Description:\t${fromModule.description}`, role: "separator" },
                     { message: `Files:\t${filesWithModuleCount}`, role: "separator" },
                     { message: `Max 1 tag:\t${fromModule.exclusive}`, role: "separator" },
-                    { message: `Tags:\t\t${this._tags.getModuleTagNames(fromModule).join(", ")}`, role: "separator" },
+                    { message: `Tags:\t\t${tagNames.length ? tagNames.join(", ") : "-"}`, role: "separator" },
                     ...(modulesMappedToOptions.length ?
                         [{ message: `─────`, role: "separator" },
                         ...modulesMappedToOptions,

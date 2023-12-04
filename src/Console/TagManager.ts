@@ -1,4 +1,4 @@
-const { Select, Form, AutoComplete } = require('enquirer')
+const { Select, Form, AutoComplete, Input, Confirm } = require('enquirer')
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
@@ -39,19 +39,13 @@ export class TagManager {
 
         const prompt = new AutoComplete({
             name: "Tag selector",
-            message: "Select appropriate tags",
-            footer: "(CTRL + C to ignore)",
+            message: "Select appropriate tags (or none to ignore files)",
+            footer: "(CTRL + C to go back)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             multiple: true,
             choices: [
                 ...tagsMappedToOptions,
             ],
-            validate: (result: any) => {
-                if (!result.length) {
-                    return "You have to select at least one tag";
-                }
-                return true;
-            },
             result(value: any) {
                 return this.map(value);
             },
@@ -109,11 +103,11 @@ export class TagManager {
             message: `Tag info: `,
             choices: [
                 { message: `Name:\t\t${module ? "\t" : ""}${tag.name}`, role: "separator" },
+                { message: `Modules:\t${module ? "\t" : ""}${tagModulesNames.length ? tagModulesNames : "-"}`, role: "separator" },
                 { message: `Files ${module ? `(${module.name})` : ""}:\t${filesWithTagCount}`, role: "separator" },
-                { message: `Modules:\t${module ? "\t" : ""}${tagModulesNames}`, role: "separator" },
                 { role: "separator" },
                 { name: 'Edit', value: module ? this._editTagFromModule : this._editTag },
-                { name: 'Delete', value: module ? this._deleteTagFromModule : this._deleteTag },
+                { name: module ? 'Unassign from module' : 'Delete tag', value: module ? this._deleteTagFromModule : this._deleteTag },
                 ...(filesWithTagCount ? [
                     { name: 'List files', value: this._listFilesForTag },
                 ] : []),
@@ -155,9 +149,7 @@ export class TagManager {
                 { name: 'name', message: 'Name', initial: tag.name },
             ],
             validate: (answer: any) => {
-                if (!answer.name.length
-                    || !answer.description.length
-                ) {
+                if (!answer.name.length) {
                     return "Name and description cannot be empty";
                 } else {
                     return true;
@@ -172,14 +164,24 @@ export class TagManager {
         this._tagsWereModified = true;
     }
 
-    private _deleteTagFromModule(tag: Tag, module: Module) {
+    private async _deleteTagFromModule(tag: Tag, module: Module) {
         if (!module) {
             throw new Error("Cannot delete tag of undefined module");
         }
         if (!tag) {
             throw new Error("Cannot delete tag which is undefined");
         }
-        this._tags.removeTagFromModule(tag, module);
+
+        const prompt = new Confirm({
+            message: `Are you sure you want to unassign tag '${tag.name}' from module ${module.name}?`,
+        });
+
+
+        const answer = await prompt.run();
+        if (answer) {
+            this._tags.removeTagFromModule(tag, module);
+            console.log("Tag unassigned.");
+        }
     }
 
     private async _listFilesForTag(tag: Tag, module: Module) {
@@ -198,8 +200,26 @@ export class TagManager {
         if (modulesWithTag.length) {
             throw new Error(`Cannot delete tag which is used by modules ${modulesWithTag.map(m => m.name).join(", ")}`);
         }
+        const prompt = new Input({
+            message: `Please enter '${tag.name}' to delete the tag (CTRL+C to abort)`,
+            initial: '',
+            validate: (answer: any) => {
+                console.log(answer);
+                if (answer !== tag.name) {
+                    return `Value '${answer}' does not match '${tag.name}'`;
+                } else {
+                    return true;
+                }
+            },
+        });
 
-        this._tags.removeTag(tag);
+        try {
+            await prompt.run();
+            console.log(`Deleted tag '${tag.name}'`);
+            this._tags.removeTag(tag);
+        } catch (e) {
+            console.log("Aborted.")
+        }
     }
 
     public async manageTagsFromModule(module: Module) {
@@ -256,13 +276,14 @@ export class TagManager {
         });
 
         const answer = await prompt.run();
-        const tagToAdd = await answer.call(this, module);
 
-        if (answer.value === this._selectSingleTag) {
-            this._tags.addTag(tagToAdd);
-        }
-
-        this._tags.assignTagToModule(tagToAdd, module);
+        try {
+            const tagToAdd = await answer.call(this, module);
+            if (answer.value === this._selectSingleTag) {
+                this._tags.addTag(tagToAdd);
+            }
+            this._tags.assignTagToModule(tagToAdd, module);
+        } catch (e) { }
 
         this._tagsWereModified = true;
 
@@ -278,7 +299,7 @@ export class TagManager {
             message: "Select tag",
             limit: TagManager.MAX_VISIBLE_TAGS,
             initial: 0,
-            footer: displayFooter ? `(CTRL + C to ${this._tagsWereModified ? "save" : "exit"})` : undefined,
+            footer: displayFooter ? `(CTRL+C to ${this._tagsWereModified ? "save" : "exit"})` : undefined,
             choices: [
                 ...tagsMappedToOptions,
             ],
@@ -287,7 +308,6 @@ export class TagManager {
                 return mapped[value];
             },
             validate: (answer: any) => {
-                console.log(answer);
                 if (module && module.tags.some(tag => tag === answer.name)) {
                     return `Module ${module.name} already contains tag ${answer.name}`;
                 } else {
@@ -304,7 +324,7 @@ export class TagManager {
 
         const addTagPrompt = new Form({
             name: 'user',
-            message: 'Fill in details about the new module:',
+            message: 'Fill in details about the new module (CTRL+C to exit)',
             choices: [
                 { name: 'name', message: 'Name', initial: defaultTagName },
             ],
@@ -323,7 +343,9 @@ export class TagManager {
         try {
             tagInfoAnswer = await addTagPrompt.run();
         } catch (e) {
-            console.log("Cannot add tag, reason: " + e);
+            if (e) {
+                console.log("Cannot add tag, reason: " + e);
+            }
         }
 
         const newTag: Tag = {

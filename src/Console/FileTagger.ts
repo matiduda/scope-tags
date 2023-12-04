@@ -8,6 +8,9 @@ const { MultiSelect } = require('enquirer');
 
 type FileAsOption = { name: string, value: FileData };
 
+type FileOrIgnored = { path: string, ignored: boolean };
+type FileToReassignTagsAsOption = { name: string, value: FileOrIgnored }
+
 export class FileTagger {
 
     private _tags: TagsDefinitionFile;
@@ -57,25 +60,45 @@ export class FileTagger {
         this._database.save();
     }
 
-    public async selectFilesToAppend(fileNames: Array<string>): Promise<Array<string>> {
-        const fileNamesAsAnswers = fileNames.map(fileName => {
-            return { name: fileName, value: fileName }
+    private _mapFilesToReassignedOption(fileNames: Array<string>, ignored: boolean): Array<FileToReassignTagsAsOption> {
+        return fileNames.map(fileName => {
+            const tagsForFile = this._database.getTagIdentifiersForFile(fileName);
+            const mappedIdentifiers = !tagsForFile.length
+                ? ""
+                : "\t→ " + tagsForFile.map(tagIdentifier => `${tagIdentifier.tag}`).join(", ");
+            const option: FileToReassignTagsAsOption = {
+                name: fileName + mappedIdentifiers,
+                value: {
+                    path: fileName,
+                    ignored: ignored
+                }
+            };
+            return option;
         });
+    }
+
+    public async selectFilesToAppend(fileNames: Array<string>, ignoredFileName: Array<string>): Promise<Array<FileOrIgnored>> {
+        const fileNamesAsAnswers = this._mapFilesToReassignedOption(fileNames, false);
+        const ignoredFilesAsAnswers = this._mapFilesToReassignedOption(ignoredFileName, true);
 
         const prompt = new MultiSelect({
             name: 'value',
             message: 'Found these files in database, select files to override',
             limit: 7,
-            choices: fileNamesAsAnswers,
+            choices: [
+                ...fileNamesAsAnswers,
+                { message: "── Ignored files ──", role: "separator" },
+                ...ignoredFilesAsAnswers,
+                { role: "separator" },
+            ],
             result(value: any) {
                 return this.map(value);
             },
         });
 
         try {
-            const selectedFileNames = await prompt.run();
-            console.log(selectedFileNames);
-            return Object.values(selectedFileNames);
+            const option = await prompt.run();
+            return Object.values(option);
         } catch (e) {
             return [];
         }
@@ -108,9 +131,5 @@ export class FileTagger {
 
     private _mapFileDataToOptions(fileData: Array<FileData>): Array<FileAsOption> {
         return fileData.map(file => ({ name: file.oldPath, value: file })); // TODO: What about oldPath?
-    }
-
-    private async _exit() {
-        return Promise.resolve();
     }
 }
