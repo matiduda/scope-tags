@@ -29,9 +29,17 @@ export function fileExists(filePath: string): boolean {
 
 export function isDirectory(filePath: string): boolean {
 	if (!fileExists(filePath)) {
-		throw new Error(`File '${filePath} does not exist'`);
+		throw new Error(`File '${filePath}' does not exist`);
 	}
 	return fs.lstatSync(filePath).isDirectory()
+}
+
+export function normalizePath(filePath: string, relative?: string) {
+	if (relative) {
+		filePath = path.relative(relative, filePath);
+	}
+	const definitelyPosix = filePath.split(path.sep).join(path.posix.sep);
+	return definitelyPosix;
 }
 
 export function getAllFilesFromDirectory(directoryPath: string): Array<string> {
@@ -39,5 +47,7 @@ export function getAllFilesFromDirectory(directoryPath: string): Array<string> {
 		throw new Error(`Directory '${directoryPath} is a file'`);
 	}
 
-	return fs.readdirSync(directoryPath).filter(file => !isDirectory(file));
+	return fs.readdirSync(directoryPath)
+		.map(file => normalizePath(path.join(directoryPath, file)))
+		.filter(file => !isDirectory(file));
 }

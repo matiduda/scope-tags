@@ -5,7 +5,6 @@ import { IJSONFileDatabase } from "./IJSONFileDatabase";
 export type ProjectConfig = {
     name: string
     location: string,
-    ignore?: Array<string>,
     useExternalImportMap?: string,
     supportedFiles?: Array<string>,
 };
@@ -14,6 +13,7 @@ export type ConfigFileType = {
     projects: Array<ProjectConfig> // tsconfig.json path relative to git project root
     gitCommitCountLimit: number,
     updateIssueURL?: string,
+    ignoredExtensions?: Array<string>,
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
@@ -60,5 +60,12 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
 
     public getUpdateIssueURL(): string | undefined {
         return this._config.updateIssueURL;
+    }
+
+    public isFileExtensionIgnored(file: string): boolean {
+        if (this._config.ignoredExtensions) {
+            return this._config.ignoredExtensions.includes(path.extname(file));
+        }
+        return false;
     }
 }

@@ -1,4 +1,4 @@
-import { Project } from "ts-morph";
+import { Project, ReferencedSymbol, SourceFile, SyntaxKind } from "ts-morph";
 import path from "path";
 import { IReferenceFinder } from "./IReferenceFinder";
 
@@ -27,18 +27,41 @@ export class TSReferenceFinder implements IReferenceFinder {
 
     public findReferences(fileNameOrPath: string): Array<string> {
         const referenceList: Array<string> = [];
+        const languageService = this._project.getLanguageService();
 
         const sourceFile = this._project.getSourceFile(fileNameOrPath);
+
         if (!sourceFile) {
             throw new Error(`Could not open file ${fileNameOrPath} in project ${this._tsConfigPath}`);
         }
 
-        for (const classDeclaration of sourceFile.getClasses()) {
-            const referencedSymbols = classDeclaration.findReferences();
+        const exportedDeclarations = sourceFile.getExportedDeclarations();
+
+        for (const declaration of exportedDeclarations.values()) {
+            let referencedSymbols: Array<ReferencedSymbol> = [];
+
+            declaration.forEach(node => {
+                const references = languageService.findReferences(node);
+                referencedSymbols = referencedSymbols.concat(references);
+            });
 
             for (const referencedSymbol of referencedSymbols) {
                 for (const reference of referencedSymbol.getReferences()) {
                     const sourceFilePath = path.resolve(sourceFile.getFilePath());
+
+                    const referenceSourceFile = reference.getSourceFile();
+
+                    const referenceImports = this._getUsedImports(referenceSourceFile);
+
+                    const referencedNodeName = referencedSymbol.getDefinition().getNode().getText();
+
+                    if (!referenceImports.includes(referencedNodeName)) {
+                        // Import is unused
+                        console.log("UNUSED!");
+                        console.log(referencedNodeName);
+                        continue;
+                    }
+
                     const referenceFilePath = path.resolve(reference.getSourceFile().getFilePath());
 
                     if (referenceFilePath !== sourceFilePath
@@ -54,5 +77,35 @@ export class TSReferenceFinder implements IReferenceFinder {
             const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
             return definitelyPosix;
         });
+    }
+
+    /**
+     * Checks if an import is used
+     * @see https://github.com/dsherret/ts-morph/issues/1206
+     * @param importDeclaration
+     */
+    private _getUsedImports(sourceFile: SourceFile): string[] {
+        const importDeclarationtEnd = sourceFile
+            .getLastChildByKind(SyntaxKind.ImportDeclaration)?.getEnd() ?? 0; // get the end position of the last import
+
+        const idsInFile = sourceFile.getDescendantsOfKind(SyntaxKind.Identifier);
+
+        /**
+        * Filtering based on valueDeclarations and endPosition after the 
+        *  end of imports.
+        * Import identifiers have valueDeclarations of 'undefined'
+        */
+        return (idsInFile ?? [])
+            .map((id) => ({
+                text: id.getText(),
+                valueDeclaration: id.getSymbol()?.getValueDeclaration(),
+                posEnd: id.getEnd(),
+            }))
+            .filter((v) => v.posEnd > importDeclarationtEnd && typeof v.valueDeclaration === 'undefined')
+            .map((v) => v.text); // and after the end of imports
+    }
+
+    private _arrayDiff<T>(a: Array<T>, b: Array<T>) {
+        return a.filter((x: T) => b.includes(x));
     }
 }

@@ -23,41 +23,60 @@ export class FileTagger {
         this._repository = repository;
     }
 
-    public async start(fileData: Array<FileData>) {
+    public async start(fileData: Array<FileData>, filterAlreadyTaggedFiles = true) {
         const tagManager = new TagManager(this._tags, this._database);
 
-        const fileDataNotFoundInDatabase = this._database.filterAlreadyTaggedFiles(fileData);
+        const fileDataToTag = filterAlreadyTaggedFiles ? this._database.filterAlreadyTaggedFiles(fileData) : fileData;
+        let untaggedFiles: Array<FileData> = [...fileDataToTag];
 
         const tagsMappedToFiles = new Map<FileData, Array<TagIdentifier>>();
-        let untaggedFiles: Array<FileData> = [...fileDataNotFoundInDatabase];
 
         while (untaggedFiles.length) {
             // Select files
             const selectedFiles = await this._selectFiles(untaggedFiles);
 
             if (!selectedFiles.length) {
-                throw new Error("Canceled");
+                break;
             }
-
-            untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
 
             // Select tags
-            const selectedTags: Array<TagIdentifier> = await tagManager.selectMultipleTagIdentifiers();
+            const commonTagIdentifiers = this._getCommonTagIdentifiers(selectedFiles);
 
-            for (const file of selectedFiles) {
-                tagsMappedToFiles.set(file, selectedTags);
-            }
+            try {
+                const selectedTags: Array<TagIdentifier> = await tagManager.selectMultipleTagIdentifiers(commonTagIdentifiers);
+                for (const file of selectedFiles) {
+                    tagsMappedToFiles.set(file, selectedTags);
+                }
+                untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
+            } catch (e) { }
         }
 
         // Save to database
         tagsMappedToFiles.forEach((tags: Array<TagIdentifier>, data: FileData) => {
             if (!tags.length) {
+                console.log(`File ${data.newPath} ignored`);
                 this._database.addIgnoredFile(data.newPath);
             } else {
-                this._database.addMultipleTagsToFile(tags, data.newPath);
+                const addedTags = this._database.addMultipleTagsToFile(tags, data.newPath);
+                console.log(`Added tags to ${data.newPath}: ${addedTags.map(id => id.tag).join(", ")}`);
             }
         })
         this._database.save();
+    }
+
+    private _getCommonTagIdentifiers(selectedFiles: FileData[]): Array<TagIdentifier> {
+        const uniqueTagIdentifiers: Array<TagIdentifier> = [];
+
+        selectedFiles.map(file => {
+            const fileTagIdentifers = this._database.getTagIdentifiersForFile(file.newPath);
+            fileTagIdentifers.forEach(identifier => {
+                if (!uniqueTagIdentifiers.some(id => id.module === identifier.module && id.tag === identifier.tag)) {
+                    uniqueTagIdentifiers.push(identifier);
+                }
+            })
+        });
+
+        return uniqueTagIdentifiers;
     }
 
     private _mapFilesToReassignedOption(fileNames: Array<string>, ignored: boolean): Array<FileToReassignTagsAsOption> {
@@ -87,9 +106,11 @@ export class FileTagger {
             limit: 7,
             choices: [
                 ...fileNamesAsAnswers,
-                { message: "── Ignored files ──", role: "separator" },
-                ...ignoredFilesAsAnswers,
-                { role: "separator" },
+                ...(ignoredFileName.length ? [
+                    { message: "── Ignored files ──", role: "separator" },
+                    ...ignoredFilesAsAnswers,
+                    { role: "separator" },
+                ] : []),
             ],
             result(value: any) {
                 return this.map(value);
@@ -109,7 +130,10 @@ export class FileTagger {
             name: 'value',
             message: 'Select files to tag',
             limit: 7,
-            choices: this._mapFileDataToOptions(fileData),
+            choices: [
+                ...this._mapFileDataToOptions(fileData),
+                { role: "separator" },
+            ],
             result(value: any) {
                 return this.map(value);
             },

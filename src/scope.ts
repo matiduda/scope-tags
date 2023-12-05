@@ -42,16 +42,16 @@ switch (args[0]) {
             console.log(`There are no files to tag for ${path}`);
         }
 
-
+        const config = new ConfigFile(root).load();
         const repository = new GitRepository(root);
         const tagsDefinitionFile = new TagsDefinitionFile(root).load();
         const fileTagsDatabase = new FileTagsDatabase(root).load();
 
         const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 
-        const filesInDatabase = filesToTag.filter(file => fileTagsDatabase.isFileInDatabase(file));
-
-        const ignoredFilesInDatabase = filesToTag.filter(file => fileTagsDatabase.isIgnored(file));
+        const filesToCheck = filesToTag.filter(file => !config.isFileExtensionIgnored(file));
+        const filesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isFileInDatabase(file));
+        const ignoredFilesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isIgnored(file));
 
         if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
             const fileData = repository.convertFilesToFileData(filesToTag);
@@ -62,20 +62,22 @@ switch (args[0]) {
         } else {
             // Ask the user if they want to re-tag selected files
             fileTagger.selectFilesToAppend(filesInDatabase, ignoredFilesInDatabase).then(async selectedFiles => {
-
                 // Remove selected ignore status from selected ignored files
                 selectedFiles.forEach(selectedFile => {
-                    console.log(selectedFile.ignored);
                     if (selectedFile.ignored) {
                         fileTagsDatabase.unIgnoreFile(selectedFile.path);
                     }
                 });
 
+                if (!selectedFiles.length) {
+                    // If user doesn't select any file, tag the remaining available files
+                    selectedFiles = filesToCheck.filter(file => !filesInDatabase.includes(file) && !ignoredFilesInDatabase.includes(file)).map(file => ({ path: file, ignored: false }));
+                }
+
                 // Map files to be compatible with git-based file tagger
                 const fileData = repository.convertFilesToFileData(selectedFiles.map(selectedFile => selectedFile.path));
 
-                await fileTagger.start(fileData);
-                console.log("All files tagged");
+                await fileTagger.start(fileData, false);
             });
         }
         break;
@@ -89,17 +91,14 @@ switch (args[0]) {
             console.log(`File or directory '${path}' does not exist`);
             process.exit(1);
         }
-
         const filesToSee = isDirectory(path) ? getAllFilesFromDirectory(path) : [path];
 
-        // if (!filesToSee.length) {
-        //     console.log(`There are no files to untag for ${path}`);
-        // }
-
+        const config = new ConfigFile(root).load();
         const fileTagsDatabase = new FileTagsDatabase(root).load();
 
-        const filesInDatabase = filesToSee.filter(file => fileTagsDatabase.isFileInDatabase(file));
-        const ignoredFilesInDatabase = filesToSee.filter(file => fileTagsDatabase.isIgnored(file));
+        const filesToCheck = filesToSee.filter(file => !config.isFileExtensionIgnored(file));
+        const filesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isFileInDatabase(file));
+        const ignoredFilesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isIgnored(file));
 
         if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
             console.log("No info about files found in database");
@@ -135,9 +134,12 @@ switch (args[0]) {
         }
 
         const fileTagsDatabase = new FileTagsDatabase(root).load();
+        const config = new ConfigFile(root).load();
 
-        const filesInDatabase = filesToUntag.filter(file => fileTagsDatabase.isFileInDatabase(file));
-        const ignoredFilesInDatabase = filesToUntag.filter(file => fileTagsDatabase.isIgnored(file));
+        const filesToCheck = filesToUntag.filter(file => !config.isFileExtensionIgnored(file));
+        console.log(filesToUntag);
+        const filesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isFileInDatabase(file));
+        const ignoredFilesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isIgnored(file));
 
         if (!filesInDatabase.length && !ignoredFilesInDatabase.length) {
             console.log("No info about files found in database");
@@ -182,27 +184,32 @@ switch (args[0]) {
 
             const tagsDefinitionFile = new TagsDefinitionFile(root).load();
             const fileTagsDatabase = new FileTagsDatabase(root).load();
+            const config = new ConfigFile(root).load();
 
             const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
             const fileData = await repository.getFileDataForCommit(commit);
 
-            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData);
+            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData)
+                .filter(fileData => !fileTagsDatabase.isIgnored(fileData.newPath) && !config.isFileExtensionIgnored(fileData.newPath));
 
             fileTagger.start(fileDataToTag).then(() => {
-                console.log("All files tagged");
+                console.log("\nAll files tagged.");
             });
         });
         break;
     }
-    case "--addtags": {
+    case "--add": {
         const repository = new GitRepository(root);
         repository.getFileDataForUnpushedCommits().then(fileData => {
 
             const tagsDefinitionFile = new TagsDefinitionFile(root).load();
             const fileTagsDatabase = new FileTagsDatabase(root).load();
+            const config = new ConfigFile(root).load();
+
             const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 
-            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData);
+            const fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData)
+                .filter(file => !config.isFileExtensionIgnored(file.newPath));
 
             fileTagger.start(fileDataToTag).then(async () => {
                 console.log("All files tagged");
@@ -215,7 +222,6 @@ switch (args[0]) {
         break;
     }
     case "--verify": {
-        const fileTagsDatabase = new FileTagsDatabase(root).load();
 
         // Checks if all files from the commit are present in database (or excluded)
         const commitHash = args[1];
@@ -225,9 +231,11 @@ switch (args[0]) {
         }
 
         const repository = new GitRepository(root);
+        const fileTagsDatabase = new FileTagsDatabase(root).load();
+        const config = new ConfigFile(root).load();
 
         repository.getCommitByHash(commitHash).then(async (commit: Commit) => {
-            await verifyCommit(commit, fileTagsDatabase, repository);
+            await verifyCommit(commit, config, fileTagsDatabase, repository);
         });
         console.log("Scope tags: All commits verified");
         break;
@@ -237,6 +245,7 @@ switch (args[0]) {
 
         const repository = new GitRepository(root);
         const fileTagsDatabase = new FileTagsDatabase(root).load();
+        const config = new ConfigFile(root).load();
 
         repository.getUnpushedCommits().then(async (commits: Commit[]) => {
             if (!commits.length) {
@@ -245,7 +254,7 @@ switch (args[0]) {
             }
 
             for (const commit of commits) {
-                await verifyCommit(commit, fileTagsDatabase, repository);
+                await verifyCommit(commit, config, fileTagsDatabase, repository);
             }
         });
         console.log("Scope tags: All commits verified");
@@ -272,10 +281,14 @@ switch (args[0]) {
             if (project.useExternalImportMap) {
                 if (!project.supportedFiles) {
                     throw new Error(
-                        `You have to specify supported file extenstions for project ${project.name}: add 'supportedFiles: [".extension"]' to config file`
+                        `When using 'useExternalImportMap' ou have to specify supported file extenstions for project ${project.name}: add 'supportedFiles: [".extension"]' to config file`
                     );
                 }
-                referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
+                if (!fileExists(project.useExternalImportMap)) {
+                    console.log(`'useExternalImportMap' - External map for project ${project.name} not found at ${project.useExternalImportMap}, so there won't be references found for files: ${project.supportedFiles}`);
+                } else {
+                    referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
+                }
             }
         })
 
@@ -367,7 +380,7 @@ Options:
     --untag\t\t\tRemoves tags for files (single or directory) in database, also removes 'ignored' status, usage: scope --untag <path>
     --see\t\t\tPrints the tags assigned to file or directory, usage: scope --see <path>
     
-    --addtags\t\t\tLists files which were modified in commits, which are not yet pushed to remote, and tags them
+    --add\t\t\tLists files which were modified in commits, which are not yet pushed to remote, and tags them
     --commit\t\t\tLists files which were modified by a specific commit and tags them, usage: scope --commit <commit hash, long format>
     
     --verify\t\t\tReturns 0 if all files modified by a commit were tagged or ignored and 1 otherwise, usage: scope --verify <commit hash, long format>
@@ -414,7 +427,7 @@ function startCLI() {
     new Menu(tagsDefinitionFile, fileTagsDatabase).start().then(() => console.log("Exit."));
 }
 
-async function verifyCommit(commit: Commit, database: FileTagsDatabase, repository: GitRepository) {
+async function verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, repository: GitRepository) {
     const fileDataArray = await repository.getFileDataForCommit(commit);
     const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray);
 
@@ -422,10 +435,12 @@ async function verifyCommit(commit: Commit, database: FileTagsDatabase, reposito
         return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;
     });
 
-    if (filesNotPresentInDatabase.length) {
+    const filesWithIgnoredExtensions = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
+
+    if (filesWithIgnoredExtensions.length) {
         console.log(`Commit '${commit.message().trim()}' not verified, no tags found for required files:\n`);
-        filesNotPresentInDatabase.forEach(file => console.log(`- ${file.newPath}`));
-        console.log("\nPlease run\n\n\tnpx scope --unpushed\n\nto tag them");
+        filesWithIgnoredExtensions.forEach(file => console.log(`- ${file.newPath}`));
+        console.log("\nPlease run\n\n\tnpx scope --add\n\nto tag them");
         process.exit(1);
     }
 }

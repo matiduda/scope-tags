@@ -145,8 +145,6 @@ export class ReportGenerator {
             });
         });
 
-        console.log(references);
-
         return references;
     }
 

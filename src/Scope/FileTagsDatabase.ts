@@ -10,14 +10,6 @@ export type TagIdentifier = {
     module: Module["name"];
 }
 
-type FileMetadata = {
-    tags: Array<TagIdentifier>;
-};
-
-type FileArray = {
-    [file: string]: FileMetadata
-}
-
 export enum FileStatusInDatabase {
     NOT_IN_DATABASE = "NOT_IN_DATABASE",
     UNTAGGED = "UNTAGGED",
@@ -25,17 +17,28 @@ export enum FileStatusInDatabase {
     IGNORED = "IGNORED",
 }
 
-interface FileTagsDatabaseType {
-    files: FileArray,
-    ignoredFiles: Array<string>,
+type FilePath = string;
+
+type FileInDatabaseType = {
+    [key: string]: Array<TagIdentifier>,
 };
+
+type LoadedDatabaseType = {
+    files: FileInDatabaseType,
+    ignoredFiles: Array<string>
+}
+
+type SavedDatabaseType = {
+    files: Array<{ path: FilePath, tags: Array<TagIdentifier> }>;
+    ignoredFiles: Array<string>,
+}
 
 export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     private static PATH = ".scope/database.json";
 
     private _root: string;
-    private _fileTagsDatabaseData: FileTagsDatabaseType;
+    private _fileTagsDatabaseData: LoadedDatabaseType;
 
     constructor(root: string) {
         this._root = root;
@@ -46,16 +49,36 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     }
 
     public initDefault() {
-        const defaultFileTagsDatabase: FileTagsDatabaseType = {
-            files: {},
+        const defaultFileTagsDatabase: SavedDatabaseType = {
+            files: [],
             ignoredFiles: [],
         };
-
         JSONFile.niceWrite(this._getPath(), defaultFileTagsDatabase);
     }
 
     public load(): FileTagsDatabase {
-        this._fileTagsDatabaseData = JSONFile.loadFrom<FileTagsDatabaseType>(this._getPath());
+        const loadedDatabase = JSONFile.loadFrom<SavedDatabaseType>(this._getPath());
+
+        this._fileTagsDatabaseData = {
+            files: {},
+            ignoredFiles: loadedDatabase.ignoredFiles,
+        }
+
+        loadedDatabase.files.forEach(file => {
+            let fileTags = this._fileTagsDatabaseData.files[file.path];
+            if (fileTags) {
+                // Append tags
+                this._fileTagsDatabaseData.files[file.path] = fileTags.concat(file.tags);
+            } else {
+                this._fileTagsDatabaseData.files[file.path] = file.tags;
+            }
+        });
+
+        // Remove duplicate tags
+        Object.entries(this._fileTagsDatabaseData.files).forEach(entry => {
+            this._fileTagsDatabaseData.files[entry[0]] = entry[1].filter((tag, index, array) => array.findIndex(t => t.tag === tag.tag && t.module === tag.module) === index);
+        })
+
         return this;
     }
 
@@ -65,7 +88,13 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public save(): string {
         const savedFilePath = this._getPath();
-        JSONFile.niceWrite(savedFilePath, this._fileTagsDatabaseData);
+
+        const databaseToSave: SavedDatabaseType = {
+            files: Object.entries(this._fileTagsDatabaseData.files).map(entry => ({ path: entry[0], tags: entry[1] })),
+            ignoredFiles: this._fileTagsDatabaseData.ignoredFiles
+        };
+
+        JSONFile.niceWrite<SavedDatabaseType>(savedFilePath, databaseToSave);
         return savedFilePath;
     }
 
@@ -73,7 +102,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         this.addMultipleTagsToFile([tagIdentifier], filePath);
     }
 
-    public addMultipleTagsToFile(tagsIdentifierArray: Array<TagIdentifier>, filePath: string) {
+    public addMultipleTagsToFile(tagsIdentifierArray: Array<TagIdentifier>, filePath: string): Array<TagIdentifier> {
         if (!fs.existsSync(filePath)) {
             throw new Error(`File not found: ${filePath}`);
         }
@@ -84,22 +113,24 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         const fileMetadata = this._fileTagsDatabaseData.files[filePath];
 
         if (!fileMetadata) {
-            this._fileTagsDatabaseData.files[filePath] = { tags: tagsIdentifierArray };
-            return;
+            this._fileTagsDatabaseData.files[filePath] = tagsIdentifierArray;
+            return tagsIdentifierArray;
         }
 
-        const currentTags = this._fileTagsDatabaseData.files[filePath]?.tags || [];
+        const currentTags = this._fileTagsDatabaseData.files[filePath] || [];
+
+        const addedTags: Array<TagIdentifier> = [];
 
         // Check if any of the tag is already assigned
         tagsIdentifierArray.forEach(tagIdentifier => {
-            currentTags.forEach(currentTag => {
-                if (tagIdentifier.module === currentTag.module && tagIdentifier.tag === currentTag.tag) {
-                    throw new Error(`Tag ${tagIdentifier} already exists in tags of ${filePath}`);
-                }
-            })
-            // If not - push the new identifier
-            this._fileTagsDatabaseData.files[filePath].tags.push(tagIdentifier);
+            if (!currentTags.some(id => id.module === tagIdentifier.module && id.tag === tagIdentifier.tag)) {
+                // If not - push the new identifier
+                this._fileTagsDatabaseData.files[filePath].push(tagIdentifier);
+                addedTags.push(tagIdentifier);
+            }
         })
+
+        return addedTags;
     }
 
     public removeTagsForFiles(selectedFiles: string[]) {
@@ -133,7 +164,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         if (!fileMetadata) {
             return [];
         }
-        return fileMetadata.tags;
+        return fileMetadata;
     }
 
     public countFilesWithTag(tag: Tag, module?: Module): number {
@@ -143,9 +174,9 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public getFilesWithTag(tag: Tag, module?: Module) {
         return Object.entries(this._fileTagsDatabaseData.files).filter(entry => {
             if (module) {
-                return entry[1].tags.some(tagIdentifier => tagIdentifier.tag === tag.name && tagIdentifier.module === module.name);
+                return entry[1].some(tagIdentifier => tagIdentifier.tag === tag.name && tagIdentifier.module === module.name);
             }
-            return entry[1].tags.some(tagIdentifier => tagIdentifier.tag === tag.name);
+            return entry[1].some(tagIdentifier => tagIdentifier.tag === tag.name);
         })
     }
 
@@ -155,7 +186,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     public getFilesWithModule(module: Module) {
         return Object.entries(this._fileTagsDatabaseData.files).filter(entry => {
-            return entry[1].tags.some(tagIdentifier => tagIdentifier.module === module.name);
+            return entry[1].some(tagIdentifier => tagIdentifier.module === module.name);
         })
     }
 
@@ -198,7 +229,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         if (!fileDataReference) {
             return FileStatusInDatabase.NOT_IN_DATABASE;
         }
-        if (fileDataReference && !fileDataReference.tags.length) {
+        if (fileDataReference && !fileDataReference.length) {
             return FileStatusInDatabase.UNTAGGED;
         }
         return FileStatusInDatabase.TAGGED;
@@ -220,6 +251,11 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     }
 
     public addIgnoredFile(file: string): void {
+        // Remove file from the database
+        if (this.isFileInDatabase(file)) {
+            delete this._fileTagsDatabaseData.files[file];
+        }
+
         if (this._fileTagsDatabaseData.ignoredFiles.includes(file)) {
             throw new Error(`Cannot ignore file ${file} as it is already ignored`);
         }
@@ -243,7 +279,13 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         delete this._fileTagsDatabaseData.files[oldPath];
     }
 
-    public isIgnored(file: string): boolean {
+    public isIgnored(file: string, ignoredFileExtensions?: Array<string>): boolean {
+        const fileExtenstion = path.extname(file);
+        if (ignoredFileExtensions && fileExtenstion) {
+            if (ignoredFileExtensions.includes(fileExtenstion)) {
+                return true;
+            }
+        }
         return this._fileTagsDatabaseData.ignoredFiles.includes(file);
     }
 

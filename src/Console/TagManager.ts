@@ -4,7 +4,7 @@ import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
 
 type TagAsOption = { name: string, value: Tag };
-type TagIdentifierAsOption = { name: string, value: TagIdentifier };
+type TagIdentifierAsOption = { name: string, value: TagIdentifier, disabled: boolean };
 
 export class TagManager {
 
@@ -33,13 +33,13 @@ export class TagManager {
         }
     }
 
-    public async selectMultipleTagIdentifiers(): Promise<TagIdentifier[]> {
+    public async selectMultipleTagIdentifiers(disabledTagIdentifieres: TagIdentifier[]): Promise<TagIdentifier[]> {
         const allModules = this._tags.getModules();
-        const tagsMappedToOptions = this._mapTagsToIdentifiers(allModules);
+        const tagsMappedToOptions = this._mapTagsToIdentifiers(allModules, disabledTagIdentifieres);
 
         const prompt = new AutoComplete({
             name: "Tag selector",
-            message: "Select appropriate tags (or none to ignore files)",
+            message: `Select tags for files (or none to ignore)`,
             footer: "(CTRL + C to go back)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             multiple: true,
@@ -54,17 +54,17 @@ export class TagManager {
         let selected: any;
         try {
             selected = await prompt.run();
+            return Object.values(selected);
         } catch (e) {
-            return [];
+            throw e;
         }
-        return Object.values(selected);
     }
 
     private _mapTagsToOptions(tags: Array<Tag>): Array<TagAsOption> {
         return tags.map(tag => ({ name: tag.name, value: tag }));
     }
 
-    private _mapTagsToIdentifiers(allModules: Array<Module>): Array<TagIdentifierAsOption> {
+    private _mapTagsToIdentifiers(allModules: Array<Module>, disabledTagIdentifieres: TagIdentifier[]): Array<TagIdentifierAsOption> {
         const allTagsAsIdentifiers: Array<TagIdentifierAsOption> = [];
 
         allModules.forEach(module => {
@@ -74,7 +74,8 @@ export class TagManager {
                     value: {
                         tag: tagName,
                         module: module.name
-                    }
+                    },
+                    disabled: disabledTagIdentifieres.some(id => id.module === module.name && id.tag === tagName),
                 };
                 allTagsAsIdentifiers.push(option);
             });
@@ -187,7 +188,7 @@ export class TagManager {
     private async _listFilesForTag(tag: Tag, module: Module) {
         const matchingFiles = this._database.getFilesWithTag(tag, module);
         matchingFiles.forEach(entry => {
-            console.log(`${entry[0]} -> ${entry[1].tags.map(id => `${id.module}/${id.tag}`).join(', ')}`);
+            console.log(`${entry[0]} -> ${entry[1].map(id => `${id.module}/${id.tag}`).join(', ')}`);
         })
         await this._selectTag.call(this, tag, module);
     }
@@ -296,7 +297,7 @@ export class TagManager {
 
         const prompt = new AutoComplete({
             name: 'Tag manager',
-            message: "Select tag",
+            message: "Select tag (CTRL+C to cancel)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             initial: 0,
             footer: displayFooter ? `(CTRL+C to ${this._tagsWereModified ? "save" : "exit"})` : undefined,

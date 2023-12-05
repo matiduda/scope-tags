@@ -1,4 +1,4 @@
-const { Select, Form, Confirm } = require('enquirer')
+const { AutoComplete, Form, Confirm, Select } = require('enquirer')
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
@@ -37,9 +37,15 @@ export class ModuleManager {
                     { message: `Files:\t${filesWithModuleCount}`, role: "separator" },
                     { message: `Max 1 tag:\t${fromModule.exclusive}`, role: "separator" },
                     { message: `Tags:\t\t${tagNames.length ? tagNames.join(", ") : "-"}`, role: "separator" },
-                    ...(modulesMappedToOptions.length ?
-                        [{ message: `─────`, role: "separator" },
-                        ...modulesMappedToOptions,
+                    ...(modulesMappedToOptions.length && modulesMappedToOptions.length < 5 ?
+                        [
+                            { message: `── Children ──`, role: "separator" },
+                            ...modulesMappedToOptions,
+                        ] : []),
+                    ...(modulesMappedToOptions.length && modulesMappedToOptions.length >= 5 ?
+                        [
+                            { message: `── Children ──`, role: "separator" },
+                            { name: 'Select child', value: this._selectChildModule },
                         ] : []),
                     { role: "separator" },
                     { name: 'Add new module here', value: this._addModule },
@@ -68,6 +74,29 @@ export class ModuleManager {
             await this.start.call(this, answer);
         } else {
             await answer.call(this, fromModule);
+        }
+    }
+
+    private async _selectChildModule(fromModule: Module) {
+        const modulesToDisplay = this._tags.getModulesByNames(fromModule.children);
+        const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay);
+
+        const prompt = new AutoComplete({
+            name: 'Module manager',
+            message: this._getModulePathAsHeader(fromModule),
+            choices: modulesMappedToOptions,
+            result(value: any) {
+                const mapped = this.map(value);
+                return mapped[value];
+            },
+        });
+
+        try {
+            const answer = await prompt.run();
+            await this.start(answer)
+        } catch (e) {
+            // User canceled - go back to module
+            await this.start(fromModule);
         }
     }
 
@@ -168,7 +197,7 @@ export class ModuleManager {
     private async _listFilesForModule(module: Module) {
         const matchingFiles = this._database.getFilesWithModule(module);
         matchingFiles.forEach(entry => {
-            console.log(`${entry[0]} -> ${entry[1].tags.map(id => `${id.module}/${id.tag}`).join(', ')}`);
+            console.log(`${entry[0]} -> ${entry[1].map(id => `${id.module}/${id.tag}`).join(', ')}`);
         })
         await this.start.call(this, module);
     }
