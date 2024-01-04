@@ -4,7 +4,8 @@ import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder } from "../References/IReferenceFinder";
-import { fileExists, getExtension, getFileBaseName } from "../FileSystem/fileSystemUtils";
+import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
+import { JiraBuilder, ReportTableRow } from "./JiraBuilder";
 
 export type ModuleReport = {
     module: Module["name"],
@@ -149,46 +150,10 @@ export class ReportGenerator {
     }
 
     public printReportAsTable(report: Report): void {
-        const tableEntries = report.allModules.map((moduleReport: ModuleReport): ReportTableEntry => {
-            const entry: ReportTableEntry = {
-                "Affected module": moduleReport.module,
-                "Affected tags": this._nicePrintTags(moduleReport),
-                "Lines": this._nicePrintLines(moduleReport),
-                "Modified": report.date.toLocaleDateString(),
-                "Used in": this._nicePrintUsedIn(moduleReport),
-            }
-            return entry;
-        });
-        console.log(JSON.stringify(tableEntries));
+        // TODO: Remove
     }
 
-    private _nicePrintTags(moduleReport: ModuleReport, addFiles: boolean = false): string {
-        let output = "";
-
-        const allTags: Array<Tag["name"]> = [];
-        const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
-
-        moduleReport.files.forEach(file => {
-            file.tagIdentifiers.forEach(tagIdentifier => {
-                if (!allTags.includes(tagIdentifier.tag)) {
-                    allTags.push(tagIdentifier.tag);
-                }
-            })
-        })
-
-        if (addFiles) {
-            allTags.forEach(tag => {
-                const filesMatchingTag = moduleReport.files.filter(file => file.tagIdentifiers.some(identifier => identifier.tag === tag));
-                output += `${tag} (${filesMatchingTag.map(file => getFileBaseName(file.file)).join(', ')})`;
-            })
-        } else {
-            output = allTags.filter(tag => currentModule?.tags.includes(tag)).map(tag => tag).join(', ');
-        }
-
-        return output;
-    }
-
-    private _nicePrintLines(moduleReport: ModuleReport): string {
+    private _calculateLines(moduleReport: ModuleReport): { added: number, removed: number } {
         let combinedLinesAdded = 0;
         let combinedLinesRemoved = 0;
         let output = "";
@@ -204,11 +169,50 @@ export class ReportGenerator {
         if (combinedLinesRemoved) {
             output += ` --${combinedLinesRemoved}`;
         }
-        return output;
+
+        return {
+            added: combinedLinesAdded,
+            removed: combinedLinesRemoved
+        };
     }
 
-    private _nicePrintUsedIn(moduleReport: ModuleReport): string {
-        let output = "";
+    public getReportAsJiraComment(report: Report, printToConsole = false): string {
+        const finalReportTableData: Array<ReportTableRow> = report.allModules.map(moduleReport => {
+            return {
+                affectedTags: this._getAffectedTags(moduleReport),
+                lines: this._calculateLines(moduleReport),
+                lastChange: report.date,
+                referencedTags: this._getReferencedTags(moduleReport),
+            };
+        });
+
+        const jiraBuilder = new JiraBuilder();
+        return jiraBuilder.parseReport(finalReportTableData, report.date, printToConsole);
+    }
+
+    private _getAffectedTags(moduleReport: ModuleReport): Array<string> {
+        const allTags: Array<Tag["name"]> = [];
+        const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
+
+        moduleReport.files.forEach(file => {
+            file.tagIdentifiers.forEach(tagIdentifier => {
+                if (!allTags.includes(tagIdentifier.tag)) {
+                    allTags.push(tagIdentifier.tag);
+                }
+            })
+        })
+
+        return allTags.filter(tag => currentModule?.tags.includes(tag)).map(tag => tag);
+    }
+
+    private _getReferencedTags(moduleReport: ModuleReport): Array<{
+        module: string,
+        tags: Array<string>
+    }> {
+        // TODO: Switch to {
+        //      tag: string,
+        //      modules: Array<string>   
+        // }
 
         const uniqueReferencedModules: Array<Module["name"]> = [];
 
@@ -222,27 +226,26 @@ export class ReportGenerator {
             })
         });
 
-        uniqueReferencedModules.forEach((referencedModule, index) => {
-            output += `${referencedModule} (`
+        return uniqueReferencedModules.map((referencedModule, index) => {
 
-            const tagsMatchingAnyReference: Array<Tag["name"]> = [];
+            const tagNamesMatchingAnyReference: Array<Tag["name"]> = [];
 
             moduleReport.files.forEach(fileInfo => {
                 fileInfo.usedIn.forEach(reference => {
                     reference.tagIdentifiers.forEach(identifier => {
-                        if (identifier.module === referencedModule && !tagsMatchingAnyReference.includes(identifier.tag)) {
-                            tagsMatchingAnyReference.push(identifier.tag);
+                        if (identifier.module === referencedModule
+                            && !tagNamesMatchingAnyReference.includes(identifier.tag)
+                        ) {
+                            tagNamesMatchingAnyReference.push(identifier.tag);
                         }
                     })
                 })
             });
 
-            output += tagsMatchingAnyReference.join(", ") + ")";
-
-            if (index !== uniqueReferencedModules.length - 1) {
-                output += ", ";
+            return {
+                module: referencedModule,
+                tags: tagNamesMatchingAnyReference
             }
         })
-        return output;
     };
 }

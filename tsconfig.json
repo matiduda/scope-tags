@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
+    "moduleResolution": "node",
     "module": "commonjs",
     "target": "ES2019",
     "strict": true,
     "declaration": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
     "outDir": "./dist",
     "baseUrl": ".",
     "typeRoots": [
@@ -13,6 +15,6 @@
     "strictPropertyInitialization": false,
   },
   "include": [
-    "src/**/*"
+    "src",
   ],
 }

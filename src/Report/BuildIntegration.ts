@@ -1,13 +1,17 @@
 import { JSONFile } from "../FileSystem/JSONFile";
 import { GitRepository } from "../Git/GitRepository";
 import { ConfigFile } from "../Scope/ConfigFile";
-import { Report } from "./ReportGenerator";
 import fetch from "node-fetch";
 
 type CommitData = {
     hash: string,
     issue: string,
 };
+
+type UpdateRequest = {
+    issue: string, // Issue key on Jira
+    report: string // Stringified ADF macro to be pasted in a comment
+}
 
 export class BuildIntegration {
 
@@ -53,18 +57,27 @@ export class BuildIntegration {
         return this._issueKeyToCommitsMap.get(issueKey) || [];
     }
 
-    public async updateIssue(issueKey: string, report: Report): Promise<void> {
+    public async updateIssue(request: UpdateRequest): Promise<void> {
         const updateURL = this._config.getUpdateIssueURL();
         if (!updateURL) {
             console.warn(
-                `Cannot update issue ${issueKey} because there is no 'updateIssueURL' set for projects: ${this._config.getProjects().map(project => project.name).join(", ")}
-            `);
+                `Cannot send report to issue '${request.issue}' because there is no 'updateIssueURL' set in config file`);
+            return;
         }
 
-        const response = await fetch('https://gs-client.testowaplatforma123.net/pr-merged/scope-tags?task=VGF-16672');
-        const data = await response.json();
+        process.stdout.write(`Sending report to issue '${request.issue}' ... `);
 
-        console.log("Updating issue of key " + issueKey);
-        console.log(data);
+        const rawResponse = await fetch(updateURL, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(request)
+        });
+
+        const content = await rawResponse.json();
+
+        console.log(content);
     }
 }

@@ -1,8 +1,12 @@
-import { Commit, Repository, Revwalk } from "nodegit";
+import { Commit, Note, Repository, Revwalk } from "nodegit";
 import { FileData, GitDeltaType } from "./Types";
 import path from "path";
+import { ConfigFile } from "../Scope/ConfigFile";
+import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
 
 export class GitRepository {
+
+    public static SKIP_VERIFICATION_MSG = "[Scope Tags] Verification to be skipped";
 
     private _repository: Repository;
     private _root: string;
@@ -107,7 +111,6 @@ export class GitRepository {
         return this.getFileDataForCommits(commits);
     }
 
-
     public convertFilesToFileData(files: Array<string>): Array<FileData> {
         return files.map(file => {
             const normalizedPath = this._normalizePath(file);
@@ -164,8 +167,6 @@ export class GitRepository {
 
         await index.addByPath(file);
 
-        // await index.write();
-
         const oid = await index.writeTree();
 
         await commit.amend(
@@ -178,5 +179,79 @@ export class GitRepository {
         );
 
         await index.write();
+    }
+
+    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase) {
+        // Check if commit should be skipped
+        const skipVerificationCheck = await this._skipVerificationCheckForCommit(commit);
+        if (skipVerificationCheck) {
+            console.log(`[Scope Tags] Skipped check for '${commit.message().trim()}'`);
+            await this._removeNoteFromCommit(commit);
+            return;
+        }
+
+        const fileDataArray = await this.getFileDataForCommit(commit);
+        const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray);
+
+        const filesNotPresentInDatabase = fileDataArray.filter(fileData => {
+            return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;
+        });
+
+        const filesWithIgnoredExtensions = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
+
+        if (filesWithIgnoredExtensions.length) {
+            console.log(`Commit '${commit.message().trim()}' not verified, no tags found for required files:\n`);
+            filesWithIgnoredExtensions.forEach(file => console.log(`- ${file.newPath}`));
+            console.log("\nPlease run\n\n\tnpx scope --add\n\nto tag them");
+            process.exit(1);
+        }
+    }
+    private async _removeNoteFromCommit(commit: Commit) {
+        const repository = await this._getRepository();
+        const note = await Note.read(repository, "refs/notes/commits", commit.id());
+
+        const errorCode = await Note.remove(
+            repository,
+            "refs/notes/commits",
+            note.author(),
+            note.committer(),
+            commit.id(),
+        );
+
+        if (errorCode) {
+            throw new Error(`Could not remove note from commit '${commit.message()}'. Error code: ${errorCode}`)
+        }
+    }
+
+    private async _skipVerificationCheckForCommit(commit: Commit): Promise<boolean> {
+
+        // If commit has the note - verify it
+
+        const repository = await this._getRepository();
+
+        try {
+            const note = await Note.read(repository, "refs/notes/commits", commit.id());
+            return note.message() === GitRepository.SKIP_VERIFICATION_MSG;
+        } catch (e) {
+            return false;
+        }
+    }
+
+    public async addSkipVerificationNoteToCommit(commit: Commit) {
+
+        // Commits which will be automatically verified
+        // should have a temporary git note attached to them
+
+        const repository = await this._getRepository();
+
+        const noteOid = await Note.create(
+            repository,
+            "refs/notes/commits",
+            commit.author(),
+            commit.committer(),
+            commit.id(),
+            GitRepository.SKIP_VERIFICATION_MSG,
+            1
+        );
     }
 }
