@@ -149,10 +149,6 @@ export class ReportGenerator {
         return references;
     }
 
-    public printReportAsTable(report: Report): void {
-        // TODO: Remove
-    }
-
     private _calculateLines(moduleReport: ModuleReport): { added: number, removed: number } {
         let combinedLinesAdded = 0;
         let combinedLinesRemoved = 0;
@@ -206,45 +202,40 @@ export class ReportGenerator {
     }
 
     private _getReferencedTags(moduleReport: ModuleReport): Array<{
-        module: string,
-        tags: Array<string>
+        tag: string,
+        modules: Array<string>
     }> {
-        // TODO: Switch to {
-        //      tag: string,
-        //      modules: Array<string>   
-        // }
-
-        const uniqueReferencedModules: Array<Module["name"]> = [];
+        const uniqueReferencedTags: Array<Tag["name"]> = [];
 
         moduleReport.files.forEach(fileInfo => {
             fileInfo.usedIn.forEach(reference => {
                 reference.tagIdentifiers.forEach(identifier => {
-                    if (!uniqueReferencedModules.includes(identifier.module)) {
-                        uniqueReferencedModules.push(identifier.module);
+                    if (!uniqueReferencedTags.includes(identifier.tag)) {
+                        uniqueReferencedTags.push(identifier.tag);
                     }
                 })
             })
         });
 
-        return uniqueReferencedModules.map((referencedModule, index) => {
+        return uniqueReferencedTags.map((referencedTag, index) => {
 
-            const tagNamesMatchingAnyReference: Array<Tag["name"]> = [];
+            const referencedModulesMatchingTag: Array<Module["name"]> = [];
 
             moduleReport.files.forEach(fileInfo => {
                 fileInfo.usedIn.forEach(reference => {
                     reference.tagIdentifiers.forEach(identifier => {
-                        if (identifier.module === referencedModule
-                            && !tagNamesMatchingAnyReference.includes(identifier.tag)
+                        if (identifier.tag === referencedTag
+                            && !referencedModulesMatchingTag.includes(identifier.module)
                         ) {
-                            tagNamesMatchingAnyReference.push(identifier.tag);
+                            referencedModulesMatchingTag.push(identifier.module);
                         }
                     })
                 })
             });
 
             return {
-                module: referencedModule,
-                tags: tagNamesMatchingAnyReference
+                tag: referencedTag,
+                modules: referencedModulesMatchingTag
             }
         })
     };

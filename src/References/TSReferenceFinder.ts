@@ -104,8 +104,4 @@ export class TSReferenceFinder implements IReferenceFinder {
             .filter((v) => v.posEnd > importDeclarationtEnd && typeof v.valueDeclaration === 'undefined')
             .map((v) => v.text); // and after the end of imports
     }
-
-    private _arrayDiff<T>(a: Array<T>, b: Array<T>) {
-        return a.filter((x: T) => b.includes(x));
-    }
 }

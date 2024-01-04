@@ -10,8 +10,8 @@ export type ReportTableRow = {
         removed: number
     },
     referencedTags: Array<{
-        module: string,
-        tags: Array<string>
+        tag: string,
+        modules: Array<string>
     }>
 };
 
@@ -46,10 +46,10 @@ export class JiraBuilder {
         ]);
     }
 
-    private _referencedTagsAsNestedExpands(referencedTags: { module: string; tags: string[]; }[]): NestedExpandDefinition[] {
+    private _referencedTagsAsNestedExpands(referencedTags: { tag: string; modules: string[]; }[]): NestedExpandDefinition[] {
         return referencedTags.map(referenced => {
-            return nestedExpand({ title: referenced.module })(
-                p(referenced.tags.join('\n'))
+            return nestedExpand({ title: referenced.tag })(
+                p(referenced.modules.join('\n'))
             );
         })
     }
@@ -58,7 +58,7 @@ export class JiraBuilder {
         const headers = [
             "Affected tags",
             "Lines",
-            "Referenced tags",
+            "Referenced tags (+ modules)",
         ];
         return tableRow(headers.map(header => tableHeader()(p(header))));
     }

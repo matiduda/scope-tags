@@ -63,10 +63,11 @@ npm i scope-tags -D
         - [x] Custom import map for `.yaml` files
             - [x] Read external import map if configured
             - [x] Test if it correctly identifies imported yaml file
+        - [ ] Some kind of debugging options:
+            - [ ] --see -> to be able to see which files are 
         - [ ] Unit tests for common actions:
             - [ ] Testing if files are correstly updated in database depending on changes in git
         - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm
-
 ### Assertions to add
 
 - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
