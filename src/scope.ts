@@ -79,3 +79,7 @@ switch (args[0]) {
         break;
     }
 }
+
+export function getScriptVersion(): string {
+    return require('../package.json').version;
+}

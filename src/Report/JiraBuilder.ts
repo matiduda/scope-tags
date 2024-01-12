@@ -1,4 +1,6 @@
+import { formatDate } from "./TimeUtils";
 import { expand, table, doc, tableRow, tableHeader, nestedExpand, p, strong } from "./AdfUtils";
+import { getScriptVersion } from "../scope";
 
 export type TagInfo = {
     tag: string,
@@ -32,7 +34,7 @@ export class JiraBuilder {
         buildTag: string,
         printToConsole = false
     ): string {
-        let tableTitle = `Scope tags '${projectName}' | ${date.toLocaleString()}`;
+        let tableTitle = `'${projectName}' scope tags v${getScriptVersion()}| ${formatDate(date, "Europe/Warsaw")}`;
         tableTitle += buildTag ? ` | ${buildTag}` : "";
 
         let reportTable = {

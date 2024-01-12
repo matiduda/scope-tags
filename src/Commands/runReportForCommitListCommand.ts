@@ -52,13 +52,26 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
     const buildIntegration = new BuildIntegration(buildDataFile, configFile);
     const uniqueIssues = buildIntegration.getUniqueIssues();
 
+    let totalCommitCount = 0;
+
     uniqueIssues.forEach(issue => {
+        console.log(`[Scope tags]: Checking commits of issue '${issue}'`);
+
         const commits = buildIntegration.getIssueCommits(issue);
         const buildTag = buildIntegration.getBuildTag();
 
         repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
+            for (const commit of commits) {
+                console.log(`[Scope tags]: Found '${commit.message().trim()}'`);
+            }
+
+            totalCommitCount += commits.length;
+
+            console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
             const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag);
-            const commentReportJSON = generator.getReportAsJiraComment(report, true);
+            const commentReportJSON = generator.getReportAsJiraComment(report, false);
+
+            console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
 
             await buildIntegration.updateIssue({
                 issue: issue,
@@ -67,4 +80,6 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
             });
         });
     });
+    console.log(`[Scope tags]: Posted comments: ${uniqueIssues.length}`);
+    console.log(`[Scope tags]: Commits processed: ${totalCommitCount}`);
 }
