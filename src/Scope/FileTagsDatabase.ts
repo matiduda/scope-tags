@@ -75,9 +75,12 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         });
 
         // Remove duplicate tags
-        Object.entries(this._fileTagsDatabaseData.files).forEach(entry => {
-            this._fileTagsDatabaseData.files[entry[0]] = entry[1].filter((tag, index, array) => array.findIndex(t => t.tag === tag.tag && t.module === tag.module) === index);
-        })
+        const allEntries = Object.entries(this._fileTagsDatabaseData.files);
+        if (allEntries) {
+            allEntries.forEach(entry => {
+                this._fileTagsDatabaseData.files[entry[0]] = entry[1].filter((tag, index, array) => array.findIndex(t => t.tag === tag.tag && t.module === tag.module) === index);
+            })
+        }
 
         return this;
     }

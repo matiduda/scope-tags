@@ -14,7 +14,9 @@ npm i scope-tags -D
 - Option `--report-for-commit-list` is used to update Jira issues, and requires additional metadata in this format:
 
 ```
-[
+{
+    "buildTag": "build-123",
+    "commitsAndIssues": [
         {
             "hash": "commit hash in long format",
             "issue": "JIRA-KEY"
@@ -23,7 +25,9 @@ npm i scope-tags -D
             "hash": "commit hash in long format",
             "issue": "JIRA-KEY"
         }
-]
+        ...
+    ]
+}
 ```
 
 - Option `projects.externalImportMap` requires additional metadata in this format:

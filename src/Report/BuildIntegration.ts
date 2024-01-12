@@ -1,55 +1,65 @@
 import { JSONFile } from "../FileSystem/JSONFile";
-import { GitRepository } from "../Git/GitRepository";
 import { ConfigFile } from "../Scope/ConfigFile";
 import fetch from "node-fetch";
+const os = require("os");
 
 type CommitData = {
     hash: string,
     issue: string,
 };
 
+type BuildInfoFile = {
+    buildTag: string,
+    commitsAndIssues: Array<CommitData>,
+}
+
 type UpdateRequest = {
     issue: string, // Issue key on Jira
     report: string // Stringified ADF macro to be pasted in a comment
+    hostname: string
 }
 
 export class BuildIntegration {
 
-    private _repository: GitRepository;
     private _config: ConfigFile;
 
-    private _allCommits: Array<CommitData>;
+    private _buildInfoFile: BuildInfoFile;
+
     private _issueKeyToCommitsMap: Map<string, Array<CommitData>>;
 
     constructor(
-        commitListFile: string,
-        repository: GitRepository,
+        buildInfoFile: string,
         config: ConfigFile,
     ) {
-        this._repository = repository;
         this._config = config;
         this._issueKeyToCommitsMap = new Map();
 
-        this._allCommits = this._loadCommitList(commitListFile);
+        this._buildInfoFile = this._loadBuildInfo(buildInfoFile);
 
         this.getUniqueIssues().forEach(uniqueIssue => {
-            const commitsMatchingIssue = this._allCommits.filter(commitData => commitData.issue === uniqueIssue);
+            const commitsMatchingIssue = this._getCommits().filter(commitData => commitData.issue === uniqueIssue);
             this._issueKeyToCommitsMap.set(uniqueIssue, commitsMatchingIssue);
         });
-
-        console.log(this._issueKeyToCommitsMap);
     }
 
-    private _loadCommitList(path: string): Array<CommitData> {
-        return JSONFile.loadFrom<Array<CommitData>>(path);
+    private _loadBuildInfo(path: string): BuildInfoFile {
+        return JSONFile.loadFrom<BuildInfoFile>(path);
+    }
+
+    private _getCommits(): Array<CommitData> {
+        if (!this._buildInfoFile) {
+            throw new Error("[BuildIntegration] Cannot get commits, file not loaded yet");
+        }
+        return this._buildInfoFile.commitsAndIssues;
     }
 
     public getUniqueIssues(): Array<string> {
-        if (!this._allCommits || !this._allCommits.length) {
+        const commits = this._getCommits();
+        if (!commits || !commits.length) {
             throw new Error("Commit list cannot be empty!");
         }
 
-        const allIssues = this._allCommits.map(commit => commit.issue);
+        const allIssues = commits.map(commit => commit.issue);
         return allIssues.filter((value, index, array) => array.indexOf(value) === index);
     }
 
@@ -71,13 +81,16 @@ export class BuildIntegration {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
             },
             body: JSON.stringify(request)
         });
 
         const content = await rawResponse.json();
-
         console.log(content);
+    }
+
+    public getBuildTag() {
+        return this._buildInfoFile.buildTag;
     }
 }

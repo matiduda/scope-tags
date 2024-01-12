@@ -34,7 +34,7 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
                     location: "tsconfig.json",
                 }
             ],
-            gitCommitCountLimit: 20
+            gitCommitCountLimit: 20,
         };
         JSONFile.niceWrite(this._getPath(), defaultConfig);
     }

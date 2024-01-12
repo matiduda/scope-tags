@@ -5,7 +5,7 @@ import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
-import { JiraBuilder, ReportTableRow } from "./JiraBuilder";
+import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
 
 export type ModuleReport = {
     module: Module["name"],
@@ -28,6 +28,8 @@ type FileReference = {
 export type Report = {
     allModules: Array<ModuleReport>
     date: Date,
+    projectName: string,
+    jobName: string,
 };
 
 type ReportTableEntry = {
@@ -58,11 +60,16 @@ export class ReportGenerator {
         this._referenceFinders = referenceFinders;
     }
 
-    public async generateReportForCommit(commit: Commit): Promise<Report> {
-        return this.generateReportForCommits([commit]);
+    public async generateReportForCommit(commit: Commit, projectName: string): Promise<Report> {
+        return this.generateReportForCommits([commit], projectName, "-", true);
     }
 
-    public async generateReportForCommits(commits: Array<Commit>): Promise<Report> {
+    public async generateReportForCommits(
+        commits: Array<Commit>,
+        projectName: string = "undefined",
+        jobName: string = "undefined",
+        printDebugInfo: boolean = false
+    ): Promise<Report> {
         const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits);
 
         return new Promise<Report>(async (resolve, reject) => {
@@ -70,9 +77,15 @@ export class ReportGenerator {
             const fileInfoArray: Array<FileInfo> = this._getFileInfo(filesAffectedByCommits)
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
+            if (printDebugInfo) {
+                console.log()
+            }
+
             const report: Report = {
                 allModules: [],
                 date: this._repository.getMostRecentChangeDateFromCommitList(commits),
+                projectName: projectName,
+                jobName: jobName
             };
 
             for (const module of affectedModules) {
@@ -174,16 +187,25 @@ export class ReportGenerator {
 
     public getReportAsJiraComment(report: Report, printToConsole = false): string {
         const finalReportTableData: Array<ReportTableRow> = report.allModules.map(moduleReport => {
+            const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
+
             return {
                 affectedTags: this._getAffectedTags(moduleReport),
                 lines: this._calculateLines(moduleReport),
                 lastChange: report.date,
-                referencedTags: this._getReferencedTags(moduleReport),
+                uniqueModules: modulesAndTagsInfo.uniqueModules,
+                referencedTags: modulesAndTagsInfo.tagInfo
             };
         });
 
         const jiraBuilder = new JiraBuilder();
-        return jiraBuilder.parseReport(finalReportTableData, report.date, printToConsole);
+        return jiraBuilder.parseReport(
+            finalReportTableData,
+            report.date,
+            report.projectName,
+            report.jobName,
+            printToConsole
+        );
     }
 
     private _getAffectedTags(moduleReport: ModuleReport): Array<string> {
@@ -201,10 +223,10 @@ export class ReportGenerator {
         return allTags.filter(tag => currentModule?.tags.includes(tag)).map(tag => tag);
     }
 
-    private _getReferencedTags(moduleReport: ModuleReport): Array<{
-        tag: string,
-        modules: Array<string>
-    }> {
+    private _getReferencedTags(moduleReport: ModuleReport): {
+        uniqueModules: Array<ModuleInfo>,
+        tagInfo: Array<TagInfo>
+    } {
         const uniqueReferencedTags: Array<Tag["name"]> = [];
 
         moduleReport.files.forEach(fileInfo => {
@@ -217,7 +239,9 @@ export class ReportGenerator {
             })
         });
 
-        return uniqueReferencedTags.map((referencedTag, index) => {
+        const uniqueModules: Array<ModuleInfo> = [];
+
+        const tagInfo = uniqueReferencedTags.map((referencedTag, index) => {
 
             const referencedModulesMatchingTag: Array<Module["name"]> = [];
 
@@ -228,15 +252,29 @@ export class ReportGenerator {
                             && !referencedModulesMatchingTag.includes(identifier.module)
                         ) {
                             referencedModulesMatchingTag.push(identifier.module);
+
+                            const infoInUniqueModules = uniqueModules.find(info => info.module === identifier.module)
+
+                            if (infoInUniqueModules) {
+                                infoInUniqueModules.count++;
+                            } else {
+                                uniqueModules.push({
+                                    module: identifier.module,
+                                    count: 1,
+                                });
+                            }
                         }
                     })
                 })
             });
-
             return {
                 tag: referencedTag,
                 modules: referencedModulesMatchingTag
             }
         })
+        return {
+            uniqueModules: uniqueModules.sort((uniqueA, uniqueB) => uniqueB.count - uniqueA.count),
+            tagInfo: tagInfo.sort((tagInfoA, tagInfoB) => tagInfoB.modules.length - tagInfoA.modules.length)
+        }
     };
 }

@@ -1,33 +1,51 @@
+import { expand, table, doc, tableRow, tableHeader, nestedExpand, p, strong } from "./AdfUtils";
 
-import { expand, table, tableHeader, tableRow, p, doc, nestedExpand } from '@atlaskit/adf-utils/builders';
-import { TableRowDefinition, NestedExpandDefinition } from '@atlaskit/adf-schema';
+export type TagInfo = {
+    tag: string,
+    modules: Array<string>
+}
 
+export type ModuleInfo = {
+    module: string,
+    count: number
+}
+
+export type LinesInfo = {
+    added: number,
+    removed: number
+}
 
 export type ReportTableRow = {
     affectedTags: Array<string>,
-    lines: {
-        added: number,
-        removed: number
-    },
-    referencedTags: Array<{
-        tag: string,
-        modules: Array<string>
-    }>
+    lines: LinesInfo
+    uniqueModules: Array<ModuleInfo>,
+    referencedTags: Array<TagInfo>
 };
 
 export class JiraBuilder {
     public constructor() { }
 
-    public parseReport(entries: Array<ReportTableRow>, date: Date, printToConsole = false): string {
+    public parseReport(
+        entries: Array<ReportTableRow>,
+        date: Date,
+        projectName: string,
+        buildTag: string,
+        printToConsole = false
+    ): string {
+        let tableTitle = `Scope tags '${projectName}' | ${date.toLocaleString()}`;
+        tableTitle += buildTag ? ` | ${buildTag}` : "";
 
-        const expandTable = expand(
-            { title: `Scope tag report | ${date.toLocaleString()}` },
-        )(
-            table(
+        let reportTable = {
+            ...table(
                 this._getHeaderRow(),
                 ...entries.map(entry => this._getEntryRow(entry)),
-            )
-        );
+            ),
+            ...{ attrs: { layout: "full-width" } }
+        };
+
+        const expandTable = expand(
+            { title: tableTitle },
+        )(reportTable);
 
         const adfDocument = doc(expandTable);
 
@@ -38,29 +56,39 @@ export class JiraBuilder {
         return `{adf:display=block}${jsonReply}{adf}`;
     }
 
+    private _getHeaderRow(): any {
+        const headers = [
+            { name: "Affected tags", width: 50 },
+            { name: "Lines", width: 20 },
+            { name: "Referenced modules (+ count)" },
+            { name: "Referenced tags (+ modules)" },
+        ];
+        return tableRow(headers.map(header => {
+            return header.width
+                ? tableHeader({ colwidth: [header.width] })(p(strong(header.name)))
+                : tableHeader()(p(strong(header.name)))
+        }));
+    }
+
     private _getEntryRow(entry: ReportTableRow): any {
         return tableRow([
             tableHeader({})(p(entry.affectedTags.join('\n'))),
             tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
+            tableHeader({})(this._parseUniqueModules(entry.uniqueModules)),
             tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags)),
         ]);
     }
 
-    private _referencedTagsAsNestedExpands(referencedTags: { tag: string; modules: string[]; }[]): NestedExpandDefinition[] {
+    private _parseUniqueModules(uniqueModules: ModuleInfo[]) {
+        return p(uniqueModules.map(unique => `(${unique.count}) ${unique.module}`).join('\n'));
+    }
+
+    private _referencedTagsAsNestedExpands(referencedTags: { tag: string; modules: string[]; }[]): any[] {
         return referencedTags.map(referenced => {
             return nestedExpand({ title: referenced.tag })(
                 p(referenced.modules.join('\n'))
             );
         })
-    }
-
-    private _getHeaderRow(): TableRowDefinition {
-        const headers = [
-            "Affected tags",
-            "Lines",
-            "Referenced tags (+ modules)",
-        ];
-        return tableRow(headers.map(header => tableHeader()(p(header))));
     }
 
     // Enables to paste the generated ADF to the online viewer

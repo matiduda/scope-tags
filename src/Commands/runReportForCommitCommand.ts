@@ -46,7 +46,7 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
     const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
 
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
-        const report = await generator.generateReportForCommit(commit);
-        const commentReportJSON = generator.getReportAsJiraComment(report, true);
+        const report = await generator.generateReportForCommit(commit, projects[0].name);
+        generator.getReportAsJiraComment(report, true);
     });
 }

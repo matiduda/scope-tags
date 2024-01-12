@@ -2,8 +2,11 @@ import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { exitIfScopeTagsNotInitialized } from "../Console/ExitIfScopeTagsNotInitialized";
 
 export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: string) {
+
+    exitIfScopeTagsNotInitialized(root);
 
     // Checks if all files from unpushed commits are present in database (or excluded)
 

@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { runSeeCommand } from "./Commands/runSeeCommand";
 import { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
@@ -11,6 +13,7 @@ import { runHelpCommand } from "./Commands/runHelpCommand";
 import { runStartCommandLineInterfaceCommand } from "./Commands/runStartCommandLineInterfaceCommand";
 import { runTagCommitCommand } from "./Commands/runTagCommand";
 import { getGitProjectRoot } from "./Git/Project";
+import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -65,6 +68,10 @@ switch (args[0]) {
     }
     case "--help": {
         runHelpCommand(args);
+        break;
+    }
+    case "--skip": {
+        runSkipVerificationForCommits(args, root);
         break;
     }
     default: {

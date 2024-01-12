@@ -10,12 +10,17 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
 
+const os = require("os");
+
 export function runReportForCommitListCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
     const buildDataFile = args[1];
     if (!buildDataFile) {
         console.log("--report-for-commit-list requires a path to a file with commit list, use: --report-for-commit-list <file>");
         process.exit(1);
+    } else if (!fileExists(buildDataFile)) {
+        console.log(`[Scope tags] Helper file ${buildDataFile} does not exist, which means there was no changes (from: '${root}')`);
+        return;
     }
 
     const repository = new GitRepository(root);
@@ -44,19 +49,21 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
 
     const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
 
-    const buildIntegration = new BuildIntegration(buildDataFile, repository, configFile);
+    const buildIntegration = new BuildIntegration(buildDataFile, configFile);
     const uniqueIssues = buildIntegration.getUniqueIssues();
 
     uniqueIssues.forEach(issue => {
         const commits = buildIntegration.getIssueCommits(issue);
+        const buildTag = buildIntegration.getBuildTag();
 
         repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
-            const report = await generator.generateReportForCommits(commits);
+            const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag);
             const commentReportJSON = generator.getReportAsJiraComment(report, true);
 
             await buildIntegration.updateIssue({
                 issue: issue,
-                report: commentReportJSON
+                report: commentReportJSON,
+                hostname: os.hostname(),
             });
         });
     });
