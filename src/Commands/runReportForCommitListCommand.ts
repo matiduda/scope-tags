@@ -9,6 +9,7 @@ import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
+import { HTMLCreator } from "../HTMLCreator/HTMLCreator";
 
 const os = require("os");
 
@@ -20,6 +21,14 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
         process.exit(1);
     } else if (!fileExists(buildDataFile)) {
         console.log(`[Scope tags] Helper file ${buildDataFile} does not exist, which means there was no changes (from: '${root}')`);
+        return;
+    }
+
+    const createLogFile = !!args[2];
+
+    if (createLogFile) {
+        const htmlCreator = new HTMLCreator();
+        console.log(htmlCreator.renderHTML());
         return;
     }
 

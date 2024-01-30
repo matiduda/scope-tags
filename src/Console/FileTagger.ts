@@ -51,6 +51,8 @@ export class FileTagger {
             } catch (e) { }
         }
 
+        const fileDataToReturn: Array<FileData> = [];
+
         // Save to database
         tagsMappedToFiles.forEach((tags: Array<TagIdentifier>, data: FileData) => {
             if (!tags.length) {
@@ -59,9 +61,12 @@ export class FileTagger {
             } else {
                 const addedTags = this._database.addMultipleTagsToFile(tags, data.newPath);
                 console.log(`Added tags to ${data.newPath}: ${addedTags.map(id => id.tag).join(", ")}`);
+                fileDataToReturn.push(data);
             }
         })
-        this._database.save();
+
+        // IMPORRTANT: Database is updated, but not yet saved, rememmber to call database.save() !
+        return fileDataToReturn;
     }
 
     private _getCommonTagIdentifiers(selectedFiles: FileData[]): Array<TagIdentifier> {

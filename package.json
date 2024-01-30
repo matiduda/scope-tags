@@ -51,6 +51,7 @@
   },
   "dependencies": {
     "enquirer": "^2.4.1",
+    "html-creator": "^0.6.3",
     "node-fetch": "^2.7.0",
     "nodegit": "^0.27.0",
     "ts-morph": "^18.0.0"

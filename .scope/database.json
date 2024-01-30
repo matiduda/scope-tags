@@ -1,0 +1,32 @@
+{
+    "files": [
+        {
+            "path": ".scope/database.json",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
+        },
+        {
+            "path": "src/Commands/runAddCommand.ts",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
+        },
+        {
+            "path": "src/testfile2",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
+        }
+    ],
+    "ignoredFiles": []
+}

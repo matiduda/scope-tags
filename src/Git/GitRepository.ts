@@ -34,21 +34,35 @@ export class GitRepository {
 
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
         const unpushedCommits = await this.getUnpushedCommits(maxCommitCount);
-        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message().trim()}`));
+        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message()}`));
+        // unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message().trim()}`));
         return this.getFileDataForCommits(unpushedCommits);
     }
 
     public async getUnpushedCommits(maxCommitCount: number = 20): Promise<Commit[]> {
         const repository = await this._getRepository();
         const currentBranch = await repository.getCurrentBranch();
+        console.log("🚀 ~ GitRepository ~ getUnpushedCommits ~ currentBranch:", currentBranch.shorthand())
         const currentBranchName = currentBranch.shorthand();
         const refs = await repository.getReferences();
         const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
-        const currentRemote = remoteRefs.find(ref => ref.shorthand() === `origin/${currentBranchName}`);
         const walk = Revwalk.create(repository);
+
+        const matchingRemotes = remoteRefs.filter(remoteRef => remoteRef.shorthand().includes(currentBranch.shorthand()));
+
+        if (matchingRemotes.length > 1) {
+            console.log(
+                "[GitRepository::getUnpushedCommits] Found more than one matching remotes:",
+                matchingRemotes,
+                `[GitRepository::getUnpushedCommits] Selecting '${matchingRemotes[0]}' because it's the first one`
+            );
+        }
+
+        const currentRemote = matchingRemotes[0];
 
         // When remote branch is not yet pushed, we can't directly compare
         // which commits are fresh, so we safely compare to origin/HEAD
+        console.log(currentRemote);
 
         walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
 
@@ -66,7 +80,7 @@ export class GitRepository {
 
     public async getFileDataForCommit(commit: Commit): Promise<FileData[]> {
         // Ignore whitespaces using a combination of git diff flags
-        // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42
+        // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42 -- TODO: Still not quite working as expected...
         const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
 
         return new Promise<FileData[]>(async (resolve, reject) => {
@@ -83,6 +97,7 @@ export class GitRepository {
                         change: patch.status(),
                         linesAdded: patch.lineStats().total_additions,
                         linesRemoved: patch.lineStats().total_deletions,
+                        commitedIn: commit.sha(),
                     };
                     fileDataArray.push(fileData);
                 }
@@ -158,7 +173,7 @@ export class GitRepository {
         return date;
     }
 
-    public async amendFileToMostRecentCommit(file: string) {
+    public async amendMostRecentCommit(file: string, commitMessageAttitionalData: string) {
 
         const repository = await this._getRepository();
         const index = await repository.refreshIndex();
@@ -174,7 +189,7 @@ export class GitRepository {
             commit.author(),
             commit.committer(),
             "UTF-8",
-            commit.message().trim(),
+            commit.message() + commitMessageAttitionalData,
             oid,
         );
 

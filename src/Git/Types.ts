@@ -6,7 +6,19 @@ export type FileData = {
     change: GitDeltaType,
     linesAdded: number,
     linesRemoved: number,
+    /**
+     * Some files can be tagged by hand, and I don't think it's a problem, since these are old files...
+     * This might be a problem if we run scope --tag manually but noone will probably do that... Nevertheless we won't have
+     * relevancy information for them (but they would be ommited for the report nontheless, so who cares)
+     */
+    commitedIn?: string // 
 };
+
+export enum Relevancy {
+    LOW = "LOW",    // Does not list file at all (example: formatting changes)
+    MEDIUM = "MEDIUM", // Does list tags for file, but does not search references for it
+    HIGH = "HIGH",   // Does list tags for file and performs full reference search
+}
 
 /**
  * @see https://github.com/libgit2/libgit2/blob/45fd9ed7ae1a9b74b957ef4f337bc3c8b3df01b5/include/git2/diff.h#L224-236
