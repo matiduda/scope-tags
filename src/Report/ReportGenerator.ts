@@ -3,7 +3,7 @@ import { GitRepository } from "../Git/GitRepository";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
-import { IReferenceFinder } from "../References/IReferenceFinder";
+import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
 import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
 
@@ -21,7 +21,7 @@ type FileInfo = {
 }
 
 type FileReference = {
-    file: string,
+    fileInfo: ReferencedFileInfo,
     tagIdentifiers: Array<TagIdentifier>,
 }
 
@@ -83,7 +83,7 @@ export class ReportGenerator {
 
             const report: Report = {
                 allModules: [],
-                date: this._repository.getMostRecentChangeDateFromCommitList(commits),
+                date: new Date(),
                 projectName: projectName,
                 jobName: jobName
             };
@@ -152,8 +152,8 @@ export class ReportGenerator {
 
             foundReferences.forEach(reference => {
                 const fileReference: FileReference = {
-                    file: reference,
-                    tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(reference),
+                    fileInfo: reference,
+                    tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(reference.filename),
                 };
                 references.push(fileReference);
             });
@@ -194,7 +194,8 @@ export class ReportGenerator {
                 lines: this._calculateLines(moduleReport),
                 lastChange: report.date,
                 uniqueModules: modulesAndTagsInfo.uniqueModules,
-                referencedTags: modulesAndTagsInfo.tagInfo
+                referencedTags: modulesAndTagsInfo.tagInfo,
+                unusedReferences: modulesAndTagsInfo.unusedReferences
             };
         });
 
@@ -225,7 +226,8 @@ export class ReportGenerator {
 
     private _getReferencedTags(moduleReport: ModuleReport): {
         uniqueModules: Array<ModuleInfo>,
-        tagInfo: Array<TagInfo>
+        tagInfo: Array<TagInfo>,
+        unusedReferences: Array<ReferencedFileInfo>
     } {
         const uniqueReferencedTags: Array<Tag["name"]> = [];
 
@@ -240,6 +242,7 @@ export class ReportGenerator {
         });
 
         const uniqueModules: Array<ModuleInfo> = [];
+        const unusedReferences: Array<ReferencedFileInfo> = [];
 
         const tagInfo = uniqueReferencedTags.map((referencedTag, index) => {
 
@@ -247,6 +250,9 @@ export class ReportGenerator {
 
             moduleReport.files.forEach(fileInfo => {
                 fileInfo.usedIn.forEach(reference => {
+                    if (reference.fileInfo.unused) {
+                        unusedReferences.push(reference.fileInfo);
+                    }
                     reference.tagIdentifiers.forEach(identifier => {
                         if (identifier.tag === referencedTag
                             && !referencedModulesMatchingTag.includes(identifier.module)
@@ -269,12 +275,13 @@ export class ReportGenerator {
             });
             return {
                 tag: referencedTag,
-                modules: referencedModulesMatchingTag
+                modules: referencedModulesMatchingTag,
             }
         })
         return {
             uniqueModules: uniqueModules.sort((uniqueA, uniqueB) => uniqueB.count - uniqueA.count),
-            tagInfo: tagInfo.sort((tagInfoA, tagInfoB) => tagInfoB.modules.length - tagInfoA.modules.length)
+            tagInfo: tagInfo.sort((tagInfoA, tagInfoB) => tagInfoB.modules.length - tagInfoA.modules.length),
+            unusedReferences: unusedReferences
         }
     };
 }

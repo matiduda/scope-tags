@@ -143,7 +143,7 @@ export class GitRepository {
         return repository.getHeadCommit();
     }
 
-    public getMostRecentChangeDateFromCommitList(commits: Commit[]): Date {
+    public getMostRecentChangeDateFromCommitList(commits: Commit[]): Date { // Unused
         if (!commits.length) {
             throw new Error("[getMostRecentChangeDateFromCommitList] Commit list is empty");
         }

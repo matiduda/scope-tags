@@ -1,5 +1,5 @@
 import { JSONFile } from "../FileSystem/JSONFile";
-import { IReferenceFinder } from "./IReferenceFinder";
+import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
 
 type FileImport = { file: string, imports: Array<string> };
 type ImportMapFile = Array<FileImport>;
@@ -22,12 +22,15 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
         return this._supportedFileExtensions;
     }
 
-    public findReferences(fileNameOrPath: string): Array<string> {
-        const referenceList: Array<string> = [];
+    public findReferences(fileNameOrPath: string): Array<ReferencedFileInfo> {
+        const referenceList: Array<ReferencedFileInfo> = [];
 
         this._importMap.forEach(importData => {
             if (importData.imports.includes(fileNameOrPath)) {
-                referenceList.push(importData.file);
+                referenceList.push({
+                    filename: importData.file,
+                    unused: false
+                });
             }
         })
 

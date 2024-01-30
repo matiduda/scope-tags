@@ -1,6 +1,6 @@
 import { Project, ReferencedSymbol, SourceFile, SyntaxKind } from "ts-morph";
 import path from "path";
-import { IReferenceFinder } from "./IReferenceFinder";
+import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
 
 export class TSReferenceFinder implements IReferenceFinder {
 
@@ -25,8 +25,8 @@ export class TSReferenceFinder implements IReferenceFinder {
         return this._supportedFileExtensions;
     }
 
-    public findReferences(fileNameOrPath: string): Array<string> {
-        const referenceList: Array<string> = [];
+    public findReferences(fileNameOrPath: string): Array<ReferencedFileInfo> {
+        const referenceList: Array<ReferencedFileInfo> = [];
         const languageService = this._project.getLanguageService();
 
         const sourceFile = this._project.getSourceFile(fileNameOrPath);
@@ -55,28 +55,39 @@ export class TSReferenceFinder implements IReferenceFinder {
 
                     const referencedNodeName = referencedSymbol.getDefinition().getNode().getText();
 
+                    let isUnused = false;
+
                     if (!referenceImports.includes(referencedNodeName)) {
-                        // Import is unused
+                        // Import is unused - we can still include it in report with this info
                         const nicePath = path.relative(this._root, referenceSourceFile.getFilePath());
                         console.log(`Found unused reference to ${referencedNodeName} in file ${nicePath}`);
-                        continue;
+                        isUnused = true;
                     }
 
                     const referenceFilePath = path.resolve(reference.getSourceFile().getFilePath());
 
+                    const referencedFileInfo: ReferencedFileInfo = {
+                        filename: referenceFilePath,
+                        unused: isUnused
+                    }
+
                     if (referenceFilePath !== sourceFilePath
-                        && !referenceList.includes(referenceFilePath)) {
-                        referenceList.push(referenceFilePath);
+                        && !referenceList.some(fileInfo => fileInfo.filename === referencedFileInfo.filename)
+                    ) {
+                        referenceList.push(referencedFileInfo);
                     }
                 }
             }
         }
 
-        return referenceList.map(reference => {
-            const relativePath = path.relative(this._root, reference);
+        // Convert all filepaths to POSIX
+        referenceList.forEach(reference => {
+            const relativePath = path.relative(this._root, reference.filename);
             const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
-            return definitelyPosix;
+            reference.filename = definitelyPosix;
         });
+
+        return referenceList;
     }
 
     /**

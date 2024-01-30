@@ -1,6 +1,7 @@
 import { formatDate } from "./TimeUtils";
 import { expand, table, doc, tableRow, tableHeader, nestedExpand, p, strong } from "./AdfUtils";
 import { getScriptVersion } from "../scope";
+import { ReferencedFileInfo } from "../References/IReferenceFinder";
 
 export type TagInfo = {
     tag: string,
@@ -21,7 +22,8 @@ export type ReportTableRow = {
     affectedTags: Array<string>,
     lines: LinesInfo
     uniqueModules: Array<ModuleInfo>,
-    referencedTags: Array<TagInfo>
+    referencedTags: Array<TagInfo>,
+    unusedReferences: Array<ReferencedFileInfo>,
 };
 
 export class JiraBuilder {
@@ -34,8 +36,8 @@ export class JiraBuilder {
         buildTag: string,
         printToConsole = false
     ): string {
-        let tableTitle = `'${projectName}' scope tags v${getScriptVersion()}| ${formatDate(date, "Europe/Warsaw")}`;
-        tableTitle += buildTag ? ` | ${buildTag}` : "";
+        let tableTitle = `'${projectName}' scope tags v${getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
+        tableTitle += buildTag ? ` │ ${buildTag}` : "";
 
         let reportTable = {
             ...table(
@@ -51,7 +53,9 @@ export class JiraBuilder {
 
         const adfDocument = doc(expandTable);
 
-        this.debugPrintADF(adfDocument);
+        if (printToConsole) {
+            this.debugPrintADF(adfDocument);
+        }
 
         const jsonReply = JSON.stringify(expandTable)
 
@@ -77,7 +81,7 @@ export class JiraBuilder {
             tableHeader({})(p(entry.affectedTags.join('\n'))),
             tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
             tableHeader({})(this._parseUniqueModules(entry.uniqueModules)),
-            tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags)),
+            tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
         ]);
     }
 
@@ -85,12 +89,15 @@ export class JiraBuilder {
         return p(uniqueModules.map(unique => `(${unique.count}) ${unique.module}`).join('\n'));
     }
 
-    private _referencedTagsAsNestedExpands(referencedTags: { tag: string; modules: string[]; }[]): any[] {
+    private _referencedTagsAsNestedExpands(
+        referencedTags: { tag: string; modules: string[]; }[],
+        unusedReferences: Array<ReferencedFileInfo>
+    ): any[] {
         return referencedTags.map(referenced => {
             return nestedExpand({ title: referenced.tag })(
                 p(referenced.modules.join('\n'))
             );
-        })
+        });
     }
 
     // Enables to paste the generated ADF to the online viewer
