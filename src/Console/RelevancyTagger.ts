@@ -96,8 +96,6 @@ export class RelevancyTagger {
 
         const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyTagger.COMMIT_MSG_PREFIX.length);
 
-
-
         try {
             const relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
             // Replace current commit' sha
