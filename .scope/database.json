@@ -26,6 +26,33 @@
                     "module": "Default module"
                 }
             ]
+        },
+        {
+            "path": "src/Console/RelevancyTagger.ts",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
+        },
+        {
+            "path": "src/Scope/FileTagsDatabase.ts",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
+        },
+        {
+            "path": "src/Scope/Utils.ts",
+            "tags": [
+                {
+                    "tag": "Tag",
+                    "module": "Default module"
+                }
+            ]
         }
     ],
     "ignoredFiles": []
