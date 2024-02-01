@@ -1,8 +1,9 @@
 import { Commit, Note, Repository, Revwalk } from "nodegit";
-import { FileData, GitDeltaType } from "./Types";
+import { FileData, FilePath, GitDeltaType } from "./Types";
 import path from "path";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
+import { CommitMessageRelevancyInfo, RelevancyMap, RelevancyTagger } from "../Console/RelevancyTagger";
 
 export class GitRepository {
 
@@ -15,27 +16,9 @@ export class GitRepository {
         this._root = root;
     }
 
-    private async _getRepository(): Promise<Repository> {
-        if (!this._repository) {
-            try {
-                this._repository = await Repository.open(this._root);
-            } catch (e) {
-                console.log(e);
-            }
-        }
-        return this._repository;
-    }
-
-    private _normalizePath(filePath: string) {
-        const relativePath = path.relative(this._root, filePath);
-        const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
-        return definitelyPosix;
-    }
-
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
         const unpushedCommits = await this.getUnpushedCommits(maxCommitCount);
-        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message()}`));
-        // unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.message().trim()}`));
+        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.summary()}`));
         return this.getFileDataForCommits(unpushedCommits);
     }
 
@@ -200,7 +183,7 @@ export class GitRepository {
         // Check if commit should be skipped
         const skipVerificationCheck = await this._skipVerificationCheckForCommit(commit);
         if (skipVerificationCheck) {
-            console.log(`[Scope Tags] Skipped check for '${commit.message().trim()}'`);
+            console.log(`[Scope Tags] Skipped check for '${commit.summary()}'`);
             await this._removeNoteFromCommit(commit);
             return;
         }
@@ -215,44 +198,14 @@ export class GitRepository {
         const filesWithIgnoredExtensions = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
 
         if (filesWithIgnoredExtensions.length) {
-            console.log(`Commit '${commit.message().trim()}' not verified, no tags found for required files:\n`);
+            console.log(`Commit '${commit.summary()}' not verified, no tags found for required files:\n`);
             filesWithIgnoredExtensions.forEach(file => console.log(`- ${file.newPath}`));
             console.log("\nPlease run\n\n\tnpx scope --add\n\nto tag them");
             process.exit(1);
         }
     }
-    private async _removeNoteFromCommit(commit: Commit) {
-        const repository = await this._getRepository();
-        const note = await Note.read(repository, "refs/notes/commits", commit.id());
 
-        const errorCode = await Note.remove(
-            repository,
-            "refs/notes/commits",
-            note.author(),
-            note.committer(),
-            commit.id(),
-        );
-
-        if (errorCode) {
-            throw new Error(`Could not remove note from commit '${commit.message()}'. Error code: ${errorCode}`)
-        }
-    }
-
-    private async _skipVerificationCheckForCommit(commit: Commit): Promise<boolean> {
-
-        // If commit has the note - verify it
-
-        const repository = await this._getRepository();
-
-        try {
-            const note = await Note.read(repository, "refs/notes/commits", commit.id());
-            return note.message() === GitRepository.SKIP_VERIFICATION_MSG;
-        } catch (e) {
-            return false;
-        }
-    }
-
-    public async addSkipVerificationNoteToCommit(commit: Commit) {
+    public async addSkipVerificationNoteToCommit(commit: Commit): Promise<void> {
 
         // Commits which will be automatically verified
         // should have a temporary git note attached to them
@@ -268,5 +221,79 @@ export class GitRepository {
             GitRepository.SKIP_VERIFICATION_MSG,
             1
         );
+    }
+
+    private async _getRepository(): Promise<Repository> {
+        if (!this._repository) {
+            try {
+                this._repository = await Repository.open(this._root);
+            } catch (e) {
+                console.log(e);
+            }
+        }
+        return this._repository;
+    }
+
+    private _normalizePath(filePath: string) {
+        const relativePath = path.relative(this._root, filePath);
+        const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
+        return definitelyPosix;
+    }
+
+    public loadRelevancyMapFromCommits(commits: Commit[]) {
+        const relevancyTagger = new RelevancyTagger();
+
+        const commitToRelevancyMap: RelevancyMap = new Map();
+
+        for (const commit of commits) {
+            if (!relevancyTagger.doesCommitMessageHaveRelevancyData(commit.message())) {
+                continue;
+            }
+
+            console.log(`[Scope tags]: Found relevancy info in commit: ${commit.summary()}`);
+            const relevancyArray = relevancyTagger.convertCommitMessageToRelevancyData(commit.message());
+
+            relevancyArray.forEach(relevancyEntry => {
+                const commitRelevancies = commitToRelevancyMap.get(relevancyEntry.commit);
+
+                if (!commitRelevancies) {
+                    commitToRelevancyMap.set(relevancyEntry.commit, [relevancyEntry]);
+                } else {
+                    commitRelevancies.push(relevancyEntry);
+                }
+            });
+        }
+        return commitToRelevancyMap;
+    }
+
+    private async _removeNoteFromCommit(commit: Commit) {
+        const repository = await this._getRepository();
+        const note = await Note.read(repository, "refs/notes/commits", commit.id());
+
+        const errorCode = await Note.remove(
+            repository,
+            "refs/notes/commits",
+            note.author(),
+            note.committer(),
+            commit.id(),
+        );
+
+        if (errorCode) {
+            throw new Error(`Could not remove note from commit '${commit.summary()}'. Error code: ${errorCode}`)
+        }
+    }
+
+    private async _skipVerificationCheckForCommit(commit: Commit): Promise<boolean> {
+
+        // If commit has the note - verify it
+
+        const repository = await this._getRepository();
+
+        try {
+            const note = await Note.read(repository, "refs/notes/commits", commit.id());
+            return note.message() === GitRepository.SKIP_VERIFICATION_MSG;
+        } catch (e) {
+            return false;
+        }
     }
 }

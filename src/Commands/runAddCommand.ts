@@ -30,9 +30,10 @@ export function runAddCommand(args: Array<string>, root: string) {
             // Save tags to database
             fileTagsDatabase.save();
 
-            const newCommitMessage = relevancyTagger.convertRelevancyDataToCommitMessage(fileDataRelevancy);
-
             const mostRecentCommit = await repository.getLatestCommit();
+
+            const newCommitMessage = relevancyTagger.convertRelevancyDataToCommitMessage(fileDataRelevancy, mostRecentCommit);
+
             const mostRecentCommitSummary = mostRecentCommit.summary();
             const mostRecentCommitMessage = mostRecentCommit.message();
 

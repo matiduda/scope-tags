@@ -10,6 +10,7 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
 import { HTMLCreator } from "../HTMLCreator/HTMLCreator";
+import { RelevancyTagger } from "../Console/RelevancyTagger";
 
 const os = require("os");
 
@@ -71,13 +72,20 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
 
         repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
             for (const commit of commits) {
-                console.log(`[Scope tags]: Found '${commit.message().trim()}'`);
+                console.log(`[Scope tags]: Found '${commit.summary()}'`);
             }
+
 
             totalCommitCount += commits.length;
 
+            console.log(`[Scope tags]: Loading relevancy map...'`);
+            const relevancyMap = repository.loadRelevancyMapFromCommits(commits);
+
             console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
-            const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag);
+            const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
+
+            console.log(report);
+
             const commentReportJSON = generator.getReportAsJiraComment(report, false);
 
             console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);

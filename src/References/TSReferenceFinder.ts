@@ -55,9 +55,13 @@ export class TSReferenceFinder implements IReferenceFinder {
 
                     const referencedNodeName = referencedSymbol.getDefinition().getNode().getText();
 
+                    const referencedNodeFilePath = referencedSymbol.getDefinition().getSourceFile().getFilePath();
+
                     let isUnused = false;
 
-                    if (!referenceImports.includes(referencedNodeName)) {
+                    const isSourceFile = sourceFile.getFilePath() === referencedNodeFilePath;
+
+                    if (!referenceImports.includes(referencedNodeName) && !isSourceFile) {
                         // Import is unused - we can still include it in report with this info
                         const nicePath = path.relative(this._root, referenceSourceFile.getFilePath());
                         console.log(`Found unused reference to ${referencedNodeName} in file ${nicePath}`);

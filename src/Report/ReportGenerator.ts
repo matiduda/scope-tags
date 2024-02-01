@@ -2,10 +2,11 @@ import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
-import { FileData } from "../Git/Types";
+import { FileData, Relevancy } from "../Git/Types";
 import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
 import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
+import { CommitMessageRelevancyInfo, RelevancyMap } from "../Console/RelevancyTagger";
 
 export type ModuleReport = {
     module: Module["name"],
@@ -17,7 +18,8 @@ type FileInfo = {
     tagIdentifiers: Array<TagIdentifier>,
     linesAdded: number,
     linesRemoved: number,
-    usedIn: Array<FileReference>
+    usedIn: Array<FileReference>,
+    relevancy: Relevancy | null,
 }
 
 type FileReference = {
@@ -68,13 +70,14 @@ export class ReportGenerator {
         commits: Array<Commit>,
         projectName: string = "undefined",
         jobName: string = "undefined",
-        printDebugInfo: boolean = false
+        printDebugInfo: boolean = false,
+        relevancyMap?: RelevancyMap,
     ): Promise<Report> {
         const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits);
 
         return new Promise<Report>(async (resolve, reject) => {
 
-            const fileInfoArray: Array<FileInfo> = this._getFileInfo(filesAffectedByCommits)
+            const fileInfoArray: FileInfo[] = this._getFileInfo(filesAffectedByCommits, relevancyMap)
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
             if (printDebugInfo) {
@@ -105,7 +108,32 @@ export class ReportGenerator {
         });
     }
 
-    private _getFileInfo(fileDataArray: Array<FileData>): Array<FileInfo> {
+    private _getRelevancyForFileData(fileData: FileData, relevancyMap: RelevancyMap): Relevancy | null {
+        if (!fileData.commitedIn) {
+            throw new Error(`[ReportGenerator]: File data '${fileData.newPath}' does not have commited in value`);
+        }
+
+        console.log(relevancyMap);
+        console.log(fileData);
+
+        const commitRelevancyArray = relevancyMap.get(fileData.commitedIn);
+
+        if (!commitRelevancyArray) {
+            console.log(`[ReportGenerator]: No relevancy data for commit '${fileData.commitedIn}'`);
+            return null;
+        }
+
+        const fileRelevancy = commitRelevancyArray.find(entry => entry.path === fileData.newPath);
+
+        if (!fileRelevancy) {
+            console.log(`[ReportGenerator]: No relevancy found for file '${fileData.newPath}'`);
+            return null;
+        }
+
+        return fileRelevancy.relevancy;
+    }
+
+    private _getFileInfo(fileDataArray: FileData[], relevancyMap?: RelevancyMap): FileInfo[] {
 
         const fileInfoArray: Array<FileInfo> = [];
 
@@ -116,6 +144,7 @@ export class ReportGenerator {
                 linesAdded: fileData.linesAdded,
                 linesRemoved: fileData.linesRemoved,
                 usedIn: this._getFileReferences(fileData.newPath),
+                relevancy: relevancyMap ? this._getRelevancyForFileData(fileData, relevancyMap) : null,
             };
 
             fileInfoArray.push(fileInfo);

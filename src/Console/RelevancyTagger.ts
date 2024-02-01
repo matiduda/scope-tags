@@ -1,7 +1,15 @@
 import { Commit } from "nodegit";
-import { FileData, Relevancy } from "../Git/Types";
+import { FileData, FilePath, Relevancy } from "../Git/Types";
 
 const { Scale } = require('enquirer');
+
+export type CommitMessageRelevancyInfo = {
+    path: string,
+    relevancy: Relevancy,
+    commit: string
+};
+
+export type RelevancyMap = Map<FilePath, Array<CommitMessageRelevancyInfo>>;
 
 type RelevancyDescription = {
     name: string,
@@ -20,14 +28,9 @@ type ScalePromptAnswerType = {
     [k: string]: number
 }
 
-type CommitMessageRelevancyInfo = {
-    path: string,
-    relevancy: string,
-    commit: string
-};
-
 export class RelevancyTagger {
     private static COMMIT_MSG_PREFIX = "__relevancy__";
+    private static CURRENT_COMMIT = "__current__";
 
 
     private _relevancyDescriptions = new Map<Relevancy, RelevancyDescription>([
@@ -57,23 +60,34 @@ export class RelevancyTagger {
 
             // Map answers
             currentPageEntries.forEach(entry => {
-                answerMap.set(entry, this._getRelevancyByIndex(answer[entry.oldPath]))
+                answerMap.set(entry, this._getRelevancyByIndex(answer[entry.newPath]))
             });
         }
         return answerMap;
     }
 
-    public convertRelevancyDataToCommitMessage(data: Map<FileData, Relevancy>): string {
-        const relevancyArray: Array<CommitMessageRelevancyInfo> = [...data].map(([fileData, relevancy]) => ({
-            path: fileData.oldPath,
-            relevancy: relevancy,
-            commit: fileData.commitedIn,
-        } as CommitMessageRelevancyInfo));
+    public convertRelevancyDataToCommitMessage(data: Map<FileData, Relevancy>, headCommit: Commit): string {
+        const relevancyArray: Array<CommitMessageRelevancyInfo> = [...data].map(([fileData, relevancy]) => {
+            // Check if fileData was commited in current head commit,
+            // since this commit stores relevancy data and will be changed later,
+            // store it's SHA as "__current__", so it can be read later...
+            const commitShaOrIdentifier = fileData.commitedIn === headCommit.sha()
+                ? RelevancyTagger.CURRENT_COMMIT
+                : fileData.commitedIn;
+
+            return {
+                path: fileData.newPath,
+                relevancy: relevancy,
+                commit: commitShaOrIdentifier,
+            } as CommitMessageRelevancyInfo;
+        });
 
         return `\n${RelevancyTagger.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}`;
     }
 
-    public convertCommitMessageToRelevancyData(commitMessage: string): CommitMessageRelevancyInfo {
+    public convertCommitMessageToRelevancyData(commit: Commit): Array<CommitMessageRelevancyInfo> {
+        const commitMessage = commit.message();
+
         const prefixStartIndex = commitMessage.indexOf(RelevancyTagger.COMMIT_MSG_PREFIX);
 
         if (prefixStartIndex === -1) {
@@ -82,8 +96,16 @@ export class RelevancyTagger {
 
         const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyTagger.COMMIT_MSG_PREFIX.length);
 
+
+
         try {
-            return JSON.parse(relevancyJSON) as CommitMessageRelevancyInfo;
+            const relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
+            // Replace current commit' sha
+            relevancyInfo.forEach(info => {
+                if (info.commit === RelevancyTagger.CURRENT_COMMIT) {
+                    info.commit = commit.sha();
+                }
+            });
         } catch (e) {
             throw new Error(`Could not parse relevancy data from commit message: '${commitMessage}'`);
         }
@@ -95,11 +117,11 @@ export class RelevancyTagger {
 
     private _assertNoDuplicateEntries(entries: Array<RelevancyEntry>) {
         entries.forEach((entry, index) => entries.forEach((duplicate, duplicateIndex) => {
-            if (entry.oldPath === duplicate.oldPath && index !== duplicateIndex) {
+            if (entry.newPath === duplicate.newPath && index !== duplicateIndex) {
                 console.log(
                     `[RelevancyTagger] Found duplicate entry:
-    1. ${entry.oldPath} at index ${index}
-    2. ${duplicate.oldPath} at index ${duplicateIndex}`)
+    1. ${entry.newPath} at index ${index}
+    2. ${duplicate.newPath} at index ${duplicateIndex}`)
                 throw new Error("Cannot have two entries with the same file path");
             }
         }));

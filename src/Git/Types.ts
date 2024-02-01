@@ -11,13 +11,13 @@ export type FileData = {
      * This might be a problem if we run scope --tag manually but noone will probably do that... Nevertheless we won't have
      * relevancy information for them (but they would be ommited for the report nontheless, so who cares)
      */
-    commitedIn?: string // 
+    commitedIn?: string
 };
 
 export enum Relevancy {
-    LOW = "LOW",    // Does not list file at all (example: formatting changes)
-    MEDIUM = "MEDIUM", // Does list tags for file, but does not search references for it
-    HIGH = "HIGH",   // Does list tags for file and performs full reference search
+    LOW = "LOW",            // Does not list file at all (example: formatting changes)
+    MEDIUM = "MEDIUM",      // Does list tags for file, but does not search references for it
+    HIGH = "HIGH",          // Does list tags for file and performs full reference search
 }
 
 /**

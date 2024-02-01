@@ -2,6 +2,10 @@ const htmlCreator = require("html-creator");
 
 // Docs: https://github.com/Hargne/html-creator/wiki/API
 
+type IssueInfo = {
+    key: string,
+}
+
 export class HTMLCreator {
     private _html: any; // html-creator doesn't export types :/
 
@@ -26,5 +30,9 @@ export class HTMLCreator {
                 href: "https://unpkg.com/mvp.css"
             }
         });
+    }
+
+    public appendIssueInfo(issueInfo: IssueInfo) {
+
     }
 }
