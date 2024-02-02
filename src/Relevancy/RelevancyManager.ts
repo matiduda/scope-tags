@@ -1,5 +1,6 @@
 import { Commit } from "nodegit";
-import { FileData, FilePath, Relevancy } from "../Git/Types";
+import { FileData, FilePath } from "../Git/Types";
+import { Relevancy } from "./Relevancy";
 
 const { Scale } = require('enquirer');
 
@@ -28,7 +29,7 @@ type ScalePromptAnswerType = {
     [k: string]: number
 }
 
-export class RelevancyTagger {
+export class RelevancyManager {
     private static COMMIT_MSG_PREFIX = "__relevancy__";
     private static CURRENT_COMMIT = "__current__";
 
@@ -49,12 +50,12 @@ export class RelevancyTagger {
 
         const answerMap = new Map<FileData, Relevancy>();
 
-        const fullPages = Math.floor(entries.length / RelevancyTagger.PAGE_LIMIT);
-        const totalPages = entries.length % RelevancyTagger.PAGE_LIMIT ? fullPages + 1 : fullPages;
+        const fullPages = Math.floor(entries.length / RelevancyManager.PAGE_LIMIT);
+        const totalPages = entries.length % RelevancyManager.PAGE_LIMIT ? fullPages + 1 : fullPages;
 
         for (let i = 0; i < totalPages; i++) {
-            const currentPageStartingIndex = i * RelevancyTagger.PAGE_LIMIT;
-            const currentPageEntries = entries.slice(currentPageStartingIndex, currentPageStartingIndex + RelevancyTagger.PAGE_LIMIT)
+            const currentPageStartingIndex = i * RelevancyManager.PAGE_LIMIT;
+            const currentPageEntries = entries.slice(currentPageStartingIndex, currentPageStartingIndex + RelevancyManager.PAGE_LIMIT)
 
             const answer = await this._getRelevancy(currentPageEntries, i, totalPages);
 
@@ -72,7 +73,7 @@ export class RelevancyTagger {
             // since this commit stores relevancy data and will be changed later,
             // store it's SHA as "__current__", so it can be read later...
             const commitShaOrIdentifier = fileData.commitedIn === headCommit.sha()
-                ? RelevancyTagger.CURRENT_COMMIT
+                ? RelevancyManager.CURRENT_COMMIT
                 : fileData.commitedIn;
 
             return {
@@ -82,42 +83,74 @@ export class RelevancyTagger {
             } as CommitMessageRelevancyInfo;
         });
 
-        return `\n${RelevancyTagger.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}`;
+        return `\n${RelevancyManager.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}`;
     }
 
     public convertCommitMessageToRelevancyData(commit: Commit): Array<CommitMessageRelevancyInfo> {
         const commitMessage = commit.message();
 
-        const prefixStartIndex = commitMessage.indexOf(RelevancyTagger.COMMIT_MSG_PREFIX);
+        const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
 
         if (prefixStartIndex === -1) {
             throw new Error(`Commit message '${commitMessage}' does not include relevancy info`);
         }
 
-        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyTagger.COMMIT_MSG_PREFIX.length);
+        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length);
+
+        let relevancyInfo = [];
 
         try {
-            const relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
-            // Replace current commit' sha
-            relevancyInfo.forEach(info => {
-                if (info.commit === RelevancyTagger.CURRENT_COMMIT) {
-                    info.commit = commit.sha();
-                }
-            });
+            relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
         } catch (e) {
             throw new Error(`Could not parse relevancy data from commit message: '${commitMessage}'`);
         }
+
+        // Replace current commit' sha
+        relevancyInfo.forEach(info => {
+            if (info.commit === RelevancyManager.CURRENT_COMMIT) {
+                info.commit = commit.sha();
+            }
+        });
+
+        return relevancyInfo;
     }
 
     public doesCommitMessageHaveRelevancyData(commitMessage: string): boolean {
-        return commitMessage.includes(RelevancyTagger.COMMIT_MSG_PREFIX);
+        return commitMessage.includes(RelevancyManager.COMMIT_MSG_PREFIX);
     }
+
+    public loadRelevancyMapFromCommits(commits: Commit[]): RelevancyMap {
+        const relevancyTagger = new RelevancyManager();
+
+        const commitToRelevancyMap: RelevancyMap = new Map();
+
+        for (const commit of commits) {
+            if (!relevancyTagger.doesCommitMessageHaveRelevancyData(commit.message())) {
+                continue;
+            }
+
+            console.log(`[Scope tags]: Found relevancy info in commit: ${commit.summary()}`);
+            const relevancyArray = relevancyTagger.convertCommitMessageToRelevancyData(commit);
+
+            relevancyArray.forEach(relevancyEntry => {
+                const commitRelevancies = commitToRelevancyMap.get(relevancyEntry.commit);
+
+                if (!commitRelevancies) {
+                    commitToRelevancyMap.set(relevancyEntry.commit, [relevancyEntry]);
+                } else {
+                    commitRelevancies.push(relevancyEntry);
+                }
+            });
+        }
+        return commitToRelevancyMap;
+    }
+
 
     private _assertNoDuplicateEntries(entries: Array<RelevancyEntry>) {
         entries.forEach((entry, index) => entries.forEach((duplicate, duplicateIndex) => {
             if (entry.newPath === duplicate.newPath && index !== duplicateIndex) {
                 console.log(
-                    `[RelevancyTagger] Found duplicate entry:
+                    `[RelevancyManager] Found duplicate entry:
     1. ${entry.newPath} at index ${index}
     2. ${duplicate.newPath} at index ${duplicateIndex}`)
                 throw new Error("Cannot have two entries with the same file path");

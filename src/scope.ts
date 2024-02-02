@@ -14,6 +14,7 @@ import { runStartCommandLineInterfaceCommand } from "./Commands/runStartCommandL
 import { runTagCommitCommand } from "./Commands/runTagCommand";
 import { getGitProjectRoot } from "./Git/Project";
 import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
+import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -72,6 +73,10 @@ switch (args[0]) {
     }
     case "--skip": {
         runSkipVerificationForCommits(args, root);
+        break;
+    }
+    case "--logcommit": {
+        runLogCommitCommand(args, root);
         break;
     }
     default: {

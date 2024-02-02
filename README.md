@@ -30,6 +30,8 @@ npm i scope-tags -D
 }
 ```
 
+## config.json
+
 - Option `projects.externalImportMap` requires additional metadata in this format:
 
 ```
@@ -42,6 +44,8 @@ npm i scope-tags -D
     }
 ]
 ```
+
+- Option `gitCommitCountLimit` is a maximum number of commits to search for when doing rev walk on git push hook - used just on the user side while running commands `--verify-unpushed-commits` or `--skip`. It this number is reached you'll get a warning and ignoring it may result in some files being ommited from tag verification.
 
 ### Features to do
 

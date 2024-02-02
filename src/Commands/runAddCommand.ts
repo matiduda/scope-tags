@@ -3,7 +3,7 @@ import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { FileTagger } from "../Console/FileTagger";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
-import { RelevancyTagger } from "../Console/RelevancyTagger";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
 
 export function runAddCommand(args: Array<string>, root: string) {
     const repository = new GitRepository(root);
@@ -18,7 +18,7 @@ export function runAddCommand(args: Array<string>, root: string) {
         let fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData)
             .filter(file => !config.isFileExtensionIgnored(file.newPath));
 
-        const relevancyTagger = new RelevancyTagger();
+        const relevancyTagger = new RelevancyManager();
 
         fileTagger.start(fileDataToTag).then(async (_taggedFileData) => {
 

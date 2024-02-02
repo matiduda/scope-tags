@@ -2,18 +2,20 @@ import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
-import { FileData, Relevancy } from "../Git/Types";
+import { FileData } from "../Git/Types";
 import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
 import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
-import { CommitMessageRelevancyInfo, RelevancyMap } from "../Console/RelevancyTagger";
+import { RelevancyMap } from "../Relevancy/RelevancyManager";
+import { Relevancy } from "../Relevancy/Relevancy";
+import { Logger } from "../Logger/Logger";
 
 export type ModuleReport = {
     module: Module["name"],
     files: Array<FileInfo>,
 }
 
-type FileInfo = {
+export type FileInfo = {
     file: string,
     tagIdentifiers: Array<TagIdentifier>,
     linesAdded: number,
@@ -22,7 +24,7 @@ type FileInfo = {
     relevancy: Relevancy | null,
 }
 
-type FileReference = {
+export type FileReference = {
     fileInfo: ReferencedFileInfo,
     tagIdentifiers: Array<TagIdentifier>,
 }
@@ -33,14 +35,6 @@ export type Report = {
     projectName: string,
     jobName: string,
 };
-
-type ReportTableEntry = {
-    "Affected module": string,
-    "Affected tags": string,
-    "Lines": string,
-    "Modified": string,
-    "Used in": string,
-}
 
 export class ReportGenerator {
 
@@ -113,9 +107,6 @@ export class ReportGenerator {
             throw new Error(`[ReportGenerator]: File data '${fileData.newPath}' does not have commited in value`);
         }
 
-        console.log(relevancyMap);
-        console.log(fileData);
-
         const commitRelevancyArray = relevancyMap.get(fileData.commitedIn);
 
         if (!commitRelevancyArray) {
@@ -138,18 +129,31 @@ export class ReportGenerator {
         const fileInfoArray: Array<FileInfo> = [];
 
         for (const fileData of fileDataArray) {
+            const relevancy = relevancyMap ? this._getRelevancyForFileData(fileData, relevancyMap) : null;
+
             const fileInfo: FileInfo = {
                 file: fileData.newPath,
                 tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(fileData.newPath),
                 linesAdded: fileData.linesAdded,
                 linesRemoved: fileData.linesRemoved,
-                usedIn: this._getFileReferences(fileData.newPath),
-                relevancy: relevancyMap ? this._getRelevancyForFileData(fileData, relevancyMap) : null,
+                usedIn: this._getUsedIn(fileData, relevancy),
+                relevancy: relevancy,
             };
+
+            Logger.pushFileInfo(fileData, fileInfo);
 
             fileInfoArray.push(fileInfo);
         }
         return fileInfoArray;
+    }
+    private _getUsedIn(fileData: FileData, relevancy: Relevancy | null) {
+        // TODO: Add some logging explainig why we do that
+
+        if (relevancy === Relevancy.HIGH) {
+            return this._getFileReferences(fileData.newPath);
+        } else {
+            return [];
+        }
     }
 
     private _getAffectedModules(fileInfoArray: Array<FileInfo>): Array<Module> {

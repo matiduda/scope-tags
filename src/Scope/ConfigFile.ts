@@ -11,9 +11,10 @@ export type ProjectConfig = {
 
 export type ConfigFileType = {
     projects: Array<ProjectConfig> // tsconfig.json path relative to git project root
-    gitCommitCountLimit: number,
+    gitCommitCountLimit: number,        // Maximum commits to search for when doing rev walk on git push - used just on te user side
     updateIssueURL?: string,
     ignoredExtensions?: Array<string>,
+    viewIssueURL?: string, // Used only for logger
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {

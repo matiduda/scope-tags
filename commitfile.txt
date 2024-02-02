@@ -1,9 +1,0 @@
-{
-    "buildTag": "build-123",
-    "commitsAndIssues": [
-        {
-            "hash": "c9dee0e80509bd853eafbf5fe9705c60bfef7296",
-            "issue": "JIRA-KEY"
-        }
-    ]
-}

@@ -13,6 +13,6 @@
     "strictPropertyInitialization": false,
   },
   "include": [
-    "src",
+    "src", "src/Git",
   ],
 }

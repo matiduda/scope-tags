@@ -51,3 +51,15 @@ export function getAllFilesFromDirectory(directoryPath: string): Array<string> {
 		.map(file => normalizePath(path.join(directoryPath, file)))
 		.filter(file => !isDirectory(file));
 }
+
+export function removeFile(path: string) {
+	fs.unlinkSync(path);
+}
+
+export function saveHTMLLogs(path: string, content: string) {
+	fs.writeFileSync(path, content);
+}
+
+export function resolvePath(relativePath: string): string {
+	return path.resolve(relativePath);
+}

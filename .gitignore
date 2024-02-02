@@ -3,3 +3,5 @@ dist/
 .scope/
 coverage/
 importMap.json
+# commitfile.txt
+# logs.html

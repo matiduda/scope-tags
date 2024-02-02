@@ -1,9 +1,8 @@
 import { Commit, Note, Repository, Revwalk } from "nodegit";
-import { FileData, FilePath, GitDeltaType } from "./Types";
+import { FileData, GitDeltaType } from "./Types";
 import path from "path";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
-import { CommitMessageRelevancyInfo, RelevancyMap, RelevancyTagger } from "../Console/RelevancyTagger";
 
 export class GitRepository {
 
@@ -238,32 +237,6 @@ export class GitRepository {
         const relativePath = path.relative(this._root, filePath);
         const definitelyPosix = relativePath.split(path.sep).join(path.posix.sep);
         return definitelyPosix;
-    }
-
-    public loadRelevancyMapFromCommits(commits: Commit[]) {
-        const relevancyTagger = new RelevancyTagger();
-
-        const commitToRelevancyMap: RelevancyMap = new Map();
-
-        for (const commit of commits) {
-            if (!relevancyTagger.doesCommitMessageHaveRelevancyData(commit.message())) {
-                continue;
-            }
-
-            console.log(`[Scope tags]: Found relevancy info in commit: ${commit.summary()}`);
-            const relevancyArray = relevancyTagger.convertCommitMessageToRelevancyData(commit.message());
-
-            relevancyArray.forEach(relevancyEntry => {
-                const commitRelevancies = commitToRelevancyMap.get(relevancyEntry.commit);
-
-                if (!commitRelevancies) {
-                    commitToRelevancyMap.set(relevancyEntry.commit, [relevancyEntry]);
-                } else {
-                    commitRelevancies.push(relevancyEntry);
-                }
-            });
-        }
-        return commitToRelevancyMap;
     }
 
     private async _removeNoteFromCommit(commit: Commit) {
