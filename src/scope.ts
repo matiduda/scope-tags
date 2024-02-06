@@ -27,6 +27,10 @@ if (!root) {
 }
 
 switch (args[0]) {
+    case "--version": {
+        console.log(getScriptVersion());
+        break;
+    }
     case "--tag": {
         runTagCommitCommand(args, root);
         break;

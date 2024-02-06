@@ -7,6 +7,7 @@ import { Utils } from "../Scope/Utils";
 import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { Relevancy } from "../Relevancy/Relevancy";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { ConfigFile } from "../Scope/ConfigFile";
 
 // What we need to know:
 // - Commits matched a single task, for each commit
@@ -117,14 +118,14 @@ export class Logger {
         return newDetachedIssueLog.commitInfos[0].fileLogs;
     }
 
-    public static exportLogsToHTML(): string {
+    public static exportLogsToHTML(configFile: ConfigFile): string {
         const htmlCreator = new HTMLCreator("Scope Tags");
 
         // ... add HTML content here
 
         htmlCreator.appendConfiguration(Logger._configuration);
         htmlCreator.appendIssueTableOfContents(Logger._issues);
-        htmlCreator.appendIssueLogs(Logger._issues);
+        htmlCreator.appendIssueLogs(Logger._issues, configFile.getViewIssueUrl());
 
         return htmlCreator.renderHTML();
     }

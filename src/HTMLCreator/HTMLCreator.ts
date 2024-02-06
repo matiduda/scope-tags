@@ -136,7 +136,7 @@ export class HTMLCreator {
     }
 
 
-    public appendIssueLogs(issues: IssueLog[]) {
+    public appendIssueLogs(issues: IssueLog[], viewIssueURL: string | undefined) {
         issues.forEach(issue => {
             this._html.document.addElementToType("main", {
                 type: "div",
@@ -152,7 +152,7 @@ export class HTMLCreator {
                         content: [
                             {
                                 type: "h3",
-                                content: issue.key
+                                content: this._getIssueHeaderContent(issue.key, viewIssueURL)
                             },
                             {
                                 type: "a",
@@ -169,6 +169,15 @@ export class HTMLCreator {
             issue.commitInfos.forEach(commitLog => this._appendCommitTable(commitLog, issue.key));
             this._html.document.addElementToId(issue.key, { type: "hr" });
         });
+    }
+    private _getIssueHeaderContent(key: string, viewIssueURL: string | undefined) {
+        return viewIssueURL ? [{
+            type: "a",
+            attributes: {
+                href: viewIssueURL + key
+            },
+            content: key
+        }] : key;
     }
 
     private _appendCommitTable(commitLog: CommitLog, elementId: string): void {
@@ -190,6 +199,10 @@ export class HTMLCreator {
                 {
                     type: "td",
                     content: entry.relevancy
+                },
+                {
+                    type: "td",
+                    content: `++${entry.linesAdded}, --${entry.linesRemoved}`,
                 },
                 {
                     type: "td",
@@ -258,6 +271,10 @@ export class HTMLCreator {
                                 {
                                     type: "th",
                                     content: "Relevancy"
+                                },
+                                {
+                                    type: "th",
+                                    content: "Lines"
                                 },
                                 {
                                     type: "th",

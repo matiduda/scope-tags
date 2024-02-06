@@ -14,7 +14,7 @@ export type ConfigFileType = {
     gitCommitCountLimit: number,        // Maximum commits to search for when doing rev walk on git push - used just on te user side
     updateIssueURL?: string,
     ignoredExtensions?: Array<string>,
-    viewIssueURL?: string, // Used only for logger
+    viewIssueURL?: string, // Used only for linking to issues in HTML logs
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
@@ -68,5 +68,9 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
             return this._config.ignoredExtensions.includes(path.extname(file));
         }
         return false;
+    }
+
+    public getViewIssueUrl(): any {
+        return this._config.viewIssueURL;
     }
 }

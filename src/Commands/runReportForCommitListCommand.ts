@@ -105,7 +105,7 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
                     removeFile(logFilePath);
                 }
 
-                saveHTMLLogs(logFilePath, Logger.exportLogsToHTML());
+                saveHTMLLogs(logFilePath, Logger.exportLogsToHTML(configFile));
                 console.log(`[Scope tags]: Saved HTML logs to '${logFilePath}'...'`);
             }
         });
