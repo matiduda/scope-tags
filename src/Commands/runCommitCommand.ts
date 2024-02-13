@@ -26,7 +26,9 @@ export function runCommitCommand(args: Array<string>, root: string) {
             .filter(fileData => !fileTagsDatabase.isIgnored(fileData.newPath) && !config.isFileExtensionIgnored(fileData.newPath));
 
         fileTagger.start(fileDataToTag).then(() => {
-            console.log("\nAll files tagged.");
+            console.log("\nAll files tagged. Saving to database...");
+            fileTagsDatabase.save();
         });
+
     });
 }

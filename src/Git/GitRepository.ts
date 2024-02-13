@@ -1,8 +1,9 @@
 import { Commit, Note, Repository, Revwalk } from "nodegit";
-import { FileData, GitDeltaType } from "./Types";
+import { FileData, GitDeltaType, VerificationInfo } from "./Types";
 import path from "path";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
 
 export class GitRepository {
 
@@ -24,7 +25,6 @@ export class GitRepository {
     public async getUnpushedCommits(maxCommitCount: number = 20): Promise<Commit[]> {
         const repository = await this._getRepository();
         const currentBranch = await repository.getCurrentBranch();
-        console.log("🚀 ~ GitRepository ~ getUnpushedCommits ~ currentBranch:", currentBranch.shorthand())
         const currentBranchName = currentBranch.shorthand();
         const refs = await repository.getReferences();
         const remoteRefs = refs.filter(ref => ref.isRemote() === 1);
@@ -178,13 +178,20 @@ export class GitRepository {
         await index.write();
     }
 
-    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase) {
+    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager): Promise<VerificationInfo> {
+        const commitInfo: VerificationInfo = {
+            isVerified: false,
+            filesToTag: [],
+            isSkipped: false,
+            hasRelevancy: false,
+        };
+
         // Check if commit should be skipped
         const skipVerificationCheck = await this._skipVerificationCheckForCommit(commit);
         if (skipVerificationCheck) {
-            console.log(`[Scope Tags] Skipped check for '${commit.summary()}'`);
             await this._removeNoteFromCommit(commit);
-            return;
+            commitInfo.isSkipped = true;
+            return commitInfo
         }
 
         const fileDataArray = await this.getFileDataForCommit(commit);
@@ -194,14 +201,16 @@ export class GitRepository {
             return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;
         });
 
-        const filesWithIgnoredExtensions = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
+        commitInfo.filesToTag = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
 
-        if (filesWithIgnoredExtensions.length) {
-            console.log(`Commit '${commit.summary()}' not verified, no tags found for required files:\n`);
-            filesWithIgnoredExtensions.forEach(file => console.log(`- ${file.newPath}`));
-            console.log("\nPlease run\n\n\tnpx scope --add\n\nto tag them");
-            process.exit(1);
+        if (!commitInfo.filesToTag.length) {
+            commitInfo.isVerified = true;
         }
+
+        // Check relevancy
+        commitInfo.hasRelevancy = relevancyManager.doesCommitMessageHaveRelevancyData(commit.message());
+
+        return commitInfo;
     }
 
     public async addSkipVerificationNoteToCommit(commit: Commit): Promise<void> {

@@ -44,7 +44,8 @@ export type FileLog = {
 export class Logger {
 
     private static _configuration: ConfigurationMap = new Map([
-        ["Package version", require("../../package.json").version]
+        ["Package version", require("../../package.json").version],
+        ["Date", new Date().toLocaleString()],
     ]);
 
     private static _issues: IssueLog[] = [];

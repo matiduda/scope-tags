@@ -86,6 +86,9 @@ export class JiraBuilder {
     }
 
     private _parseUniqueModules(uniqueModules: ModuleInfo[]) {
+        if (!uniqueModules.length) {
+            return p("-");
+        }
         return p(uniqueModules.map(unique => `(${unique.count}) ${unique.module}`).join('\n'));
     }
 
@@ -93,6 +96,10 @@ export class JiraBuilder {
         referencedTags: { tag: string; modules: string[]; }[],
         unusedReferences: Array<ReferencedFileInfo>
     ): any[] {
+        if (!referencedTags.length && !unusedReferences.length) {
+            return [p("-")];
+        }
+
         return referencedTags.map(referenced => {
             return nestedExpand({ title: referenced.tag })(
                 p(referenced.modules.join('\n'))

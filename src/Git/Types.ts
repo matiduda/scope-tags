@@ -38,3 +38,10 @@ export enum GitDeltaType {
     UNREADABLE = 9,  /**< entry is unreadable */
     CONFLICTED = 10  /**< entry in the index is conflicted */
 };
+
+export type VerificationInfo = {
+    isVerified: boolean,
+    filesToTag: Array<FileData>,
+    isSkipped: boolean,
+    hasRelevancy: boolean,
+}
