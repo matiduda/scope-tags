@@ -89,6 +89,11 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
             console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
             const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
 
+            if (generator.isReportEmpty(report)) {
+                console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
+                return;
+            }
+
             const commentReportJSON = generator.getReportAsJiraComment(report, false);
 
             console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
@@ -98,18 +103,18 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
                 report: commentReportJSON,
                 hostname: os.hostname(),
             });
-
-            if (logFilePath) {
-                if (fileExists(logFilePath)) {
-                    console.log(`Deleting existing HTML logs from '${logFilePath}' to create new log file`);
-                    removeFile(logFilePath);
-                }
-
-                saveHTMLLogs(logFilePath, Logger.exportLogsToHTML(configFile));
-                console.log(`[Scope tags]: Saved HTML logs to '${logFilePath}'...'`);
-            }
         });
     });
+
+    if (logFilePath) {
+        if (fileExists(logFilePath)) {
+            console.log(`Deleting existing HTML logs from '${logFilePath}' to create new log file`);
+            removeFile(logFilePath);
+        }
+
+        saveHTMLLogs(logFilePath, Logger.exportLogsToHTML(configFile));
+        console.log(`[Scope tags]: Saved HTML logs to '${logFilePath}'...'`);
+    }
 
     console.log(`[Scope tags]: Posted comments: ${uniqueIssues.length}`);
     console.log(`[Scope tags]: Commits processed: ${totalCommitCount}`);

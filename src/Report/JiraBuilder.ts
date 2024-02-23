@@ -10,7 +10,7 @@ export type TagInfo = {
 
 export type ModuleInfo = {
     module: string,
-    count: number
+    tags: Array<string>
 }
 
 export type LinesInfo = {
@@ -66,8 +66,8 @@ export class JiraBuilder {
         const headers = [
             { name: "Affected tags", width: 50 },
             { name: "Lines", width: 20 },
-            { name: "Referenced modules (+ count)" },
-            { name: "Referenced tags (+ modules)" },
+            { name: "Referenced modules" },
+            { name: "Referenced tags" },
         ];
         return tableRow(headers.map(header => {
             return header.width
@@ -80,16 +80,23 @@ export class JiraBuilder {
         return tableRow([
             tableHeader({})(p(entry.affectedTags.join('\n'))),
             tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
-            tableHeader({})(this._parseUniqueModules(entry.uniqueModules)),
+            tableHeader({})(...this._referencedModulesAsNestedExpands(entry.uniqueModules)),
             tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
         ]);
     }
 
-    private _parseUniqueModules(uniqueModules: ModuleInfo[]) {
+    private _referencedModulesAsNestedExpands(
+        uniqueModules: ModuleInfo[],
+    ): any[] {
         if (!uniqueModules.length) {
-            return p("-");
+            return [p("-")];
         }
-        return p(uniqueModules.map(unique => `(${unique.count}) ${unique.module}`).join('\n'));
+
+        return uniqueModules.map(uniqueModule => {
+            return nestedExpand({ title: uniqueModule.module })(
+                p(uniqueModule.tags.join('\n'))
+            );
+        });
     }
 
     private _referencedTagsAsNestedExpands(

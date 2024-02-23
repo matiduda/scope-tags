@@ -36,7 +36,7 @@ export type FileLog = {
     changeType: string,
     linesAdded: number,
     linesRemoved: number,
-    relevancy: string,
+    relevancy: Relevancy | null,
     databaseContent: TagIdentifier[],
     referencedFiles: FileReference[],
 }
@@ -91,7 +91,7 @@ export class Logger {
             changeType: Utils.getEnumKeyByEnumValue(GitDeltaType, fileData.change) || `= ${fileData.change} (unknown)`,
             linesAdded: fileInfo.linesAdded,
             linesRemoved: 0,
-            relevancy: Utils.getEnumKeyByEnumValue(Relevancy, fileInfo.relevancy) || `-`,
+            relevancy: fileInfo.relevancy,
             databaseContent: fileInfo.tagIdentifiers,
             referencedFiles: fileInfo.usedIn,
         }

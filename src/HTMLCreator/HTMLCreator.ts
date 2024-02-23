@@ -198,7 +198,7 @@ export class HTMLCreator {
                 },
                 {
                     type: "td",
-                    content: entry.relevancy
+                    content: entry.relevancy || "-"
                 },
                 {
                     type: "td",

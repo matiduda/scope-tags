@@ -37,27 +37,15 @@ export type Report = {
 };
 
 export class ReportGenerator {
-
-    private _repository: GitRepository;
-    private _tagsDefinitionFile: TagsDefinitionFile;
-    private _fileTagsDatabase: FileTagsDatabase;
-
-    private _referenceFinders: Array<IReferenceFinder>;
-
     constructor(
-        repository: GitRepository,
-        tagsDefinitionFile: TagsDefinitionFile,
-        fileTagsDatabase: FileTagsDatabase,
-        referenceFinders: Array<IReferenceFinder>
-    ) {
-        this._repository = repository;
-        this._tagsDefinitionFile = tagsDefinitionFile;
-        this._fileTagsDatabase = fileTagsDatabase;
-        this._referenceFinders = referenceFinders;
-    }
+        private _repository: GitRepository,
+        private _tagsDefinitionFile: TagsDefinitionFile,
+        private _fileTagsDatabase: FileTagsDatabase,
+        private _referenceFinders: Array<IReferenceFinder>
+    ) { }
 
-    public async generateReportForCommit(commit: Commit, projectName: string): Promise<Report> {
-        return this.generateReportForCommits([commit], projectName, "-", true);
+    public async generateReportForCommit(commit: Commit, projectName: string, relevancyMap: RelevancyMap): Promise<Report> {
+        return this.generateReportForCommits([commit], projectName, "-", true, relevancyMap);
     }
 
     public async generateReportForCommits(
@@ -75,7 +63,8 @@ export class ReportGenerator {
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
             if (printDebugInfo) {
-                console.log()
+                console.log(fileInfoArray);
+                console.log(affectedModules);
             }
 
             const report: Report = {
@@ -148,7 +137,7 @@ export class ReportGenerator {
     }
     private _getUsedIn(fileData: FileData, relevancy: Relevancy | null) {
         // TODO: Add some logging explainig why we do that
-
+        console.log(relevancy);
         if (relevancy === Relevancy.HIGH) {
             return this._getFileReferences(fileData.newPath);
         } else {
@@ -218,30 +207,6 @@ export class ReportGenerator {
         };
     }
 
-    public getReportAsJiraComment(report: Report, printToConsole = false): string {
-        const finalReportTableData: Array<ReportTableRow> = report.allModules.map(moduleReport => {
-            const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
-
-            return {
-                affectedTags: this._getAffectedTags(moduleReport),
-                lines: this._calculateLines(moduleReport),
-                lastChange: report.date,
-                uniqueModules: modulesAndTagsInfo.uniqueModules,
-                referencedTags: modulesAndTagsInfo.tagInfo,
-                unusedReferences: modulesAndTagsInfo.unusedReferences
-            };
-        });
-
-        const jiraBuilder = new JiraBuilder();
-        return jiraBuilder.parseReport(
-            finalReportTableData,
-            report.date,
-            report.projectName,
-            report.jobName,
-            printToConsole
-        );
-    }
-
     private _getAffectedTags(moduleReport: ModuleReport): Array<string> {
         const allTags: Array<Tag["name"]> = [];
         const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
@@ -294,12 +259,12 @@ export class ReportGenerator {
 
                             const infoInUniqueModules = uniqueModules.find(info => info.module === identifier.module)
 
-                            if (infoInUniqueModules) {
-                                infoInUniqueModules.count++;
+                            if (infoInUniqueModules && !infoInUniqueModules.tags.includes(identifier.tag)) {
+                                infoInUniqueModules.tags.push(identifier.tag);
                             } else {
                                 uniqueModules.push({
                                     module: identifier.module,
-                                    count: 1,
+                                    tags: [],
                                 });
                             }
                         }
@@ -312,9 +277,37 @@ export class ReportGenerator {
             }
         })
         return {
-            uniqueModules: uniqueModules.sort((uniqueA, uniqueB) => uniqueB.count - uniqueA.count),
+            uniqueModules: uniqueModules.sort((uniqueA, uniqueB) => uniqueB.tags.length - uniqueA.tags.length),
             tagInfo: tagInfo.sort((tagInfoA, tagInfoB) => tagInfoB.modules.length - tagInfoA.modules.length),
             unusedReferences: unusedReferences
         }
     };
+
+    public getReportAsJiraComment(report: Report, printToConsole = false): string {
+        const finalReportTableData: Array<ReportTableRow> = report.allModules.map(moduleReport => {
+            const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
+
+            return {
+                affectedTags: this._getAffectedTags(moduleReport),
+                lines: this._calculateLines(moduleReport),
+                lastChange: report.date,
+                uniqueModules: modulesAndTagsInfo.uniqueModules,
+                referencedTags: modulesAndTagsInfo.tagInfo,
+                unusedReferences: modulesAndTagsInfo.unusedReferences
+            };
+        });
+
+        const jiraBuilder = new JiraBuilder();
+        return jiraBuilder.parseReport(
+            finalReportTableData,
+            report.date,
+            report.projectName,
+            report.jobName,
+            printToConsole
+        );
+    }
+
+    public isReportEmpty(report: Report): boolean {
+        return report.allModules.some(moduleReport => moduleReport.files.some(file => file.tagIdentifiers.length));
+    }
 }

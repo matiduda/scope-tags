@@ -8,6 +8,7 @@ import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
 
 export function runReportForCommitCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
@@ -44,9 +45,11 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
     })
 
     const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
+    const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
-        const report = await generator.generateReportForCommit(commit, projects[0].name);
+        const relevancyMap = relevancyManager.loadRelevancyMapFromCommits([commit]);
+        const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap);
         generator.getReportAsJiraComment(report, true);
     });
 }

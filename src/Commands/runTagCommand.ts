@@ -36,7 +36,8 @@ export function runTagCommitCommand(args: Array<string>, root: string) {
         const fileData = repository.convertFilesToFileData(filesToTag);
 
         fileTagger.start(fileData).then(() => {
-            console.log("All files tagged");
+            console.log("All files tagged. Saving to database...");
+            fileTagsDatabase.save();
         });
     } else {
         // Ask the user if they want to re-tag selected files
@@ -57,6 +58,8 @@ export function runTagCommitCommand(args: Array<string>, root: string) {
             const fileData = repository.convertFilesToFileData(selectedFiles.map(selectedFile => selectedFile.path));
 
             await fileTagger.start(fileData, false);
+            console.log("All files tagged. Saving to database...");
+            fileTagsDatabase.save();
         });
     }
 }
