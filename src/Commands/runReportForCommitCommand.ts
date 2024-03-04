@@ -50,6 +50,10 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
         const relevancyMap = relevancyManager.loadRelevancyMapFromCommits([commit]);
         const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap);
+        if (generator.isReportEmpty(report)) {
+            console.log("Report is empty (no tags were found in modified files).");
+            return;
+        }
         generator.getReportAsJiraComment(report, true);
     });
 }

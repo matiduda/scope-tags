@@ -136,8 +136,6 @@ export class ReportGenerator {
         return fileInfoArray;
     }
     private _getUsedIn(fileData: FileData, relevancy: Relevancy | null) {
-        // TODO: Add some logging explainig why we do that
-        console.log(relevancy);
         if (relevancy === Relevancy.HIGH) {
             return this._getFileReferences(fileData.newPath);
         } else {
@@ -308,6 +306,6 @@ export class ReportGenerator {
     }
 
     public isReportEmpty(report: Report): boolean {
-        return report.allModules.some(moduleReport => moduleReport.files.some(file => file.tagIdentifiers.length));
+        return report.allModules.length === 0;
     }
 }
