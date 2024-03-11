@@ -9,6 +9,7 @@ import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder"
 import { RelevancyMap } from "../Relevancy/RelevancyManager";
 import { Relevancy } from "../Relevancy/Relevancy";
 import { Logger } from "../Logger/Logger";
+import { ConfigFile } from "../Scope/ConfigFile";
 
 export type ModuleReport = {
     module: Module["name"],
@@ -41,7 +42,8 @@ export class ReportGenerator {
         private _repository: GitRepository,
         private _tagsDefinitionFile: TagsDefinitionFile,
         private _fileTagsDatabase: FileTagsDatabase,
-        private _referenceFinders: Array<IReferenceFinder>
+        private _configFile: ConfigFile,
+        private _referenceFinders: Array<IReferenceFinder>,
     ) { }
 
     public async generateReportForCommit(commit: Commit, projectName: string, relevancyMap: RelevancyMap): Promise<Report> {
@@ -301,7 +303,8 @@ export class ReportGenerator {
             report.date,
             report.projectName,
             report.jobName,
-            printToConsole
+            printToConsole,
+            this._configFile.getLogsURL(report.jobName),
         );
     }
 

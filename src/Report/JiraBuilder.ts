@@ -1,5 +1,16 @@
 import { formatDate } from "./TimeUtils";
-import { expand, table, doc, tableRow, tableHeader, nestedExpand, p, strong } from "./AdfUtils";
+import {
+    expand,
+    table,
+    doc,
+    tableRow,
+    tableHeader,
+    nestedExpand,
+    p,
+    strong,
+    text,
+    link,
+} from "./AdfUtils";
 import { getScriptVersion } from "../scope";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
 
@@ -34,7 +45,8 @@ export class JiraBuilder {
         date: Date,
         projectName: string,
         buildTag: string,
-        printToConsole = false
+        printToConsole = false,
+        logURL?: string
     ): string {
         let tableTitle = `'${projectName}' scope tags v${getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
         tableTitle += buildTag ? ` │ ${buildTag}` : "";
@@ -47,9 +59,13 @@ export class JiraBuilder {
             ...{ attrs: { layout: "full-width" } }
         };
 
+        const expandContent = logURL ? [reportTable, this._createLink(logURL, "Go to build logs")] : [reportTable];
+
         const expandTable = expand(
             { title: tableTitle },
-        )(reportTable);
+        )(
+            ...expandContent
+        );
 
         const adfDocument = doc(expandTable);
 
@@ -112,6 +128,17 @@ export class JiraBuilder {
                 p(referenced.modules.join('\n'))
             );
         });
+    }
+
+    private _createLink(url: string, description: string) {
+        const adfText = text(description);
+
+        const adfLink = link({
+            href: url,
+            title: description
+        })(adfText);
+
+        return p(adfLink);
     }
 
     // Enables to paste the generated ADF to the online viewer

@@ -1,4 +1,3 @@
-import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { ExternalMapReferenceFinder } from "../References/ExternalMapReferenceFinder";
 import { IReferenceFinder } from "../References/IReferenceFinder";
@@ -14,7 +13,7 @@ import { Logger } from "../Logger/Logger";
 
 const os = require("os");
 
-export function runReportForCommitListCommand(args: Array<string>, root: string) {
+export async function runReportForCommitListCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
 
     const buildDataFile = args[1];
@@ -59,52 +58,53 @@ export function runReportForCommitListCommand(args: Array<string>, root: string)
         }
     })
 
-    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
+    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
     const relevancyTagger = new RelevancyManager();
     const buildIntegration = new BuildIntegration(buildDataFile, configFile);
     const uniqueIssues = buildIntegration.getUniqueIssues();
 
     let totalCommitCount = 0;
 
-    uniqueIssues.forEach(issue => {
+    for (const issue of uniqueIssues) {
         console.log(`[Scope tags]: Checking commits of issue '${issue}'`);
 
-        const commits = buildIntegration.getIssueCommits(issue);
+        const issueCommits = buildIntegration.getIssueCommits(issue);
         const buildTag = buildIntegration.getBuildTag();
 
         Logger.setConfigurationProperty("Build tag", buildTag);
 
-        repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
-            for (const commit of commits) {
-                console.log(`[Scope tags]: Found '${commit.summary()}'`);
-            }
+        // const commits = await repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
+        const commits = await repository.getCommitsByHashes(issueCommits.map(commit => commit.hash));
 
-            Logger.pushIssueInfo(issue, commits);
+        for (const commit of commits) {
+            console.log(`[Scope tags]: Found '${commit.summary()}'`);
+        }
 
-            totalCommitCount += commits.length;
+        Logger.pushIssueInfo(issue, commits);
 
-            console.log(`[Scope tags]: Loading relevancy map...'`);
-            const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits(commits);
+        totalCommitCount += commits.length;
 
-            console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
-            const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
+        console.log(`[Scope tags]: Loading relevancy map...'`);
+        const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits(commits);
 
-            if (generator.isReportEmpty(report)) {
-                console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
-                return;
-            }
+        console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
+        const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
 
-            const commentReportJSON = generator.getReportAsJiraComment(report, false);
+        if (generator.isReportEmpty(report)) {
+            console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
+            return;
+        }
 
-            console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
+        const commentReportJSON = generator.getReportAsJiraComment(report, false);
 
-            await buildIntegration.updateIssue({
-                issue: issue,
-                report: commentReportJSON,
-                hostname: os.hostname(),
-            });
+        console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
+
+        await buildIntegration.updateIssue({
+            issue: issue,
+            report: commentReportJSON,
+            hostname: os.hostname(),
         });
-    });
+    }
 
     if (logFilePath) {
         if (fileExists(logFilePath)) {

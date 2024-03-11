@@ -70,6 +70,11 @@ export function applyMark(mark: any, maybeNode: any) {
     return node;
 }
 
+export const link = (attrs: any) => (maybeNode: any) => applyMark({
+    type: 'link',
+    attrs
+}, maybeNode);
+
 function isDuplicateMark(node: any, type: any) {
     if (node.marks && node.marks.some((mark: any) => mark.type === type)) {
         return true;

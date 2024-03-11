@@ -1,6 +1,7 @@
 export const CSSOverrides = `
 :root {
     --justify-important: left;
+    --width-content: 1800px;
 }
 
 hr {

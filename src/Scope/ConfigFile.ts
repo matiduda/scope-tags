@@ -15,10 +15,12 @@ export type ConfigFileType = {
     updateIssueURL?: string,
     ignoredExtensions?: Array<string>,
     viewIssueURL?: string, // Used only for linking to issues in HTML logs
+    logsURL?: string,
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
     private static PATH = ".scope/config.json";
+    private static LOGURL_BUILD_REPLACE_TAG = "__BUILD__";
 
     private _root: string;
     private _config: ConfigFileType;
@@ -70,7 +72,18 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
         return false;
     }
 
-    public getViewIssueUrl(): any {
+    public getViewIssueUrl(): string | undefined {
         return this._config.viewIssueURL;
+    }
+
+    public getLogsURL(buildTag: string): string | undefined {
+        if (!buildTag) {
+            console.log("[ConfigFile] Could not create logs URL because of empty buildTag");
+            return;
+        } else if (!this._config.logsURL?.includes(ConfigFile.LOGURL_BUILD_REPLACE_TAG)) {
+            console.log(`[ConfigFile] Could not create logs URL because logsURL does not include required tag '${ConfigFile.LOGURL_BUILD_REPLACE_TAG}'`);
+            return;
+        }
+        return this._config.logsURL?.replace(ConfigFile.LOGURL_BUILD_REPLACE_TAG, buildTag);
     }
 }

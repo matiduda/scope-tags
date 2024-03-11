@@ -44,7 +44,7 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
         }
     })
 
-    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, referenceFinders);
+    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
     const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
