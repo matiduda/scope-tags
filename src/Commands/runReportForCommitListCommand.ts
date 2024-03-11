@@ -92,7 +92,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
 
         if (generator.isReportEmpty(report)) {
             console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
-            return;
+            continue;
         }
 
         const commentReportJSON = generator.getReportAsJiraComment(report, false);
