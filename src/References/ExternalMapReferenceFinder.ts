@@ -1,4 +1,5 @@
 import { JSONFile } from "../FileSystem/JSONFile";
+import { fileExists } from "../FileSystem/fileSystemUtils";
 import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
 
 type FileImport = { file: string, imports: Array<string> };
@@ -9,13 +10,36 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
     private _importMap: ImportMapFile;
     private _supportedFileExtensions: Array<string>;
 
+    private _chunks: number = 0;
+
     constructor(importMapFilePath: string, supportedFileExtensions: Array<string>) {
         this._importMap = this._loadImportMap(importMapFilePath);
         this._supportedFileExtensions = supportedFileExtensions;
     }
 
     private _loadImportMap(path: string): ImportMapFile {
-        return JSONFile.loadFrom<ImportMapFile>(path);
+        if (!path.includes("{x}")) {
+            return JSONFile.loadFrom<ImportMapFile>(path);
+        } else {
+            let loadedImportMap: ImportMapFile = [];
+
+            while (true) {
+                const currentChunkFilePath = path.replace("{x}", this._chunks.toString());
+
+                if (!fileExists(currentChunkFilePath)) {
+                    return loadedImportMap;
+                }
+
+                const loadedChunk = JSONFile.loadFrom<ImportMapFile>(path);
+                loadedImportMap = loadedImportMap.concat(loadedChunk);
+
+                this._chunks++;
+            }
+        }
+    }
+
+    public getImportMapChunkCount(): number {
+        return this._chunks;
     }
 
     public getSupportedFilesExtension(): string[] {
@@ -32,7 +56,7 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
                     unused: false
                 });
             }
-        })
+        });
 
         return referenceList;
     }

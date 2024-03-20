@@ -53,7 +53,9 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
             if (!fileExists(project.useExternalImportMap)) {
                 console.log(`'useExternalImportMap' - External map for project ${project.name} not found at ${project.useExternalImportMap}, so there won't be references found for files: ${project.supportedFiles}`);
             } else {
-                referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
+                const externalMapReferenceFinder = new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles);
+                referenceFinders.push(externalMapReferenceFinder);
+                Logger.setConfigurationProperty("Import map chunks", externalMapReferenceFinder.getImportMapChunkCount().toString());
             }
         }
     })
