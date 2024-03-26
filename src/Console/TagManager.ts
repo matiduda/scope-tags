@@ -47,8 +47,10 @@ export class TagManager {
                 ...tagsMappedToOptions,
             ],
             result(value: any) {
+                // console.log(value);
+                // console.log(this.map);
                 return this.map(value);
-            },
+            }
         });
 
         let selected: any;

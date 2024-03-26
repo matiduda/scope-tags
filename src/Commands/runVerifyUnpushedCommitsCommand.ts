@@ -33,7 +33,11 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
                 console.log(`[Scope Tags] Skipped check for '${commit.summary()}'`);
             }
 
-            if (!verificationInfo.isVerified && !verificationInfo.isSkipped) {
+            if (verificationInfo.isMergeCommit) {
+                console.log(`[Scope Tags] Skipped check for '${commit.summary()}' because it's a merge commit`);
+            }
+
+            if (!verificationInfo.isVerified && !verificationInfo.isSkipped && !verificationInfo.isMergeCommit) {
                 console.log(`Commit '${commit.summary()}' not verified, no tags found for required files:\n`);
                 verificationInfo.filesToTag.forEach(file => console.log(`- ${file.newPath}`));
                 console.log("To tag files run\n\n\tnpx scope --add\n\n");
@@ -44,7 +48,7 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
         }
 
         // All commits are skipped => return
-        if ([...commitsVerificationInfo.values()].every(info => info.isSkipped)) {
+        if ([...commitsVerificationInfo.values()].every(info => info.isSkipped || info.isMergeCommit)) {
             console.log("[Scope Tags] All commits are skipped");
             return;
         }

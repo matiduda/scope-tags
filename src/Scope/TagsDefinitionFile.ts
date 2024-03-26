@@ -82,7 +82,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public save(): string {
         const savedFilePath = this._getPath();
-        JSONFile.niceWrite<TagsDatabaseType>(savedFilePath, this._tagsDatabaseData);
+        JSONFile.niceWrite<TagsDatabaseType>(savedFilePath, this._tagsDatabaseData, this._replacer);
         return savedFilePath;
     }
 
@@ -262,6 +262,14 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             name: "Tag",
         };
         return defaultTag;
+    }
+
+    // This is cancer
+    private _replacer(stringifiedOutput: string) {
+        return stringifiedOutput
+            .replace(/{\n\s+"name": "(.+)"\n\s+}/g, `{ "name": "$1" }`)
+            .replace(/\n(\s+)},\n\s+{/g, `\n$1}, {`)
+            .replace(/"modules": \[\n\s+/g, `modules": [{`);
     }
 
     static getDefaultModule(): Module {

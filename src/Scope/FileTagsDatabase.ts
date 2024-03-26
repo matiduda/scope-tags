@@ -93,11 +93,14 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         const savedFilePath = this._getPath();
 
         const databaseToSave: SavedDatabaseType = {
-            files: Object.entries(this._fileTagsDatabaseData.files).map(entry => ({ path: entry[0], tags: entry[1] })),
+            files: Object.entries(this._fileTagsDatabaseData.files).map(entry => ({
+                path: entry[0],
+                tags: entry[1]
+            })),
             ignoredFiles: this._fileTagsDatabaseData.ignoredFiles
         };
 
-        JSONFile.niceWrite<SavedDatabaseType>(savedFilePath, databaseToSave);
+        JSONFile.niceWrite<SavedDatabaseType>(savedFilePath, databaseToSave, this._replacer);
         return savedFilePath;
     }
 
@@ -106,8 +109,10 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     }
 
     public addMultipleTagsToFile(tagsIdentifierArray: Array<TagIdentifier>, filePath: string): Array<TagIdentifier> {
-        if (!fs.existsSync(filePath)) {
-            throw new Error(`File not found: ${filePath}`);
+        const relativePath = path.join(this._root, filePath);
+
+        if (!fs.existsSync(relativePath)) {
+            throw new Error(`File not found: ${relativePath}`);
         }
         if (!tagsIdentifierArray.length) {
             throw new Error("Tags array is empty");
@@ -219,6 +224,17 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             filesStatusesInDatabase.set(data, this._checkFileStatus(data.newPath));
         });
         return filesStatusesInDatabase;
+    }
+
+    // Oh boy what a mess
+    private _replacer(stringifiedOutput: string) {
+        return stringifiedOutput
+            .replace(/{\n\s+"tag": "(.+)",\n\s+"module": "(.+)"\n\s+}/g, `{ "tag": "$1", "module": "$2" }`)
+            .replace(/(\s+)]\n\s+},\n\s+{\n\s+"path"/g, `]},$1{ "path"`)
+            .replace(/"tags"/g, `  "tags"`)
+            .replace(/}\n\s+]\n\s+}\n\s+],\n(\s+)"ignoredFiles"/g, `}]}],\n$1"ignoredFiles"`)
+            .replace(/\n\s+{\s\s+"path"/g, `\n            { "path"`)
+            .replace(/            /g, `        `);
     }
 
     private _checkFileStatus(filePath: string): FileStatusInDatabase {

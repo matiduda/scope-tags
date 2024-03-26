@@ -44,4 +44,5 @@ export type VerificationInfo = {
     filesToTag: Array<FileData>,
     isSkipped: boolean,
     hasRelevancy: boolean,
+    isMergeCommit: boolean,
 }

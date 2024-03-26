@@ -23,6 +23,7 @@ Options:
     
     --verify\t\t\tReturns 0 if all files modified by a commit were tagged or ignored and 1 otherwise, usage: scope --verify <commit hash, long format>
     --verify-unpushed-commits\tWorks similar to --verify, but checks for commits no yet pushed to remote, returns 0 or 1 analogous to --verify
+    --list-unpushed-commits\tLists the commits which are currently "observed" by the script
     
     --report-for-commit\t\tGenerates human readable report with statistics for files modified in a commit, usage: --report-for-commit <commit hash, long format>
     --report-for-commit-list\tSimilar to --report-for-commit, but enables Jira issue norification - see README.md for configuration details.

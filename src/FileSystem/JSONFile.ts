@@ -15,10 +15,14 @@ export class JSONFile {
         // TODO: Add typecheck?
     }
 
-    public static niceWrite<T>(path: string, value: T) {
+    public static niceWrite<T>(path: string, value: T, replacer?: (json: string) => string) {
+        const stringifiedValue = replacer
+            ? replacer(JSON.stringify(value, null, 4))
+            : JSON.stringify(value, null, 4);
+
         fs.writeFileSync(
             path,
-            JSON.stringify(value, null, 4),
+            stringifiedValue,
             { encoding: "utf8", flag: "w" }
         );
     }

@@ -34,9 +34,9 @@ export class GitRepository {
 
         if (matchingRemotes.length > 1) {
             console.log(
-                "[GitRepository::getUnpushedCommits] Found more than one matching remotes:",
-                matchingRemotes,
-                `[GitRepository::getUnpushedCommits] Selecting '${matchingRemotes[0]}' because it's the first one`
+                "[GitRepository::getUnpushedCommits] Found more than one matching remotes:\n",
+                matchingRemotes.map(remote => '- ' + remote.toString()).join('\n'),
+                `\n[GitRepository::getUnpushedCommits] Selecting '${matchingRemotes[0]}' because it's the first one`
             );
         }
 
@@ -44,7 +44,6 @@ export class GitRepository {
 
         // When remote branch is not yet pushed, we can't directly compare
         // which commits are fresh, so we safely compare to origin/HEAD
-        console.log(currentRemote);
 
         walk.pushRange(currentRemote ? `${currentRemote}..HEAD` : `origin/HEAD..${currentBranchName}`);
 
@@ -183,6 +182,7 @@ export class GitRepository {
             isVerified: false,
             filesToTag: [],
             isSkipped: false,
+            isMergeCommit: false,
             hasRelevancy: false,
         };
 
@@ -191,7 +191,10 @@ export class GitRepository {
         if (skipVerificationCheck) {
             await this._removeNoteFromCommit(commit);
             commitInfo.isSkipped = true;
-            return commitInfo
+            return commitInfo;
+        } else if (this.isMergeCommit(commit)) {
+            commitInfo.isMergeCommit = true;
+            return commitInfo;
         }
 
         const fileDataArray = await this.getFileDataForCommit(commit);
@@ -229,6 +232,10 @@ export class GitRepository {
             GitRepository.SKIP_VERIFICATION_MSG,
             1
         );
+    }
+
+    public isMergeCommit(commit: Commit): boolean {
+        return commit.parentcount() > 1;
     }
 
     private async _getRepository(): Promise<Repository> {

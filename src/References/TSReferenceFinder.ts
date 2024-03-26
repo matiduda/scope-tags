@@ -37,8 +37,6 @@ export class TSReferenceFinder implements IReferenceFinder {
 
         const exportedDeclarations = sourceFile.getExportedDeclarations();
 
-        console.log(exportedDeclarations);
-
         for (const declaration of exportedDeclarations.values()) {
             let referencedSymbols: Array<ReferencedSymbol> = [];
 
@@ -71,8 +69,6 @@ export class TSReferenceFinder implements IReferenceFinder {
                     }
 
                     const referenceFilePath = path.resolve(reference.getSourceFile().getFilePath());
-
-                    console.log(referenceFilePath);
 
                     const referencedFileInfo: ReferencedFileInfo = {
                         filename: referenceFilePath,
