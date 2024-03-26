@@ -45,7 +45,6 @@ export class RelevancyManager {
     public constructor() { }
 
     public async start(entries: Array<RelevancyEntry>): Promise<Map<FileData, Relevancy>> {
-
         this._assertNoDuplicateEntries(entries);
 
         const answerMap = new Map<FileData, Relevancy>();
@@ -64,6 +63,7 @@ export class RelevancyManager {
                 answerMap.set(entry, this._getRelevancyByIndex(answer[entry.newPath]))
             });
         }
+
         return answerMap;
     }
 
@@ -72,7 +72,7 @@ export class RelevancyManager {
             // Check if fileData was commited in current head commit,
             // since this commit stores relevancy data and will be changed later,
             // store it's SHA as "__current__", so it can be read later...
-            const commitShaOrIdentifier = fileData.commitedIn === headCommit.sha()
+            const commitShaOrIdentifier = fileData.commitedIn?.sha() === headCommit.sha()
                 ? RelevancyManager.CURRENT_COMMIT
                 : fileData.commitedIn;
 
@@ -83,26 +83,27 @@ export class RelevancyManager {
             } as CommitMessageRelevancyInfo;
         });
 
-        return `\n${RelevancyManager.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}`;
+        return `\n${RelevancyManager.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}${RelevancyManager.COMMIT_MSG_PREFIX}`;
     }
 
     public convertCommitMessageToRelevancyData(commit: Commit): Array<CommitMessageRelevancyInfo> {
         const commitMessage = commit.message();
 
         const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+        const relevancyEndIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
 
         if (prefixStartIndex === -1) {
             throw new Error(`Commit message '${commitMessage}' does not include relevancy info`);
         }
 
-        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length);
+        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
 
         let relevancyInfo = [];
 
         try {
             relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
         } catch (e) {
-            throw new Error(`Could not parse relevancy data from commit message: '${commitMessage}'`);
+            throw new Error(`Could not parse relevancy data from commit message: '${commitMessage}', found relevancy data: '${relevancyJSON}'`);
         }
 
         // Replace current commit' sha
@@ -153,7 +154,7 @@ export class RelevancyManager {
                     `[RelevancyManager] Found duplicate entry:
     1. ${entry.newPath} at index ${index}
     2. ${duplicate.newPath} at index ${duplicateIndex}`)
-                throw new Error("Cannot have two entries with the same file path");
+                throw new Error("[RelevancyManager] Cannot add relevancy with multiple entries the same file path");
             }
         }));
     }

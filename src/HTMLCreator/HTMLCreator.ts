@@ -29,6 +29,9 @@ export class HTMLCreator {
             content: [
                 {
                     type: "h3",
+                    attributes: {
+                        id: "page-title",
+                    },
                     content: 'Scope tags report logs'
                 },
                 {
@@ -190,7 +193,7 @@ export class HTMLCreator {
                 },
                 {
                     type: "td",
-                    content: entry.changeType
+                    content: entry.ignored ? "IGNORED" : entry.changeType
                 },
                 {
                     type: "td",
@@ -202,7 +205,7 @@ export class HTMLCreator {
                 },
                 {
                     type: "td",
-                    content: `++${entry.linesAdded}, --${entry.linesRemoved}`,
+                    content: this._renderLinedAddedRemoved(entry.linesAdded, entry.linesRemoved),
                 },
                 {
                     type: "td",
@@ -212,9 +215,13 @@ export class HTMLCreator {
                     type: "td",
                     content: this._renderReferencedFiles(entry.referencedFiles)
                 },
-            ]
+            ],
+            ...(entry.ignored ? {
+                attributes: {
+                    class: "ignored-file"
+                }
+            } : {}),
         }));
-
 
         this._html.document.addElementToId(elementId, {
             type: "div",
@@ -302,6 +309,27 @@ export class HTMLCreator {
             },
             content: `${fileReference.fileInfo.filename + (fileReference.fileInfo.unused ? '- unused' : '')}`
         }));
+    }
+
+    private _renderLinedAddedRemoved(linesAdded: number, linesRemoved: number) {
+        if (linesAdded === 0 && linesRemoved === 0) {
+            return '-';
+        }
+
+        let linesAddedRemovedText = "";
+
+        if (linesAdded > 0) {
+            linesAddedRemovedText += `++${linesAdded}`;
+            if (linesRemoved > 0) {
+                linesAddedRemovedText += ` `;
+            }
+        }
+
+        if (linesRemoved > 0) {
+            linesAddedRemovedText += `--${linesAdded}`;
+        }
+
+        return linesAddedRemovedText;
     }
 
     private _renderTagIdentifiers(tagIdentifiers: TagIdentifier[]) {

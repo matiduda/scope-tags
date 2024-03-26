@@ -21,6 +21,11 @@ hr {
     color: #606060;
 }
 
+.ignored-file {
+    background-color: 
+    color: #cccccc;
+}
+
 table > p {
     margin-block-start: 0em;
     margin-block-end: 0em;

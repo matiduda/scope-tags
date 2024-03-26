@@ -18,8 +18,14 @@ export class GitRepository {
 
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
         const unpushedCommits = await this.getUnpushedCommits(maxCommitCount);
-        unpushedCommits.forEach(commit => console.log(`Checking commit: ${commit.summary()}`));
-        return this.getFileDataForCommits(unpushedCommits);
+
+        unpushedCommits.forEach(commit => {
+            if (this.isMergeCommit(commit)) {
+                console.log(`Skipping '${commit.summary()}' because it is a merge.`);
+            }
+        });
+
+        return this.getFileDataForCommits(unpushedCommits.filter(commit => !this.isMergeCommit(commit)));
     }
 
     public async getUnpushedCommits(maxCommitCount: number = 20): Promise<Commit[]> {
@@ -78,7 +84,7 @@ export class GitRepository {
                         change: patch.status(),
                         linesAdded: patch.lineStats().total_additions,
                         linesRemoved: patch.lineStats().total_deletions,
-                        commitedIn: commit.sha(),
+                        commitedIn: commit,
                     };
                     fileDataArray.push(fileData);
                 }
@@ -107,6 +113,9 @@ export class GitRepository {
         return this.getFileDataForCommits(commits);
     }
 
+    /**
+     * Careful, this won't add commitedIn, to retrieve fileData its best to use getFileDataForCommit
+     */
     public convertFilesToFileData(files: Array<string>): Array<FileData> {
         return files.map(file => {
             const normalizedPath = this._normalizePath(file);

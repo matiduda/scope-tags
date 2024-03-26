@@ -23,6 +23,7 @@ export type FileInfo = {
     linesRemoved: number,
     usedIn: Array<FileReference>,
     relevancy: Relevancy | null,
+    ignored: boolean,
 }
 
 export type FileReference = {
@@ -98,7 +99,7 @@ export class ReportGenerator {
             throw new Error(`[ReportGenerator]: File data '${fileData.newPath}' does not have commited in value`);
         }
 
-        const commitRelevancyArray = relevancyMap.get(fileData.commitedIn);
+        const commitRelevancyArray = relevancyMap.get(fileData.commitedIn.sha());
 
         if (!commitRelevancyArray) {
             console.log(`[ReportGenerator]: No relevancy data for commit '${fileData.commitedIn}'`);
@@ -129,6 +130,7 @@ export class ReportGenerator {
                 linesRemoved: fileData.linesRemoved,
                 usedIn: this._getUsedIn(fileData, relevancy),
                 relevancy: relevancy,
+                ignored: this._configFile.isFileExtensionIgnored(fileData.newPath),
             };
 
             Logger.pushFileInfo(fileData, fileInfo);

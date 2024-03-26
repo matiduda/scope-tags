@@ -39,6 +39,7 @@ export type FileLog = {
     relevancy: Relevancy | null,
     databaseContent: TagIdentifier[],
     referencedFiles: FileReference[],
+    ignored: boolean,
 }
 
 export class Logger {
@@ -77,7 +78,7 @@ export class Logger {
 
         Logger._issues.forEach(issue => {
             issue.commitInfos.forEach(commitInfo => {
-                if (commitInfo.hash === fileData.commitedIn) {
+                if (commitInfo.hash === fileData.commitedIn?.sha()) {
                     matchingCommitFileLogs = commitInfo.fileLogs;
                 }
             });
@@ -94,7 +95,9 @@ export class Logger {
             relevancy: fileInfo.relevancy,
             databaseContent: fileInfo.tagIdentifiers,
             referencedFiles: fileInfo.usedIn,
+            ignored: fileInfo.ignored,
         }
+
         matchingCommitFileLogs.push(newFileLog);
     }
 

@@ -1,3 +1,5 @@
+import { Commit } from "nodegit/commit";
+
 export type FilePath = string;
 
 export type FileData = {
@@ -11,7 +13,7 @@ export type FileData = {
      * This might be a problem if we run scope --tag manually but noone will probably do that... Nevertheless we won't have
      * relevancy information for them (but they would be ommited for the report nontheless, so who cares)
      */
-    commitedIn?: string
+    commitedIn?: Commit
 };
 
 /**

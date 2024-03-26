@@ -4,6 +4,8 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { FileTagger } from "../Console/FileTagger";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { FileData } from "../Git/Types";
+import { Relevancy } from "../Relevancy/Relevancy";
 
 export function runAddCommand(args: Array<string>, root: string) {
     const repository = new GitRepository(root);
@@ -23,7 +25,15 @@ export function runAddCommand(args: Array<string>, root: string) {
         fileTagger.start(fileDataToTag).then(async (_taggedFileData) => {
 
             // Select relevancy for each file
-            const fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
+            let fileDataRelevancy: Map<FileData, Relevancy> = new Map();
+
+            try {
+                fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
+            } catch (e) {
+                console.log((e as Error)?.message);
+                console.log("Could not add relevancy, the changes won't be saved.");
+                return;
+            }
 
             console.log("All files tagged");
 

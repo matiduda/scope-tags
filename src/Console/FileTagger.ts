@@ -1,3 +1,4 @@
+import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { FileData } from "../Git/Types";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
@@ -6,7 +7,7 @@ import { TagManager } from "./TagManager";
 
 const { MultiSelect } = require('enquirer');
 
-type FileAsOption = { name: string, value: FileData };
+type FileAsOption = { name: string, value: FileData } | { message: string, role: string };
 
 type FileOrIgnored = { path: string, ignored: boolean };
 type FileToReassignTagsAsOption = { name: string, value: FileOrIgnored }
@@ -84,8 +85,10 @@ export class FileTagger {
         return uniqueTagIdentifiers;
     }
 
-    private _mapFilesToReassignedOption(fileNames: Array<string>, ignored: boolean): Array<FileToReassignTagsAsOption> {
-        return fileNames.map(fileName => {
+    private _mapFilesToReassignedOption(fileNames: Array<string>, ignored: boolean): FileToReassignTagsAsOption[] {
+        const fileNamesMappedToOptions: FileToReassignTagsAsOption[] = [];
+
+        fileNames.forEach(fileName => {
             const tagsForFile = this._database.getTagIdentifiersForFile(fileName);
             const mappedIdentifiers = !tagsForFile.length
                 ? ""
@@ -97,8 +100,10 @@ export class FileTagger {
                     ignored: ignored
                 }
             };
-            return option;
+            fileNamesMappedToOptions.push(option);
         });
+
+        return fileNamesMappedToOptions;
     }
 
     public async selectFilesToAppend(fileNames: Array<string>, ignoredFileName: Array<string>): Promise<Array<FileOrIgnored>> {
@@ -133,7 +138,7 @@ export class FileTagger {
     private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
         const prompt = new MultiSelect({
             name: 'value',
-            message: 'Select files to tag',
+            message: 'Select files to apply the same tags (or CTRL+C for next step)',
             limit: 7,
             choices: [
                 ...this._mapFileDataToOptions(fileData),
@@ -158,7 +163,34 @@ export class FileTagger {
         }
     }
 
-    private _mapFileDataToOptions(fileData: Array<FileData>): Array<FileAsOption> {
-        return fileData.map(file => ({ name: file.oldPath, value: file })); // TODO: What about oldPath?
+    private _createSeparatorMessageFromCommit(commit: Commit | undefined) {
+        return {
+            message: `── ${commit?.summary() || "Unknown commit"} ──`,
+            role: "separator"
+        };
+    }
+
+    private _mapFileDataToOptions(fileData: Array<FileData>): FileAsOption[] {
+        if (fileData.length === 0) {
+            throw new Error("[FileTagger] Cannot have empty list of files to tag.");
+        }
+
+        let currentCommit = fileData[0].commitedIn;
+
+        const fileAsOptionArray: FileAsOption[] = [this._createSeparatorMessageFromCommit(currentCommit)];
+
+        fileData.forEach(file => {
+            if (file.commitedIn !== currentCommit) {
+                currentCommit = file.commitedIn;
+                fileAsOptionArray.push(this._createSeparatorMessageFromCommit(currentCommit));
+            }
+
+            fileAsOptionArray.push({
+                name: file.oldPath,  // TODO: What about newPath?
+                value: file
+            })
+        });
+
+        return fileAsOptionArray;
     }
 }

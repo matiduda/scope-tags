@@ -1,6 +1,6 @@
 {
   "name": "scope-tags",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "description": "Output human readable test scope report for QA",
   "main": "dist/scope.js",
   "types": "dist/scope.d.ts",
