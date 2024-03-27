@@ -173,7 +173,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             if (module.tags.includes(tag.name)) {
                 this.removeTagFromModule(tag, module);
             }
-        })
+        });
     }
 
     public editTag(tag: Tag, newName: string) {
@@ -269,7 +269,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         return stringifiedOutput
             .replace(/{\n\s+"name": "(.+)"\n\s+}/g, `{ "name": "$1" }`)
             .replace(/\n(\s+)},\n\s+{/g, `\n$1}, {`)
-            .replace(/"modules": \[\n\s+/g, `modules": [{`);
+            .replace(/"modules": \[\n\s+{/g, `"modules": [{`);
     }
 
     static getDefaultModule(): Module {

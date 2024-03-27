@@ -183,6 +183,7 @@ export class TagManager {
         const answer = await prompt.run();
         if (answer) {
             this._tags.removeTagFromModule(tag, module);
+            this._tagsWereModified = true;
             console.log("Tag unassigned.");
         }
     }
@@ -220,6 +221,7 @@ export class TagManager {
             await prompt.run();
             console.log(`Deleted tag '${tag.name}'`);
             this._tags.removeTag(tag);
+            this._tagsWereModified = true;
         } catch (e) {
             console.log("Aborted.")
         }

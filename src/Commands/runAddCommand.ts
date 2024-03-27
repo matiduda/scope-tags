@@ -20,6 +20,11 @@ export function runAddCommand(args: Array<string>, root: string) {
         let fileDataToTag = fileTagsDatabase.updateDatabaseBasedOnChanges(fileData)
             .filter(file => !config.isFileExtensionIgnored(file.newPath));
 
+        if (fileDataToTag.length === 0) {
+            console.log("[Scope tags] Found no commits that could be tagged.");
+            return;
+        }
+
         const relevancyTagger = new RelevancyManager();
 
         fileTagger.start(fileDataToTag).then(async (_taggedFileData) => {
@@ -31,14 +36,14 @@ export function runAddCommand(args: Array<string>, root: string) {
                 fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
             } catch (e) {
                 console.log((e as Error)?.message);
-                console.log("Could not add relevancy, the changes won't be saved.");
+                console.log("[Scope tags] Could not add relevancy, the changes won't be saved.");
                 return;
             }
 
-            console.log("All files tagged");
-
             // Save tags to database
             fileTagsDatabase.save();
+
+            console.log("[Scope tags] Changes saved to the database.");
 
             const mostRecentCommit = await repository.getLatestCommit();
 
