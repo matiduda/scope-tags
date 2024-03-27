@@ -90,7 +90,7 @@ export class RelevancyManager {
         const commitMessage = commit.message();
 
         const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
-        const relevancyEndIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+        const relevancyEndIndex = commitMessage.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
 
         if (prefixStartIndex === -1) {
             throw new Error(`Commit message '${commitMessage}' does not include relevancy info`);

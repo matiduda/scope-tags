@@ -163,14 +163,16 @@ export class GitRepository {
         return date;
     }
 
-    public async amendMostRecentCommit(file: string, commitMessageAttitionalData: string) {
+    public async amendMostRecentCommit(files: string[], commitMessageAttitionalData: string) {
 
         const repository = await this._getRepository();
         const index = await repository.refreshIndex();
 
         const commit = await repository.getHeadCommit();
 
-        await index.addByPath(file);
+        for (const file of files) {
+            await index.addByPath(file);
+        }
 
         const oid = await index.writeTree();
 

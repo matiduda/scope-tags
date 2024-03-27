@@ -4,24 +4,25 @@ import { FileData } from "../Git/Types";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { TagManager } from "./TagManager";
+import { YesNoMenu } from "./YesNoMenu";
+import { getFileDirectoryPath } from "../FileSystem/fileSystemUtils";
 
 const { MultiSelect } = require('enquirer');
 
-type FileAsOption = { name: string, value: FileData } | { message: string, role: string };
+type BasicFileAsOption = { name: string, value: FileData };
+
+type FileAsOption = BasicFileAsOption
+    | { message: string, role: string }
+    | { disabled: boolean, hint: string, choices: BasicFileAsOption[] };
 
 type FileOrIgnored = { path: string, ignored: boolean };
 type FileToReassignTagsAsOption = { name: string, value: FileOrIgnored }
 
 export class FileTagger {
-
-    private _tags: TagsDefinitionFile;
-    private _database: FileTagsDatabase;
-    private _repository: GitRepository;
-
-    constructor(tags: TagsDefinitionFile, database: FileTagsDatabase, repository: GitRepository) {
-        this._tags = tags;
-        this._database = database;
-        this._repository = repository;
+    constructor(
+        private _tags: TagsDefinitionFile,
+        private _database: FileTagsDatabase,
+        private _repository: GitRepository) {
     }
 
     public async start(fileData: Array<FileData>, filterAlreadyTaggedFiles = true) {
@@ -45,11 +46,24 @@ export class FileTagger {
 
             try {
                 const selectedTags: Array<TagIdentifier> = await tagManager.selectMultipleTagIdentifiers(commonTagIdentifiers);
-                for (const file of selectedFiles) {
-                    tagsMappedToFiles.set(file, selectedTags);
+
+                if (!selectedTags.length) {
+                    // Confirmation to ignore files
+                    if (await this._isUserSureToIgnoreFiles(selectedFiles)) {
+                        for (const file of selectedFiles) {
+                            tagsMappedToFiles.set(file, []);
+                        }
+                        untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
+                    }
+                } else {
+                    for (const file of selectedFiles) {
+                        tagsMappedToFiles.set(file, selectedTags);
+                    }
+                    untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
                 }
-                untaggedFiles = untaggedFiles.filter(file => !selectedFiles.includes(file));
-            } catch (e) { }
+            } catch (e) {
+                // Do nothing, user just exited from tag selection
+            }
         }
 
         const fileDataToReturn: Array<FileData> = [];
@@ -68,6 +82,14 @@ export class FileTagger {
 
         // IMPORRTANT: Database is updated, but not yet saved, rememmber to call database.save() !
         return fileDataToReturn;
+    }
+
+    private async _isUserSureToIgnoreFiles(selectedFiles: FileData[]): Promise<boolean> {
+        return await (new YesNoMenu()).ask(
+            "Are you sure you want to ignore these files? (they won't be checked in the future)",
+            true,
+            selectedFiles.map(fileData => fileData.newPath).join('\n') + '\n',
+        );
     }
 
     private _getCommonTagIdentifiers(selectedFiles: FileData[]): Array<TagIdentifier> {
@@ -138,12 +160,10 @@ export class FileTagger {
     private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
         const prompt = new MultiSelect({
             name: 'value',
-            message: 'Select files to apply the same tags (or CTRL+C for next step)',
-            limit: 7,
-            choices: [
-                ...this._mapFileDataToOptions(fileData),
-                { role: "separator" },
-            ],
+            message: 'Select files to apply the same tags',
+            footer: 'CTRL+C to go to next step, G to select whole group',
+            limit: 10,
+            choices: this._mapFileDataToOptions(fileData),
             result(value: any) {
                 return this.map(value);
             },
@@ -163,11 +183,23 @@ export class FileTagger {
         }
     }
 
-    private _createSeparatorMessageFromCommit(commit: Commit | undefined) {
+    private _createSeparatorMessage(commit?: Commit) {
         return {
             message: `── ${commit?.summary() || "Unknown commit"} ──`,
             role: "separator"
         };
+    }
+
+    private _createGroupedOption(fileData: FileData[], groupName: string) {
+        return {
+            choices: this._createOptions(fileData),
+            hint: groupName,
+            disabled: true
+        };
+    }
+
+    private _createOptions(fileData: FileData[]) {
+        return fileData.map(data => ({ name: data.newPath, value: data }));
     }
 
     private _mapFileDataToOptions(fileData: Array<FileData>): FileAsOption[] {
@@ -175,21 +207,55 @@ export class FileTagger {
             throw new Error("[FileTagger] Cannot have empty list of files to tag.");
         }
 
-        let currentCommit = fileData[0].commitedIn;
+        const fileAsOptionArray: FileAsOption[] = [];
 
-        const fileAsOptionArray: FileAsOption[] = [this._createSeparatorMessageFromCommit(currentCommit)];
+        const commitToFileDataMap: Map<Commit, FileData[]> = new Map();
 
+        const uniqueCommits: Commit[] = [];
         fileData.forEach(file => {
-            if (file.commitedIn !== currentCommit) {
-                currentCommit = file.commitedIn;
-                fileAsOptionArray.push(this._createSeparatorMessageFromCommit(currentCommit));
+            if (file.commitedIn && !uniqueCommits.includes(file.commitedIn)) {
+                uniqueCommits.push(file.commitedIn);
             }
-
-            fileAsOptionArray.push({
-                name: file.oldPath,  // TODO: What about newPath?
-                value: file
-            })
         });
+
+        // console.log(uniqueCommits);
+
+        uniqueCommits.forEach(uniqueCommit => {
+            commitToFileDataMap.set(uniqueCommit, fileData.filter(data => data.commitedIn === uniqueCommit));
+        });
+
+        // Group files based on the same directory
+        commitToFileDataMap.forEach((matchingFileData: FileData[], commit: Commit, map: Map<Commit, FileData[]>) => {
+            fileAsOptionArray.push(this._createSeparatorMessage(commit));
+
+            // Group files with a common source directory
+            const processedFileData: FileData[] = [];
+
+            matchingFileData.forEach(dataA => {
+                const currentDirectoryPath = getFileDirectoryPath(dataA.newPath);
+
+                const groupedFiles = matchingFileData.filter(dataB => !processedFileData.includes(dataB)
+                    && getFileDirectoryPath(dataB.newPath) === currentDirectoryPath);
+
+                if (groupedFiles.length > 1) {
+                    // Add as group
+                    const option = this._createGroupedOption(groupedFiles, currentDirectoryPath);
+                    fileAsOptionArray.push(option);
+                    processedFileData.push(...groupedFiles);
+                }
+            });
+
+            const ungroupedFileData = matchingFileData.filter(data => !processedFileData.includes(data));
+            fileAsOptionArray.push(...this._createOptions(ungroupedFileData));
+        });
+
+        // Append files with unknown source commit
+        const fileDataWithUnknownSourceCommit = fileData.filter(data => !data.commitedIn);
+
+        if (fileDataWithUnknownSourceCommit.length) {
+            fileAsOptionArray.push(this._createSeparatorMessage());
+            fileAsOptionArray.push(...this._createOptions(fileDataWithUnknownSourceCommit));
+        }
 
         return fileAsOptionArray;
     }

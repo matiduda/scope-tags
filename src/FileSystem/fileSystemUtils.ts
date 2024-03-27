@@ -23,6 +23,10 @@ export function getFileBaseName(filePath: string): string {
 	return path.basename(filePath);
 }
 
+export function getFileDirectoryPath(filePath: string): string {
+	return filePath.substring(0, filePath.lastIndexOf("/"));
+}
+
 export function fileExists(filePath: string): boolean {
 	return fs.existsSync(filePath);
 }

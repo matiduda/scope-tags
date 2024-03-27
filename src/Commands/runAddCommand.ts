@@ -35,7 +35,6 @@ export function runAddCommand(args: Array<string>, root: string) {
             try {
                 fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
             } catch (e) {
-                console.log((e as Error)?.message);
                 console.log("[Scope tags] Could not add relevancy, the changes won't be saved.");
                 return;
             }
@@ -57,7 +56,7 @@ export function runAddCommand(args: Array<string>, root: string) {
     commit message: ${mostRecentCommitMessage}`);
             }
 
-            await repository.amendMostRecentCommit(fileTagsDatabase.getPath(), newCommitMessage);
+            await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage);
 
         }); // TODO: Save already tagged files
     }).catch(e => console.log("Canceled")); // TODO: Save already tagged files - ???

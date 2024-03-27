@@ -127,11 +127,11 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public assignTagToModule(tag: Tag, module: Module) {
         if (!module) {
-            throw new Error(`Can't add tag to undefined module`);
+            throw new Error(`[TagManager] Can't add tag to undefined module`);
         }
 
         if (module.tags.some(moduleTag => moduleTag === tag.name)) {
-            throw new Error(`Can't add tag to module ${module.name}, as it already contains tag ${tag.name}`);
+            throw new Error(`[TagManager] Can't add tag to module ${module.name}, as it already contains tag ${tag.name}`);
         }
 
         module.tags.push(tag.name);
@@ -139,8 +139,15 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public addTag(tag: Tag) {
         if (this._tagsDatabaseData.tags.some(databaseTag => databaseTag.name === tag.name)) {
-            throw new Error(`Can't add tag ${tag.name}, because it already exists`);
+            throw new Error(`[TagManager] Can't add tag named '${tag.name}', because it already exists!`);
         }
+
+        let matchingTag: Tag | undefined = this._tagsDatabaseData.tags.find(databaseTag => databaseTag.name.toLowerCase() === tag.name.toLowerCase());
+
+        if (matchingTag) {
+            throw new Error(`[TagManager] Can't add tag named '${tag.name}', because tag '${matchingTag.name}' already exists, it is better to assign '${matchingTag.name}' directly`);
+        }
+
         this._tagsDatabaseData.tags.push(tag);
     }
 
@@ -262,6 +269,10 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             name: "Tag",
         };
         return defaultTag;
+    }
+
+    public getPath(): string {
+        return TagsDefinitionFile.PATH;
     }
 
     // This is cancer

@@ -39,8 +39,8 @@ export class TagManager {
 
         const prompt = new AutoComplete({
             name: "Tag selector",
-            message: `Select tags for files (or none to ignore)`,
-            footer: "(CTRL + C to go back)",
+            message: `Select tags for files (or none to ignore) and use ENTER to confirm`,
+            footer: "(CTRL + C to go back without adding any tags)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             multiple: true,
             choices: [
@@ -273,6 +273,7 @@ export class TagManager {
             choices: [
                 { name: 'Add new', value: this._createNewTag },
                 { name: 'Search from available tags', value: this._selectSingleTag },
+                { name: `Back to: ${module.name}`, value: this._doNothing },
             ],
             result(value: any) {
                 const mapped = this.map(value);
@@ -284,15 +285,25 @@ export class TagManager {
 
         try {
             const tagToAdd = await answer.call(this, module);
-            if (answer.value === this._selectSingleTag) {
-                this._tags.addTag(tagToAdd);
+
+            if (tagToAdd) {
+                if (answer.value === this._selectSingleTag) {
+                    this._tags.addTag(tagToAdd);
+                }
+                this._tags.assignTagToModule(tagToAdd, module);
+                console.log(`[TagManager] Successfully assigned tag '${tagToAdd.name}' to module '${module.name}'`);
+            } else {
+                console.log(`[TagManager] Could not add new tag to module '${module.name}'`);
             }
-            this._tags.assignTagToModule(tagToAdd, module);
         } catch (e) { }
 
         this._tagsWereModified = true;
 
         await this.manageTagsFromModule.call(this, module);
+    }
+
+    private async _doNothing(module?: Module) {
+        Promise.resolve();
     }
 
     private async _selectSingleTag(module?: Module, displayFooter: boolean = false): Promise<Tag> {
@@ -324,7 +335,7 @@ export class TagManager {
         return prompt.run();
     }
 
-    private async _createNewTag(module: Module): Promise<Tag> {
+    private async _createNewTag(module: Module): Promise<Tag | undefined> {
         const defaultTagName = "Tag";
 
         const addTagPrompt = new Form({
@@ -347,21 +358,20 @@ export class TagManager {
 
         try {
             tagInfoAnswer = await addTagPrompt.run();
+
+            const newTag: Tag = {
+                name: tagInfoAnswer.name,
+            };
+
+            this._tags.addTag(newTag);
+            console.log("Successfuly added tag: " + newTag.name);
+            return newTag;
+
         } catch (e) {
             if (e) {
                 console.log("Cannot add tag, reason: " + e);
             }
         }
-
-        const newTag: Tag = {
-            name: tagInfoAnswer.name,
-        };
-
-        console.log("Successfuly added tag: " + newTag.name);
-
-        this._tags.addTag(newTag);
-
-        return newTag;
     }
 
     private _saveChanges() {
