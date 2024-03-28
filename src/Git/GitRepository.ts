@@ -163,7 +163,7 @@ export class GitRepository {
         return date;
     }
 
-    public async amendMostRecentCommit(files: string[], commitMessageAttitionalData: string) {
+    public async amendMostRecentCommit(files: string[], newCommitMessage: string) {
 
         const repository = await this._getRepository();
         const index = await repository.refreshIndex();
@@ -181,7 +181,7 @@ export class GitRepository {
             commit.author(),
             commit.committer(),
             "UTF-8",
-            commit.message() + commitMessageAttitionalData,
+            newCommitMessage,
             oid,
         );
 

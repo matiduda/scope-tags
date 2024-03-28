@@ -30,6 +30,7 @@ type ScalePromptAnswerType = {
 }
 
 export class RelevancyManager {
+
     private static COMMIT_MSG_PREFIX = "__relevancy__";
     private static CURRENT_COMMIT = "__current__";
 
@@ -68,7 +69,19 @@ export class RelevancyManager {
     }
 
     public convertRelevancyDataToCommitMessage(data: Map<FileData, Relevancy>, headCommit: Commit): string {
-        const relevancyArray: Array<CommitMessageRelevancyInfo> = [...data].map(([fileData, relevancy]) => {
+        // Store the relevancy from the commit if it has one
+        let relevancyArrayFromCurrentCommit: CommitMessageRelevancyInfo[] = [];
+
+        if (this.doesCommitMessageHaveRelevancyData(headCommit.message())) {
+            relevancyArrayFromCurrentCommit = this.convertCommitMessageToRelevancyData(headCommit, false);
+            console.log("Relevancy from current commit:");
+            console.log(JSON.stringify(relevancyArrayFromCurrentCommit));
+        }
+
+        const relevancyArray: CommitMessageRelevancyInfo[] = [...data].map(([fileData, relevancy]) => {
+            console.log(fileData.newPath);
+            console.log(relevancy);
+
             // Check if fileData was commited in current head commit,
             // since this commit stores relevancy data and will be changed later,
             // store it's SHA as "__current__", so it can be read later...
@@ -83,10 +96,48 @@ export class RelevancyManager {
             } as CommitMessageRelevancyInfo;
         });
 
-        return `\n${RelevancyManager.COMMIT_MSG_PREFIX}${JSON.stringify(relevancyArray)}${RelevancyManager.COMMIT_MSG_PREFIX}`;
+        // Merge relevancies - if some are duplicates, select those with higher relevancy
+        const allRelevancies: CommitMessageRelevancyInfo[] = relevancyArray.concat(relevancyArrayFromCurrentCommit);
+        const mergedRelevancies: CommitMessageRelevancyInfo[] = [];
+
+        relevancyArray.concat(relevancyArrayFromCurrentCommit).forEach(relevancy => {
+            console.log(JSON.stringify(relevancy));
+
+            if (mergedRelevancies.some(mergedRelevancy => {
+                console.log(JSON.stringify(mergedRelevancy));
+                return mergedRelevancy.path === relevancy.path
+            })) {
+                return;
+            }
+
+            const relevanciesForThisFileData = allRelevancies.filter(mergedRelevancy => mergedRelevancy.path === relevancy.path);
+
+            if (relevanciesForThisFileData.length === 0) {
+                throw new Error("[RelevancyManager] Could not merge relevancy data to current head commit");
+            } else if (relevanciesForThisFileData.length === 1) {
+                mergedRelevancies.push(relevancy);
+                return;
+            } else {
+                // Find highest relevancy for this file
+                let highestPossibleRelevancyData = relevanciesForThisFileData[0];
+
+                for (let i = 1; i < relevanciesForThisFileData.length; i++) {
+                    if (this._getIndexByRelevancy(relevanciesForThisFileData[i].relevancy) > this._getIndexByRelevancy(highestPossibleRelevancyData.relevancy)) {
+                        highestPossibleRelevancyData = relevanciesForThisFileData[i];
+                    }
+                }
+                mergedRelevancies.push(highestPossibleRelevancyData);
+            }
+        });
+
+        const outputRelevancyArray = JSON.stringify(mergedRelevancies);
+
+        const commitMessageWithoutRelevancy = headCommit.message().replace(/__relevancy__.+__relevancy__/gs, "");
+
+        return `${commitMessageWithoutRelevancy}\n${RelevancyManager.COMMIT_MSG_PREFIX}${outputRelevancyArray}${RelevancyManager.COMMIT_MSG_PREFIX}`;
     }
 
-    public convertCommitMessageToRelevancyData(commit: Commit): Array<CommitMessageRelevancyInfo> {
+    public convertCommitMessageToRelevancyData(commit: Commit, replaceCurrentCommitSHA = true): Array<CommitMessageRelevancyInfo> {
         const commitMessage = commit.message();
 
         const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
@@ -107,14 +158,22 @@ export class RelevancyManager {
         }
 
         // Replace current commit' sha
-        relevancyInfo.forEach(info => {
-            if (info.commit === RelevancyManager.CURRENT_COMMIT) {
-                info.commit = commit.sha();
-            }
-        });
-
+        if (replaceCurrentCommitSHA) {
+            relevancyInfo.forEach(info => {
+                if (info.commit === RelevancyManager.CURRENT_COMMIT) {
+                    info.commit = commit.sha();
+                }
+            });
+        }
         return relevancyInfo;
     }
+
+    // public addRelevancyFromCommit(fileDataRelevancy: Map<FileData, Relevancy>, commit: Commit) {
+    //     const relevancyFromCommit = this.convertCommitMessageToRelevancyData(commitMessageWithRelevancy);
+    //     relevancyFromCommit.forEach(relevancyEntry => {
+    //         if(fileDataRelevancy.has)
+    //     });
+    // }
 
     public doesCommitMessageHaveRelevancyData(commitMessage: string): boolean {
         return commitMessage.includes(RelevancyManager.COMMIT_MSG_PREFIX);
@@ -187,5 +246,9 @@ export class RelevancyManager {
 
     private _getRelevancyByIndex(index: number): Relevancy {
         return Object.values(Relevancy)[index];
+    }
+
+    private _getIndexByRelevancy(relevancy: Relevancy): number {
+        return Object.values(Relevancy).indexOf(relevancy);
     }
 }

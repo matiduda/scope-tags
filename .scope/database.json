@@ -1,6 +1,6 @@
 {
     "files": [
-        { "path": "package-lock.json",
+        { "path": ".gitignore",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
@@ -8,16 +8,31 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
-        { "path": ".scope/database.json",
+        { "path": "src/Console/FileTagger.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/Console/TagManager.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/Commands/runAddCommand.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": ".scope/tags.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": "package-lock.json",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
         { "path": "src/FileSystem/fileSystemUtils.ts",
           "tags": [
-            { "tag": "asdflkj", "module": "Second module" }]},
-        { "path": ".scope/tags.json",
-          "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]}],
-    "ignoredFiles": []
+    "ignoredFiles": [
+        "src/Git/GitRepository.ts",
+        "src/Relevancy/RelevancyManager.ts",
+        ".scope/database.json"
+    ]
 }

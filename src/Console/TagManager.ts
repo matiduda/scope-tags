@@ -35,7 +35,7 @@ export class TagManager {
 
     public async selectMultipleTagIdentifiers(disabledTagIdentifieres: TagIdentifier[]): Promise<TagIdentifier[]> {
         const allModules = this._tags.getModules();
-        const tagsMappedToOptions = this._mapTagsToIdentifiers(allModules, disabledTagIdentifieres);
+        const tagsMappedToOptions = this._mapAllPossibleTagsToOptions(allModules, disabledTagIdentifieres);
 
         const prompt = new AutoComplete({
             name: "Tag selector",
@@ -43,20 +43,14 @@ export class TagManager {
             footer: "(CTRL + C to go back without adding any tags)",
             limit: TagManager.MAX_VISIBLE_TAGS,
             multiple: true,
-            choices: [
-                ...tagsMappedToOptions,
-            ],
-            result(value: any) {
-                // console.log(value);
-                // console.log(this.map);
-                return this.map(value);
-            }
+            choices: [...tagsMappedToOptions.values()],
         });
 
-        let selected: any;
+        let selectedTagsPaths: any;
+
         try {
-            selected = await prompt.run();
-            return Object.values(selected);
+            selectedTagsPaths = await prompt.run();
+            return selectedTagsPaths.map((selectedTagsPath: string) => tagsMappedToOptions.get(selectedTagsPath)?.value);
         } catch (e) {
             throw e;
         }
@@ -66,24 +60,25 @@ export class TagManager {
         return tags.map(tag => ({ name: tag.name, value: tag }));
     }
 
-    private _mapTagsToIdentifiers(allModules: Array<Module>, disabledTagIdentifieres: TagIdentifier[]): Array<TagIdentifierAsOption> {
-        const allTagsAsIdentifiers: Array<TagIdentifierAsOption> = [];
+    private _mapAllPossibleTagsToOptions(allModules: Array<Module>, disabledTagIdentifieres: TagIdentifier[]): Map<string, TagIdentifierAsOption> {
+        const allPossibleTagsToOptionsMap: Map<string, TagIdentifierAsOption> = new Map();
 
         allModules.forEach(module => {
             module.tags.forEach(tagName => {
+                const tagAbsolutePath = this._getTagAbsolutePath(tagName, module);
                 const option: TagIdentifierAsOption = {
-                    name: this._getTagAbsolutePath(tagName, module),
+                    name: tagAbsolutePath,
                     value: {
                         tag: tagName,
                         module: module.name
                     },
                     disabled: disabledTagIdentifieres.some(id => id.module === module.name && id.tag === tagName),
                 };
-                allTagsAsIdentifiers.push(option);
+                allPossibleTagsToOptionsMap.set(tagAbsolutePath, option);
             });
         });
 
-        return allTagsAsIdentifiers;
+        return allPossibleTagsToOptionsMap;
     }
 
     private _getTagAbsolutePath(tagName: string, module: Module): any {

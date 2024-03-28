@@ -48,14 +48,6 @@ export function runAddCommand(args: Array<string>, root: string) {
 
             const newCommitMessage = relevancyTagger.convertRelevancyDataToCommitMessage(fileDataRelevancy, mostRecentCommit);
 
-            const mostRecentCommitSummary = mostRecentCommit.summary();
-            const mostRecentCommitMessage = mostRecentCommit.message();
-
-            if (relevancyTagger.doesCommitMessageHaveRelevancyData(mostRecentCommitMessage)) {
-                throw new Error(`Commit '${mostRecentCommitSummary}' already has relevancy data, so it can't be saved.
-    commit message: ${mostRecentCommitMessage}`);
-            }
-
             await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage);
 
         }); // TODO: Save already tagged files

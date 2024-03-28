@@ -47,6 +47,8 @@ export class FileTagger {
             try {
                 const selectedTags: Array<TagIdentifier> = await tagManager.selectMultipleTagIdentifiers(commonTagIdentifiers);
 
+                console.log("selectedTags: " + JSON.stringify(selectedTags));
+
                 if (!selectedTags.length) {
                     // Confirmation to ignore files
                     if (await this._isUserSureToIgnoreFiles(selectedFiles)) {
@@ -75,6 +77,7 @@ export class FileTagger {
                 this._database.addIgnoredFile(data.newPath);
             } else {
                 const addedTags = this._database.addMultipleTagsToFile(tags, data.newPath);
+
                 console.log(`Added tags to ${data.newPath}: ${addedTags.map(id => id.tag).join(", ")}`);
                 fileDataToReturn.push(data);
             }
@@ -193,7 +196,7 @@ export class FileTagger {
     private _createGroupedOption(fileData: FileData[], groupName: string) {
         return {
             choices: this._createOptions(fileData),
-            hint: groupName,
+            hint: groupName + '/',
             disabled: true
         };
     }
@@ -217,8 +220,6 @@ export class FileTagger {
                 uniqueCommits.push(file.commitedIn);
             }
         });
-
-        // console.log(uniqueCommits);
 
         uniqueCommits.forEach(uniqueCommit => {
             commitToFileDataMap.set(uniqueCommit, fileData.filter(data => data.commitedIn === uniqueCommit));
