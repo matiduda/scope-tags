@@ -67,3 +67,6 @@ export function saveHTMLLogs(path: string, content: string) {
 export function resolvePath(relativePath: string): string {
 	return path.resolve(relativePath);
 }
+
+
+

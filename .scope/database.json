@@ -1,59 +1,23 @@
 {
     "files": [
-        {
-            "path": ".scope/database.json",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        },
-        {
-            "path": "src/Commands/runAddCommand.ts",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        },
-        {
-            "path": "src/testfile2",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        },
-        {
-            "path": "src/Console/RelevancyTagger.ts",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        },
-        {
-            "path": "src/Scope/FileTagsDatabase.ts",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        },
-        {
-            "path": "src/Scope/Utils.ts",
-            "tags": [
-                {
-                    "tag": "Tag",
-                    "module": "Default module"
-                }
-            ]
-        }
-    ],
+        { "path": "package-lock.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "package.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": ".scope/database.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/FileSystem/fileSystemUtils.ts",
+          "tags": [
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": ".scope/tags.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]}],
     "ignoredFiles": []
 }

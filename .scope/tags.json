@@ -1,0 +1,26 @@
+{
+    "modules": [{
+            "name": "Default module",
+            "description": "Module added automatically on script initialization",
+            "exclusive": false,
+            "tags": [
+                "Tag"
+            ],
+            "parent": null,
+            "children": []
+        }, {
+            "name": "Second module",
+            "exclusive": false,
+            "tags": [
+                "asdflkj"
+            ],
+            "parent": null,
+            "children": [],
+            "description": "A module containing multiple functionalities"
+        }
+    ],
+    "tags": [
+        { "name": "Tag" },
+        { "name": "asdflkj" }
+    ]
+}
