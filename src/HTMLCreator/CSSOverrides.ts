@@ -22,7 +22,7 @@ hr {
 }
 
 .ignored-file {
-    background-color: 
+    background-color;
     color: #cccccc;
 }
 
