@@ -36,6 +36,15 @@ export const purgeMockRepository = () => {
 export const assertTemporaryFolderExists = () => {
     const folderPath = resolve(TEMP_TEST_FOLDER);
     if (!existsSync(folderPath)) {
+        // For debug - print info
+        const { exec } = require('child_process');
+        exec('pwd && ls -ltra', (err: any, stdout: any, stderr: any) => {
+            // the *entire* stdout and stderr (buffered)
+            console.debug(`stdout: ${stdout}`);
+        });
+
+
+
         throw new Error(`Temporary folder '${folderPath}' does not exist`);
     }
 }
