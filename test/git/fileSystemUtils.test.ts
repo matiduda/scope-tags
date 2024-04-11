@@ -5,14 +5,14 @@ import rimraf from "rimraf";
 import { TEMP_TEST_FOLDER } from "../_utils/globals";
 import { assertTemporaryFolderExists } from "../_utils/utils";
 
-const SCOPE_FOLDER_PATH = join(TEMP_TEST_FOLDER, ".scope");
+const SCOPE_FOLDER_PATH = resolve(join(TEMP_TEST_FOLDER, ".scope"));
 
 beforeEach(() => {
   assertTemporaryFolderExists();
 });
 
 afterAll(() => {
-  rimraf.sync(resolve(SCOPE_FOLDER_PATH));
+  rimraf.sync(SCOPE_FOLDER_PATH);
 });
 
 const purgeScopeFolder = () => {

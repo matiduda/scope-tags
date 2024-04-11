@@ -14,10 +14,13 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '12.16.1'
-      - name: Install npm dependencies 
+      - name: Install npm dependencies
         run: npm ci
       - name: Create scope-tags build
         run: npx tsc
+      # Just to not display git warning in unit test output
+      - name: Configure git 
+        run: git config --global init.defaultBranch main
       - name: Make temporary folder for tests 
         run: mkdir ./TEST_TMP && ls -ltra .
       - name: Run Jest unit tests 
