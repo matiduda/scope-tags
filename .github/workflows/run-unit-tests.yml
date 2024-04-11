@@ -19,6 +19,6 @@ jobs:
       - name: Create scope-tags build
         run: npx tsc
       - name: Make temporary folder for tests 
-        run: mkdir ./TEST_TMP
+        run: mkdir ./TEST_TMP && ls -ltra .
       - name: Run Jest unit tests 
         run: npm run test
