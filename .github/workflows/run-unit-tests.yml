@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: '12.16.1'
       - name: Install npm dependencies
-        run: npm ci
+        run: npm install --no-package-lock
       - name: Create scope-tags build
         run: npx tsc
       # Just to not display git warning in unit test output

@@ -26,7 +26,7 @@ jobs:
         key: ${{ matrix.node-version }}-${{ runner.OS }}-build-${{ hashFiles('package.json') }}
     - name: Build
       if: steps.cache-modules.outputs.cache-hit != 'true'
-      run: npm install
+      run: npm install --no-package-lock
     - name: Test
       run: npm run test
   publish:
@@ -43,7 +43,7 @@ jobs:
         key: 12.x-${{ runner.OS }}-build-${{ hashFiles('package.json') }}
     - name: Build
       if: steps.cache-modules.outputs.cache-hit != 'true'
-      run: npm install
+      run: npm install --no-package-lock
     - name: Test
       run: npm run test
 
