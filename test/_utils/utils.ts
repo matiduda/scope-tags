@@ -1,5 +1,5 @@
 import { resolve, join } from "path";
-import { existsSync } from "fs";
+import { existsSync, mkdirSync } from "fs";
 import { copySync } from "fs-extra";
 
 import rimraf from "rimraf";
@@ -36,7 +36,6 @@ export const purgeMockRepository = () => {
 export const assertTemporaryFolderExists = () => {
     const folderPath = resolve(TEMP_TEST_FOLDER);
     if (!existsSync(folderPath)) {
-        // mkdirSync(folderPath);
-        throw new Error(`Temporary folder '${folderPath}' does not exist`);
+        mkdirSync(folderPath);
     }
 }
