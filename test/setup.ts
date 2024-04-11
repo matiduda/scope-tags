@@ -7,5 +7,10 @@ module.exports = async function(globalConfig, projectConfig) {
 
     console.debug(`\n[SCOPE TAGS] Global test setup - initializing temporary folder at ${global.TEMP_FOLDER_FOR_TESTS}`);
     rimraf.sync(global.TEMP_FOLDER_FOR_TESTS);
-    fs.mkdirSync(global.TEMP_FOLDER_FOR_TESTS);
+
+    try {
+        fs.mkdirSync(global.TEMP_FOLDER_FOR_TESTS, { recursive: true });
+    } catch (e) {
+        console.error(e);
+    }
 };
