@@ -9,6 +9,10 @@ module.exports = async function(globalConfig, projectConfig) {
 
     if (!fs.existsSync(global.TEMP_FOLDER_FOR_TESTS)) {
         console.debug(`[SCOPE TAGS] Initializing temporary folder at '${global.TEMP_FOLDER_FOR_TESTS}'...`);
-        fs.mkdirSync(global.TEMP_FOLDER_FOR_TESTS);
+        await fs.mkdir(global.TEMP_FOLDER_FOR_TESTS, (err) => {
+            if (err) {
+                console.debug(err);
+            }
+        });
     }
 };
