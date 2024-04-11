@@ -17,12 +17,16 @@ afterAll(() => {
 });
 
 describe("Commit verification by scope tags script", () => {
+    it("Mock repository to be cloned with content", () => {
+        const fileList = fs.readdirSync(resolve(join(TEMP_TEST_FOLDER, "./tmp/_repo_cloned")));
+        if (fileList.length === 0) {
+            console.debug("There is no content with mock repo, probably scope-tags repository was not correctly cloned, please refer to README.md");
+        }
+        expect(fileList.length).toBeGreaterThan(0);
+    })
+
     it("When commits consists only of files which extensions are ignored, the commit is marked by 'includesOnlyIgnoredFiles' flag", () => {
 
-        // Use fs.readdirSync to read the contents of the directory synchronously
-        const fileList = fs.readdirSync(resolve(join(TEMP_TEST_FOLDER, "./tmp/_repo_cloned")));
-
-        console.debug('Files and folders in the directory:', fileList);
 
         expect(true).toBe(true);
     });
