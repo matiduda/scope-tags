@@ -61,6 +61,8 @@ npm i scope-tags -D
 
 To run tests manually use `npm run test`.
 
+### Publishing
+
 For unit testing there is a [separate mock repository](https://www.npmjs.com/package/ora), which should be keeped up-to-date
 
 <!-- To make things easier for developing...  -->
