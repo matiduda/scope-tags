@@ -34,5 +34,7 @@ export const purgeMockRepository = () => {
 // Temp folder
 
 export const assertTemporaryFolderExists = () => {
-    expect(existsSync(TEMP_TEST_FOLDER)).toBe(true);
+    if (!existsSync(TEMP_TEST_FOLDER)) {
+        throw new Error(`Temporary folder '${TEMP_TEST_FOLDER}' does not exist`);
+    }
 }
