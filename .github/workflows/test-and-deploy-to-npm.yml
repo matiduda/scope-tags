@@ -1,0 +1,53 @@
+name: Run tests and deploy to NPM automatically
+on: [push]
+run-name: ${{ github.event.head_commit.message }}
+jobs:
+
+  run-tests:
+  
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '12.16.1'
+      - name: Install npm dependencies
+        run: npm install --no-package-lock
+      - name: Create scope-tags build
+        run: npx tsc
+      # Just to not display git warning in unit test output
+      - name: Configure git 
+        run: git config --global init.defaultBranch main
+      - name: Make temporary folder for tests 
+        run: mkdir ./__testModulesData__ && sleep 5
+      - name: Run Jest unit tests 
+        run: npm run test
+
+  publish:
+
+    name: Publish
+    needs: run-tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Cache node_modules
+      id: cache-modules
+      uses: actions/cache@v1
+      with:
+        path: node_modules
+        key: 12.x-${{ runner.OS }}-build-${{ hashFiles('package.json') }}
+    - name: Build
+      if: steps.cache-modules.outputs.cache-hit != 'true'
+      run: npm install --no-package-lock
+    - name: Publish
+      uses: mikeal/merge-release@master
+      env:
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+        NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        DEPLOY_DIR: my/deploy/dir
+        SRC_PACKAGE_DIR: my/src/package

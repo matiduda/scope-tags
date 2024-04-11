@@ -1,5 +1,5 @@
 [![npm version](https://badge.fury.io/js/scope-tags.svg)](https://www.npmjs.com/package/scope-tags)
-![unit tests](https://github.com/matiduda/scope-tags/actions/workflows/run-unit-tests.yml/badge.svg)
+![Auto test and deploy](https://github.com/matiduda/scope-tags/actions/workflows/test-and-deploy-to-npm.yml/badge.svg)
 
 ### How to install
 
