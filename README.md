@@ -79,7 +79,6 @@ For unit testing there is a [separate mock repository](https://www.npmjs.com/pac
 - [ ] Unit tests for common actions:
     - [ ] Testing if files are correstly updated in database depending on changes in git
     - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
-- [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm - giga optional
 - [ ] Add [automatic publish to npm](https://github.com/marketplace/actions/automated-releases-for-npm-packages) as github action (if tests passed)
 
 ### To be discussed

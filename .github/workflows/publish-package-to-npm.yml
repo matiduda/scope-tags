@@ -7,15 +7,15 @@ on:
       - 'main'
 jobs:
   test:
-    name: Build & Test
+    name: Publish package to npm
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [12.x, 14.x]
+        node-version: [12.16.1]
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
     - name: Cache node_modules
@@ -33,9 +33,9 @@ jobs:
     name: Publish
     needs: test
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && ( github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' )
+    if: github.event_name == 'push' && ( github.ref == 'refs/heads/main' )
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Cache node_modules
       id: cache-modules
       uses: actions/cache@v1
@@ -51,5 +51,7 @@ jobs:
     - name: Publish
       uses: mikeal/merge-release@master
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+        DEPLOY_DIR: my/deploy/dir
+        SRC_PACKAGE_DIR: my/src/package
