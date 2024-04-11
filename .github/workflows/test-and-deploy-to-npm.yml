@@ -4,7 +4,6 @@ run-name: ${{ github.event.head_commit.message }}
 jobs:
 
   run-tests:
-  
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -13,6 +12,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - name: Make temporary folder for tests # tests break without this
+        run: mkdir ./__testModulesData__ && sleep 5
       - uses: actions/setup-node@v3
         with:
           node-version: '12.16.1'
@@ -23,18 +24,20 @@ jobs:
       # Just to not display git warning in unit test output
       - name: Configure git 
         run: git config --global init.defaultBranch main
-      - name: Make temporary folder for tests 
-        run: mkdir ./__testModulesData__ && sleep 5
+
       - name: Run Jest unit tests 
         run: npm run test
 
   publish:
-
     name: Publish
     needs: run-tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: '12.16.1'
     - name: Cache node_modules
       id: cache-modules
       uses: actions/cache@v1
