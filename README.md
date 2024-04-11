@@ -53,10 +53,13 @@ npm i scope-tags -D
 ### Local development
 
 1. Clone this repository using `git clone --recurse-submodules https://github.com/matiduda/scope-tags`
-2. Run `npm install` (preffered Node/NPM version: v12.16.3 / 6.14.4)
-3. Run `npm link`
-4. Use the local version of the script using `scope` (without the `npx prefix`) (if it doesn't work - restart the terminal)
-5. `npx scope` runs version installed in the current repository (as a dependency), `scope` runs locally builded version
+2. Make sure you're using the correct verion of Node - `v12.16.1 (npm v6.13.4)`
+3. Run `npm install` (preffered Node/NPM version: v12.16.3 / 6.14.4)
+4. Run `npm link`
+5. Use the local version of the script using `scope` (without the `npx prefix`) (if it doesn't work - restart the terminal)
+6. `npx scope` runs version installed in the current repository (as a dependency), `scope` runs locally builded version
+
+To run tests manually use `npm run test`.
 
 For unit testing there is a [separate mock repository](https://www.npmjs.com/package/ora), which should be keeped up-to-date
 
@@ -75,6 +78,7 @@ For unit testing there is a [separate mock repository](https://www.npmjs.com/pac
     - [ ] Testing if files are correstly updated in database depending on changes in git
     - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
 - [ ] Add [np package](https://www.npmjs.com/package/np) to handle publishing to npm - giga optional
+- [ ] Add [automatic publish to npm](https://github.com/marketplace/actions/automated-releases-for-npm-packages) as github action (if tests passed)
 
 ### To be discussed
 
