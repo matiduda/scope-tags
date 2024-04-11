@@ -5,13 +5,14 @@ module.exports = async function(globalConfig, projectConfig) {
 
     global.TEMP_FOLDER_FOR_TESTS = path.resolve("./TEST_TMP/");
 
-    console.debug(`\n[SCOPE TAGS] Global test setup - initializing temporary folder at ${global.TEMP_FOLDER_FOR_TESTS}`);
-
     if (fs.existsSync(global.TEMP_FOLDER_FOR_TESTS)) {
-        console.debug(`\n[SCOPE TAGS] Removing previous instance of '${global.TEMP_FOLDER_FOR_TESTS}'`);
-        rimraf.sync(global.TEMP_FOLDER_FOR_TESTS);
+        // Just remove folder content
+        console.debug(`\n[SCOPE TAGS] Found existing temporary folder at '${global.TEMP_FOLDER_FOR_TESTS}', removing its contents...`);
+        rimraf.sync(path.join(global.TEMP_FOLDER_FOR_TESTS, "*"));
+        return;
     }
 
+    console.debug(`\n[SCOPE TAGS] Global test setup - initializing temporary folder at '${global.TEMP_FOLDER_FOR_TESTS}'...`);
     try {
         fs.mkdirSync(global.TEMP_FOLDER_FOR_TESTS, { recursive: true });
     } catch (e) {
