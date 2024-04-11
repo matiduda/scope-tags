@@ -31,12 +31,11 @@ jobs:
         id: check-package-version
         run: echo "version=$(node ./.github/shouldVersionBePublishedCheck.js)" >> "$GITHUB_OUTPUT"
         shell: bash
-
   publish:
     name: Publish to npm if package version changed
     needs: run-tests
     runs-on: ubuntu-latest
-    if: ${{needs.run-tests.outputs.version}} == 1
+    if: ${{needs.run-tests.outputs.version}} != 0
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
