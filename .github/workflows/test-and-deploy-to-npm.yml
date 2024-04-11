@@ -46,6 +46,6 @@ jobs:
     - run: npm ci
     - name: Create scope-tags build
       run: npx tsc
-    - run: npm publish --dry-run
+    - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
