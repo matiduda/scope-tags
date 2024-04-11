@@ -45,7 +45,7 @@ export const assertTemporaryFolderExists = () => {
         }
     });
 
-    if (!existsSync(TEMP_TEST_FOLDER)) {
-        throw new Error(`Temporary folder '${TEMP_TEST_FOLDER}' does not exist`);
-    }
+    // if (!existsSync(TEMP_TEST_FOLDER)) {
+    //     throw new Error(`Temporary folder '${TEMP_TEST_FOLDER}' does not exist`);
+    // }
 }

@@ -7,7 +7,7 @@ import { assertTemporaryFolderExists } from "../_utils/utils";
 
 const SCOPE_FOLDER_PATH = join(TEMP_TEST_FOLDER, ".scope");
 
-beforeAll(() => {
+beforeEach(() => {
   assertTemporaryFolderExists();
 });
 
