@@ -52,7 +52,7 @@ npm i scope-tags -D
 
 ### Local development
 
-1. Clone this repository
+1. Clone this repository using `git clone --recurse-submodules https://github.com/matiduda/scope-tags`
 2. Run `npm install` (preffered Node/NPM version: v12.16.3 / 6.14.4)
 3. Run `npm link`
 4. Use the local version of the script using `scope` (without the `npx prefix`) (if it doesn't work - restart the terminal)

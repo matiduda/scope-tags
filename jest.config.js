@@ -7,5 +7,6 @@ module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ["**/src/**", "!**/node_modules/**"],
   coverageDirectory: './coverage',
-  coverageReporters: ['json', 'lcovonly', 'text', 'clover']
+  coverageReporters: ['json', 'lcovonly', 'text', 'clover'],
+  testPathIgnorePatterns: ['/_utils/'],
 };

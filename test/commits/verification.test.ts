@@ -1,6 +1,6 @@
 import { resolve } from "path";
 import rimraf from "rimraf";
-import { TEMP_TEST_FOLDER, initMockRepository, purgeMockRepository } from "../utils.test";
+import { TEMP_TEST_FOLDER, initMockRepository, purgeMockRepository } from "../_utils/utils.test";
 
 
 beforeEach(() => {
