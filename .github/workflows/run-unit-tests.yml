@@ -22,6 +22,6 @@ jobs:
       - name: Configure git 
         run: git config --global init.defaultBranch main
       - name: Make temporary folder for tests 
-        run: mkdir ./TEST_TMP && ls -ltra .
+        run: mkdir ./__testModulesData__
       - name: Run Jest unit tests 
         run: npm run test

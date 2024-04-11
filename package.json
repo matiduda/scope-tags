@@ -16,7 +16,7 @@
     "local-build": "npm run build && npm link",
     "start": "npm run build && scope",
     "tag": "npm run build && scope --tag-unpushed-commits",
-    "test": "jest ./test --verbose --silent=false",
+    "test": "jest ./test --verbose --silent=false --runInBand",
     "clean": "rimraf .scope/"
   },
   "repository": {
