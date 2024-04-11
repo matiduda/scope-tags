@@ -1,11 +1,9 @@
 import { resolve, join } from "path";
 import { existsSync } from "fs";
 import { copySync } from "fs-extra";
+
 import rimraf from "rimraf";
-
-// Common test constants
-
-export const TEMP_TEST_FOLDER = resolve("./tmp/");
+import { TEMP_TEST_FOLDER } from "./globals";
 
 // Mocked repository
 
@@ -31,8 +29,4 @@ export const purgeMockRepository = () => {
         throw new Error(`Could not purge mock repository located in '${MOCK_REPO_DESTINATION_PATH}' as this folder does not exist`);
     }
     rimraf.sync(resolve(MOCK_REPO_DESTINATION_PATH));
-}
-
-export const cloneMockRepository = () => {
-
 }

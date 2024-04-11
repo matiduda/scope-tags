@@ -1,7 +1,8 @@
-import { resolve } from "path";
+import { join, resolve } from "path";
 import rimraf from "rimraf";
-import { TEMP_TEST_FOLDER, initMockRepository, purgeMockRepository } from "../_utils/utils.test";
-
+import { initMockRepository, purgeMockRepository } from "../_utils/utils";
+import { TEMP_TEST_FOLDER } from "../_utils/globals";
+const fs = require('fs');
 
 beforeEach(() => {
     initMockRepository();
@@ -17,6 +18,12 @@ afterAll(() => {
 
 describe("Commit verification by scope tags script", () => {
     it("When commits consists only of files which extensions are ignored, the commit is marked by 'includesOnlyIgnoredFiles' flag", () => {
+
+        // Use fs.readdirSync to read the contents of the directory synchronously
+        const fileList = fs.readdirSync(resolve(join(TEMP_TEST_FOLDER, "./tmp/_repo_cloned")));
+
+        console.debug('Files and folders in the directory:', fileList);
+
         expect(true).toBe(true);
     });
 

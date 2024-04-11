@@ -2,38 +2,33 @@ import { scopeFolderExists, ensureScopeFolderExists } from "../../src/FileSystem
 import { resolve, join } from "path";
 import { mkdirSync, rmdirSync, existsSync } from "fs";
 import rimraf from "rimraf";
+import { TEMP_TEST_FOLDER } from "../_utils/globals";
 
-const testFolderPath = resolve("./tmp/");
-const scopeFolderPath = join(testFolderPath, ".scope");
-
-beforeEach(() => {
-  rimraf.sync(resolve('./tmp'));
-  mkdirSync(testFolderPath, { recursive: true });
-});
+const SCOPE_FOLDER_PATH = join(TEMP_TEST_FOLDER, ".scope");
 
 afterAll(() => {
-  rimraf.sync(resolve('./tmp'));
+  rimraf.sync(resolve(SCOPE_FOLDER_PATH));
 });
 
 const purgeScopeFolder = () => {
-  rmdirSync(scopeFolderPath);
-  expect(existsSync(scopeFolderPath)).toBe(false);
+  rmdirSync(SCOPE_FOLDER_PATH);
+  expect(existsSync(SCOPE_FOLDER_PATH)).toBe(false);
 }
 
 describe("Finding .scope folder", () => {
   it("Does not find .scope folder when there is none", () => {
-    expect(scopeFolderExists(testFolderPath)).toBe(false);
+    expect(scopeFolderExists(TEMP_TEST_FOLDER)).toBe(false);
   });
 
   it("Does find .scope folder where when is one", () => {
-    mkdirSync(scopeFolderPath);
-    expect(scopeFolderExists(testFolderPath)).toBe(true);
+    mkdirSync(SCOPE_FOLDER_PATH);
+    expect(scopeFolderExists(TEMP_TEST_FOLDER)).toBe(true);
     purgeScopeFolder();
   });
 
   it("Creates .scope folder when there is none", () => {
-    ensureScopeFolderExists(testFolderPath);
-    expect(existsSync(scopeFolderPath)).toBe(true);
+    ensureScopeFolderExists(TEMP_TEST_FOLDER);
+    expect(existsSync(SCOPE_FOLDER_PATH)).toBe(true);
     purgeScopeFolder();
   });
 });

@@ -9,4 +9,6 @@ module.exports = {
   coverageDirectory: './coverage',
   coverageReporters: ['json', 'lcovonly', 'text', 'clover'],
   testPathIgnorePatterns: ['/_utils/'],
+  globalSetup: '<rootDir>/test/setup.ts',
+  globalTeardown: '<rootDir>/test/teardown.ts',
 };
