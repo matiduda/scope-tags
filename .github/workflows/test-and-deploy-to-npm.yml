@@ -12,8 +12,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Make temporary folder for tests # tests break without this
-        run: mkdir ./__testModulesData__ && sleep 5
       - uses: actions/setup-node@v3
         with:
           node-version: '12.16.1'
@@ -52,5 +50,3 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
         NPM_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-        DEPLOY_DIR: my/deploy/dir
-        SRC_PACKAGE_DIR: my/src/package
