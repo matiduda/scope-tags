@@ -27,7 +27,7 @@ describe("Finding .scope folder", () => {
 
   it("Does find .scope folder where when is one", () => {
     mkdirSync(SCOPE_FOLDER_PATH);
-    expect(scopeFolderExists(TEMP_TEST_FOLDER)).toBe(true);
+    expect(scopeFolderExists(resolve(TEMP_TEST_FOLDER))).toBe(true);
     purgeScopeFolder();
   });
 
