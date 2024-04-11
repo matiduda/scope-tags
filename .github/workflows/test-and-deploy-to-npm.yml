@@ -36,7 +36,7 @@ jobs:
     name: Publish to npm if package version changed
     needs: run-tests
     runs-on: ubuntu-latest
-    if: ${{needs.run-tests.outputs.version}} == '1'
+    if: ${{needs.run-tests.outputs.version}} == 1
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-node@v4
