@@ -8,7 +8,7 @@ module.exports = async function(globalConfig, projectConfig) {
     if (fs.existsSync(global.TEMP_FOLDER_FOR_TESTS)) {
         // Just remove folder content
         console.debug(`\n[SCOPE TAGS] Found existing temporary folder at '${global.TEMP_FOLDER_FOR_TESTS}', removing its contents...`);
-        rimraf.sync(path.join(global.TEMP_FOLDER_FOR_TESTS, "*"));
+        // rimraf.sync(path.join(global.TEMP_FOLDER_FOR_TESTS, "*"));
         return;
     }
 
