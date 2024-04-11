@@ -58,6 +58,10 @@ npm i scope-tags -D
 4. Use the local version of the script using `scope` (without the `npx prefix`) (if it doesn't work - restart the terminal)
 5. `npx scope` runs version installed in the current repository (as a dependency), `scope` runs locally builded version
 
+For unit testing there is a [separate mock repository](https://www.npmjs.com/package/ora), which should be keeped up-to-date
+
+<!-- To make things easier for developing...  -->
+
 ### Features to do
 
 - [-] Use [spinner](https://www.npmjs.com/package/ora) while waiting for async operations (opening repo, ast analysis) - probably not needed because wait time is short

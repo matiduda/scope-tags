@@ -32,3 +32,7 @@ export const purgeMockRepository = () => {
     }
     rimraf.sync(resolve(MOCK_REPO_DESTINATION_PATH));
 }
+
+export const cloneMockRepository = () => {
+
+}
