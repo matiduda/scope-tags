@@ -4,6 +4,7 @@ run-name: ${{ github.event.head_commit.message }}
 jobs:
 
   run-tests:
+    name: Run unit tests to verifiy package
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.check-package-version.outputs.version }}
@@ -32,7 +33,7 @@ jobs:
         run: echo "version=$(node ./.github/shouldVersionBePublishedCheck.js)" >> "$GITHUB_OUTPUT"
         shell: bash
   publish:
-    name: Publish to npm if package version changed
+    name: Publish if package version changed
     needs: run-tests
     runs-on: ubuntu-latest
     if: ${{ needs.run-tests.outputs.version == '1' }}
