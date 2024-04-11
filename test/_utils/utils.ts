@@ -30,3 +30,9 @@ export const purgeMockRepository = () => {
     }
     rimraf.sync(resolve(MOCK_REPO_DESTINATION_PATH));
 }
+
+// Temp folder
+
+export const assertTemporaryFolderExists = () => {
+    expect(existsSync(TEMP_TEST_FOLDER)).toBe(true);
+}

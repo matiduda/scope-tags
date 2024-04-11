@@ -3,8 +3,13 @@ import { resolve, join } from "path";
 import { mkdirSync, rmdirSync, existsSync } from "fs";
 import rimraf from "rimraf";
 import { TEMP_TEST_FOLDER } from "../_utils/globals";
+import { assertTemporaryFolderExists } from "../_utils/utils";
 
 const SCOPE_FOLDER_PATH = join(TEMP_TEST_FOLDER, ".scope");
+
+beforeAll(() => {
+  assertTemporaryFolderExists();
+});
 
 afterAll(() => {
   rimraf.sync(resolve(SCOPE_FOLDER_PATH));
