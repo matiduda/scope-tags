@@ -37,7 +37,7 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
                 console.log(`[Scope Tags] Skipped check for '${commit.summary()}' because it's a merge commit`);
             }
 
-            if (!verificationInfo.isVerified && !verificationInfo.isSkipped && !verificationInfo.isMergeCommit) {
+            if (!verificationInfo.isVerified && !verificationInfo.isSkipped && !verificationInfo.isMergeCommit && !verificationInfo.includesOnlyIgnoredFiles) {
                 console.log(`Commit '${commit.summary()}' not verified, no tags found for required files:\n`);
                 verificationInfo.filesToTag.forEach(file => console.log(`- ${file.newPath}`));
                 console.log("To tag files run\n\n\tnpx scope --add\n\n");
@@ -53,7 +53,7 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
             return;
         }
 
-        if (![...commitsVerificationInfo.values()].some(info => info.hasRelevancy)) {
+        if ([...commitsVerificationInfo.values()].some(info => !info.isSkipped && !info.isMergeCommit && !info.includesOnlyIgnoredFiles && !info.hasRelevancy)) {
             console.log(`[Scope tags] All commits are verified, but found no relevancy data. To add relevancy use:\n`);
             console.log("\nTo add relevancy use\n\n\tnpx scope --add\n\n");
             process.exit(1);

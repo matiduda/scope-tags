@@ -46,22 +46,30 @@ export class RelevancyManager {
     public constructor() { }
 
     public async start(entries: Array<RelevancyEntry>): Promise<Map<FileData, Relevancy>> {
-        this._assertNoDuplicateEntries(entries);
+
+        const uniqueEntries = entries.filter((value, index, self) =>
+            index === self.findIndex((t) => (
+                t.newPath === value.newPath
+            ))
+        );
 
         const answerMap = new Map<FileData, Relevancy>();
 
-        const fullPages = Math.floor(entries.length / RelevancyManager.PAGE_LIMIT);
-        const totalPages = entries.length % RelevancyManager.PAGE_LIMIT ? fullPages + 1 : fullPages;
+        const fullPages = Math.floor(uniqueEntries.length / RelevancyManager.PAGE_LIMIT);
+        const totalPages = uniqueEntries.length % RelevancyManager.PAGE_LIMIT ? fullPages + 1 : fullPages;
 
         for (let i = 0; i < totalPages; i++) {
             const currentPageStartingIndex = i * RelevancyManager.PAGE_LIMIT;
-            const currentPageEntries = entries.slice(currentPageStartingIndex, currentPageStartingIndex + RelevancyManager.PAGE_LIMIT)
+            const currentPageEntries = uniqueEntries.slice(currentPageStartingIndex, currentPageStartingIndex + RelevancyManager.PAGE_LIMIT)
 
             const answer = await this._getRelevancy(currentPageEntries, i, totalPages);
 
             // Map answers
-            currentPageEntries.forEach(entry => {
-                answerMap.set(entry, this._getRelevancyByIndex(answer[entry.newPath]))
+            currentPageEntries.forEach(uniqueEntry => {
+                // Set every matching fileData to the same relevancy, this doesn't neet to be change specific
+
+                const matchingFileData = entries.filter(entry => entry.newPath === uniqueEntry.newPath);
+                matchingFileData.forEach(fileData => answerMap.set(fileData, this._getRelevancyByIndex(answer[uniqueEntry.newPath])));
             });
         }
 
@@ -74,20 +82,15 @@ export class RelevancyManager {
 
         if (this.doesCommitMessageHaveRelevancyData(headCommit.message())) {
             relevancyArrayFromCurrentCommit = this.convertCommitMessageToRelevancyData(headCommit, false);
-            console.log("Relevancy from current commit:");
-            console.log(JSON.stringify(relevancyArrayFromCurrentCommit));
         }
 
         const relevancyArray: CommitMessageRelevancyInfo[] = [...data].map(([fileData, relevancy]) => {
-            console.log(fileData.newPath);
-            console.log(relevancy);
-
             // Check if fileData was commited in current head commit,
             // since this commit stores relevancy data and will be changed later,
             // store it's SHA as "__current__", so it can be read later...
             const commitShaOrIdentifier = fileData.commitedIn?.sha() === headCommit.sha()
                 ? RelevancyManager.CURRENT_COMMIT
-                : fileData.commitedIn;
+                : fileData.commitedIn?.sha();
 
             return {
                 path: fileData.newPath,
@@ -101,12 +104,8 @@ export class RelevancyManager {
         const mergedRelevancies: CommitMessageRelevancyInfo[] = [];
 
         relevancyArray.concat(relevancyArrayFromCurrentCommit).forEach(relevancy => {
-            console.log(JSON.stringify(relevancy));
 
-            if (mergedRelevancies.some(mergedRelevancy => {
-                console.log(JSON.stringify(mergedRelevancy));
-                return mergedRelevancy.path === relevancy.path
-            })) {
+            if (mergedRelevancies.some(mergedRelevancy => mergedRelevancy.path === relevancy.path)) {
                 return;
             }
 
@@ -203,19 +202,6 @@ export class RelevancyManager {
             });
         }
         return commitToRelevancyMap;
-    }
-
-
-    private _assertNoDuplicateEntries(entries: Array<RelevancyEntry>) {
-        entries.forEach((entry, index) => entries.forEach((duplicate, duplicateIndex) => {
-            if (entry.newPath === duplicate.newPath && index !== duplicateIndex) {
-                console.log(
-                    `[RelevancyManager] Found duplicate entry:
-    1. ${entry.newPath} at index ${index}
-    2. ${duplicate.newPath} at index ${duplicateIndex}`)
-                throw new Error("[RelevancyManager] Cannot add relevancy with multiple entries the same file path");
-            }
-        }));
     }
 
     private async _getRelevancy(entries: Array<RelevancyEntry>, currentPage: number, pageCount: number): Promise<ScalePromptAnswerType> {

@@ -1,6 +1,4 @@
-#!/usr/bin/env node
-
-import { runSeeCommand } from "./Commands/runSeeCommand";
+#!/usr/bin/env nodeimport { runSeeCommand } from "./Commands/runSeeCommand";
 import { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
@@ -15,7 +13,7 @@ import { runTagCommitCommand } from "./Commands/runTagCommand";
 import { getGitProjectRoot } from "./Git/Project";
 import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
-import { runListUnpushedCommitsCommand } from "./Commands/runListUnpushedCommitsCommand";
+import { runSeeCommand } from "./Commands/runSeeCommand";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -58,10 +56,6 @@ switch (args[0]) {
     }
     case "--verify-unpushed-commits": {
         runVerifyUnpushedCommitsCommand(args, root);
-        break;
-    }
-    case "--list-unpushed-commits": {
-        runListUnpushedCommitsCommand(args, root);
         break;
     }
     case "--report-for-commit": {

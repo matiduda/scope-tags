@@ -193,6 +193,7 @@ export class GitRepository {
             isVerified: false,
             filesToTag: [],
             isSkipped: false,
+            includesOnlyIgnoredFiles: false,
             isMergeCommit: false,
             hasRelevancy: false,
         };
@@ -209,7 +210,16 @@ export class GitRepository {
         }
 
         const fileDataArray = await this.getFileDataForCommit(commit);
-        const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray);
+        const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray, config);
+
+        const allFilesAreIgnored = fileDataArray.every(fileData => {
+            return statusMap.get(fileData) === FileStatusInDatabase.IGNORED;
+        });
+
+        if (allFilesAreIgnored) {
+            commitInfo.includesOnlyIgnoredFiles = true;
+            return commitInfo;
+        }
 
         const filesNotPresentInDatabase = fileDataArray.filter(fileData => {
             return statusMap.get(fileData) === FileStatusInDatabase.NOT_IN_DATABASE;

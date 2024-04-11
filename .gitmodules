@@ -1,0 +1,4 @@
+[submodule "test/_repo"]
+	path = test/_repo
+	url = https://github.com/matiduda/scope-tags-mock-repo-for-testing-only
+	branch = main

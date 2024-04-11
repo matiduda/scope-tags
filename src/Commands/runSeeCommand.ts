@@ -1,12 +1,13 @@
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { fileExists, getAllFilesFromDirectory, isDirectory } from "../FileSystem/fileSystemUtils";
+import { runListUnpushedCommitsCommand } from "./runListUnpushedCommitsCommand";
 
 export function runSeeCommand(args: Array<string>, root: string) {
     const path = args[1];
     if (!path) {
-        console.log("--see option requires path to file or folder, use: scope --see <path>");
-        process.exit(1);
+        runListUnpushedCommitsCommand(args, root);
+        return;
     } else if (!fileExists(path)) {
         console.log(`File or directory '${path}' does not exist`);
         process.exit(1);

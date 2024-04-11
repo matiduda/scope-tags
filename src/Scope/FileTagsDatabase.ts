@@ -4,6 +4,7 @@ import { JSONFile } from "../FileSystem/JSONFile";
 import { IJSONFileDatabase } from "./IJSONFileDatabase";
 import { Module, Tag } from "./TagsDefinitionFile";
 import { FileData, GitDeltaType } from "../Git/Types";
+import { ConfigFile } from "./ConfigFile";
 
 export type TagIdentifier = {
     tag: Tag["name"];
@@ -217,11 +218,11 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         return uniquefileDataNotFoundInDatabase;
     }
 
-    public checkMultipleFileStatusInDatabase(fileData: Array<FileData>): Map<FileData, FileStatusInDatabase> {
+    public checkMultipleFileStatusInDatabase(fileData: Array<FileData>, configFile: ConfigFile): Map<FileData, FileStatusInDatabase> {
         const filesStatusesInDatabase = new Map<FileData, FileStatusInDatabase>();
 
         fileData.forEach((data: FileData) => {
-            filesStatusesInDatabase.set(data, this._checkFileStatus(data.newPath));
+            filesStatusesInDatabase.set(data, this.checkFileStatus(data.newPath, configFile));
         });
         return filesStatusesInDatabase;
     }
@@ -237,10 +238,9 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             .replace(/            /g, `        `);
     }
 
-    private _checkFileStatus(filePath: string): FileStatusInDatabase {
-        const isFileIgnored = this._fileTagsDatabaseData.ignoredFiles.includes(filePath);
-        if (isFileIgnored) {
-            return FileStatusInDatabase.IGNORED
+    public checkFileStatus(filePath: string, configFile: ConfigFile): FileStatusInDatabase {
+        if (this.isIgnored(filePath, configFile.getIgnoredFileExtenstions())) {
+            return FileStatusInDatabase.IGNORED;
         }
 
         const fileDataReference = this._fileTagsDatabaseData.files[filePath];

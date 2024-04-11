@@ -72,6 +72,10 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
         return false;
     }
 
+    public getIgnoredFileExtenstions(): string[] {
+        return this._config.ignoredExtensions || [];
+    }
+
     public getViewIssueUrl(): string | undefined {
         return this._config.viewIssueURL;
     }
