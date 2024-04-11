@@ -12,18 +12,17 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions/setup-node@v3
+      - uses: actions/setup-node@v4
         with:
           node-version: '12.16.1'
           registry-url: 'https://registry.npmjs.org'
       - name: Install npm dependencies
-        run: npm install --no-package-lock
+        run: npm ci
       - name: Create scope-tags build
         run: npx tsc
       # Just to not display git warning in unit test output
       - name: Configure git 
         run: git config --global init.defaultBranch main
-
       - name: Run Jest unit tests 
         run: npm run test
 
@@ -33,11 +32,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Setup Node
-      uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
       with:
         node-version: '12.16.1'
         registry-url: 'https://registry.npmjs.org'
+    - run: npm ci
     - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
