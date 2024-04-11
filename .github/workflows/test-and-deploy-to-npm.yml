@@ -31,8 +31,8 @@ jobs:
     needs: run-tests
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-node@v4
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
       with:
         node-version: '12.16.1'
         registry-url: 'https://registry.npmjs.org'
