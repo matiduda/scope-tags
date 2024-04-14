@@ -1,4 +1,4 @@
-#!/usr/bin/env
+#!/usr/bin/env node
 import { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
