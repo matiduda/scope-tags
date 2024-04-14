@@ -63,7 +63,7 @@ To run tests manually use `npm run test`.
 
 ### Publishing
 
-For unit testing there is a [separate mock repository](https://www.npmjs.com/package/ora), which should be keeped up-to-date
+For unit testing there is a [separate mock repository](https://github.com/matiduda/scope-tags-mock-repo-for-testing-only), which should be keeped up-to-date
 
 Publishing is made automatically by pushing a commit to the main branch, see [github action](https://github.com/matiduda/scope-tags/actions/workflows/test-and-deploy-to-npm.yml)
 <!-- To make things easier for developing...  -->

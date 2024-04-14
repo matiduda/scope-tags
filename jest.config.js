@@ -11,4 +11,5 @@ module.exports = {
   testPathIgnorePatterns: ['/_utils/'],
   globalSetup: '<rootDir>/test/setup.ts',
   globalTeardown: '<rootDir>/test/teardown.ts',
+  setupTestFrameworkScriptFile: './jest.setup.js',
 };

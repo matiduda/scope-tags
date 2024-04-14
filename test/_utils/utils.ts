@@ -8,7 +8,8 @@ import { TEMP_TEST_FOLDER } from "./globals";
 // Mocked repository
 
 const MOCK_REPO_SOURCE_PATH = resolve("./test/_repo");
-const MOCK_REPO_DESTINATION_PATH = resolve(join(TEMP_TEST_FOLDER, "./tmp/_repo_cloned"));
+
+export const MOCK_REPO_DESTINATION_PATH = resolve(join(TEMP_TEST_FOLDER, "./_repo_cloned"));
 
 export const initMockRepository = (): void => {
     if (!existsSync(MOCK_REPO_SOURCE_PATH)) {

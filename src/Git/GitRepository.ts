@@ -1,9 +1,9 @@
-import { Commit, Note, Repository, Revwalk } from "nodegit";
+import { Commit, Note, Oid, Repository, Revwalk, Signature } from "nodegit";
 import { FileData, GitDeltaType, VerificationInfo } from "./Types";
 import path from "path";
-import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { ConfigFile } from "../Scope/ConfigFile";
 
 export class GitRepository {
 
@@ -161,6 +161,25 @@ export class GitRepository {
             }
         }
         return date;
+    }
+
+    // Mostly from https://github.com/nodegit/nodegit/blob/master/examples/add-and-commit.js
+    public async commitFiles(commitMessage: string, pathspec?: string | string[]): Promise<Oid> {
+        const repository = await this._getRepository();
+        const index = await repository.refreshIndex();
+
+        await index.addAll(pathspec);
+        await index.write();
+
+        const oid = await index.writeTree();
+
+        const parent = await repository.getHeadCommit();
+        const author = Signature.now("Scott Chacon", "schacon@gmail.com");
+        const committer = Signature.now("Scott A Chacon", "scott@github.com");
+
+        const commitId = await repository.createCommit("HEAD", author, committer, commitMessage, oid, [parent]);
+
+        return commitId;
     }
 
     public async amendMostRecentCommit(files: string[], newCommitMessage: string) {

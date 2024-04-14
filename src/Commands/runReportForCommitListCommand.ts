@@ -4,12 +4,12 @@ import { IReferenceFinder } from "../References/IReferenceFinder";
 import { TSReferenceFinder } from "../References/TSReferenceFinder";
 import { BuildIntegration } from "../Report/BuildIntegration";
 import { ReportGenerator } from "../Report/ReportGenerator";
-import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists, getExtension, removeFile, resolvePath, saveHTMLLogs } from "../FileSystem/fileSystemUtils";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { Logger } from "../Logger/Logger";
+import { ConfigFile } from "../Scope/ConfigFile";
 
 const os = require("os");
 

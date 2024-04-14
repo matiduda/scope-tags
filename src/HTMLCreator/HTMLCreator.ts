@@ -44,7 +44,8 @@ export class HTMLCreator {
             type: "link",
             attributes: {
                 rel: "stylesheet",
-                href: "https://unpkg.com/mvp.css"
+                // don't use https://unpkg.com/mvp.css as cloudflare is sometimes down
+                href: "https://andybrewer.github.io/mvp/mvp.css"
             },
         });
 

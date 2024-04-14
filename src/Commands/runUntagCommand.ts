@@ -1,7 +1,7 @@
 import { YesNoMenu } from "../Console/YesNoMenu";
 import { fileExists, isDirectory, getAllFilesFromDirectory } from "../FileSystem/fileSystemUtils";
-import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { ConfigFile } from "../Scope/ConfigFile";
 
 export function runUntagCommand(args: Array<string>, root: string) {
     const path = args[1];

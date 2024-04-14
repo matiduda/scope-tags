@@ -26,6 +26,8 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     private _root: string;
     private _tagsDatabaseData: TagsDatabaseType;
 
+    _loaded: boolean = false;
+
     constructor(root: string) {
         this._root = root;
     }
@@ -52,6 +54,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         const loadedDatabase = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
         this._validateDatabase(loadedDatabase);
         this._tagsDatabaseData = loadedDatabase;
+        this._loaded = true;
         return this;
     }
 

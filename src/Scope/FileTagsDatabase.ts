@@ -1,9 +1,9 @@
 import path from "path";
 import fs from "fs";
 import { JSONFile } from "../FileSystem/JSONFile";
-import { IJSONFileDatabase } from "./IJSONFileDatabase";
 import { Module, Tag } from "./TagsDefinitionFile";
 import { FileData, GitDeltaType } from "../Git/Types";
+import { IJSONFileDatabase } from "./IJSONFileDatabase";
 import { ConfigFile } from "./ConfigFile";
 
 export type TagIdentifier = {
@@ -40,6 +40,8 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
 
     private _root: string;
     private _fileTagsDatabaseData: LoadedDatabaseType;
+
+    _loaded: boolean = false;
 
     constructor(root: string) {
         this._root = root;
@@ -83,6 +85,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             })
         }
 
+        this._loaded = true;
         return this;
     }
 

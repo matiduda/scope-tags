@@ -1,4 +1,4 @@
-#!/usr/bin/env nodeimport { runSeeCommand } from "./Commands/runSeeCommand";
+#!/usr/bin/env
 import { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
