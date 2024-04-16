@@ -23,7 +23,7 @@ export class Menu {
             choices: [
                 { name: "Manage tags", value: this._manageTags },
                 { name: "Manage modules", value: this._manageModules },
-                { name: "Commands", value: this._executeCommands },
+                { name: "Commands (WIP)", value: this._executeCommands },
                 { name: "Exit", value: this._exit },
             ],
             result(value: any) { // This is ugly, but we need it to retrieve the value

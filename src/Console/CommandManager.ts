@@ -6,7 +6,11 @@ import { Menu } from "./Menu";
 
 type CommandAsOption = { name: string, value: CommandType };
 
+
+
 export class CommandManager {
+
+    private static readonly GO_BACK = "__back__";
 
     private _tags: TagsDefinitionFile;
     private _database: FileTagsDatabase;
@@ -28,12 +32,17 @@ export class CommandManager {
             execute: () => console.log("RUNNING TEST COMMAND!!!!"),
         };
 
+        const backToMenuOption = { name: "Back to menu", value: CommandManager.GO_BACK };
+
         const commandsMappedToOptions = this._mapCommandsToOptions([testCommand]);
 
         const prompt = new Select({
             name: "Select command",
             message: "Command manager",
-            choices: commandsMappedToOptions,
+            choices: [
+                ...commandsMappedToOptions,
+                backToMenuOption
+            ],
             result(value: any) {
                 const mapped = this.map(value);
                 return mapped[value];
@@ -42,7 +51,10 @@ export class CommandManager {
 
         const answer = await prompt.run();
 
-        console.log(answer);
+        if (answer === CommandManager.GO_BACK) {
+            await this._exit();
+            return;
+        }
 
         await this._selectCommand(answer);
     }
@@ -52,7 +64,7 @@ export class CommandManager {
 
         const prompt = new Invisible({
             name: "invisible",
-            message: "Press ENTER to return to command selection"
+            message: `Executed ${command.name}.Press ENTER to return to command selection`
         });
 
         await prompt.run();
@@ -60,6 +72,10 @@ export class CommandManager {
     }
 
     private _mapCommandsToOptions(commands: CommandType[]): CommandAsOption[] {
-        return commands.map(command => ({ name: `→ ${command.name}`, value: command }));
+        return commands.map(command => ({ name: `→ ${command.name} (${command.runOption})`, value: command }));
+    }
+
+    private async _exit(): Promise<void> {
+        await this._menu.start();
     }
 }
