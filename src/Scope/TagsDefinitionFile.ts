@@ -20,16 +20,15 @@ type TagsDatabaseType = {
     tags: Array<Tag>;
 }
 
-export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile> {
+export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
     private static PATH = ".scope/tags.json";
 
     private _root: string;
     private _tagsDatabaseData: TagsDatabaseType;
 
-    _loaded: boolean = false;
-
     constructor(root: string) {
         this._root = root;
+        this._tagsDatabaseData = this.load();
     }
 
     private _getPath(): string {
@@ -45,17 +44,15 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
         const defaultDatabase: TagsDatabaseType = {
             modules: [defaultModule],
             tags: [defaultTag]
-        }
+        };
 
         JSONFile.niceWrite<TagsDatabaseType>(this._getPath(), defaultDatabase);
     }
 
-    public load(): TagsDefinitionFile {
+    public load(): TagsDatabaseType {
         const loadedDatabase = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
         this._validateDatabase(loadedDatabase);
-        this._tagsDatabaseData = loadedDatabase;
-        this._loaded = true;
-        return this;
+        return loadedDatabase;
     }
 
     private _validateDatabase(loadedDatabase: TagsDatabaseType) {
@@ -130,7 +127,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public assignTagToModule(tag: Tag, module: Module) {
         if (!module) {
-            throw new Error(`[TagManager] Can't add tag to undefined module`);
+            throw new Error("[TagManager] Can't add tag to undefined module");
         }
 
         if (module.tags.some(moduleTag => moduleTag === tag.name)) {
@@ -145,7 +142,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             throw new Error(`[TagManager] Can't add tag named '${tag.name}', because it already exists!`);
         }
 
-        let matchingTag: Tag | undefined = this._tagsDatabaseData.tags.find(databaseTag => databaseTag.name.toLowerCase() === tag.name.toLowerCase());
+        const matchingTag: Tag | undefined = this._tagsDatabaseData.tags.find(databaseTag => databaseTag.name.toLowerCase() === tag.name.toLowerCase());
 
         if (matchingTag) {
             throw new Error(`[TagManager] Can't add tag named '${tag.name}', because tag '${matchingTag.name}' already exists, it is better to assign '${matchingTag.name}' directly`);
@@ -212,8 +209,8 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
                 throw new Error(`Could not find tag of name '${tagName}'`);
             }
             foundTags.push(tag);
-        })
-        return foundTags
+        });
+        return foundTags;
     }
 
     public getModules(): Array<Module> {
@@ -281,9 +278,9 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
     // This is cancer
     private _replacer(stringifiedOutput: string) {
         return stringifiedOutput
-            .replace(/{\n\s+"name": "(.+)"\n\s+}/g, `{ "name": "$1" }`)
-            .replace(/\n(\s+)},\n\s+{/g, `\n$1}, {`)
-            .replace(/"modules": \[\n\s+{/g, `"modules": [{`);
+            .replace(/{\n\s+"name": "(.+)"\n\s+}/g, "{ \"name\": \"$1\" }")
+            .replace(/\n(\s+)},\n\s+{/g, "\n$1}, {")
+            .replace(/"modules": \[\n\s+{/g, "\"modules\": [{");
     }
 
     static getDefaultModule(): Module {
@@ -294,7 +291,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             tags: [],
             parent: null,
             children: [],
-        }
+        };
         return defaultModule;
     }
 }

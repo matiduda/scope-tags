@@ -19,9 +19,9 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
     }
 
     const repository = new GitRepository(root);
-    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
-    const configFile = new ConfigFile(root).load();
+    const tagsDefinitionFile = new TagsDefinitionFile(root);
+    const fileTagsDatabase = new FileTagsDatabase(root);
+    const configFile = new ConfigFile(root);
 
     const referenceFinders: Array<IReferenceFinder> = [];
 
@@ -42,7 +42,7 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
                 referenceFinders.push(new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles));
             }
         }
-    })
+    });
 
     const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
     const relevancyManager = new RelevancyManager();

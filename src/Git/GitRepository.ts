@@ -9,7 +9,7 @@ export class GitRepository {
 
     public static SKIP_VERIFICATION_MSG = "[Scope Tags] Verification to be skipped";
 
-    private _repository: Repository;
+    private _repository: Repository | null = null;
     private _root: string;
 
     constructor(root: string) {
@@ -41,7 +41,7 @@ export class GitRepository {
         if (matchingRemotes.length > 1) {
             console.log(
                 "[GitRepository::getUnpushedCommits] Found more than one matching remotes:\n",
-                matchingRemotes.map(remote => '- ' + remote.toString()).join('\n'),
+                matchingRemotes.map(remote => "- " + remote.toString()).join("\n"),
                 `\n[GitRepository::getUnpushedCommits] Selecting '${matchingRemotes[0]}' because it's the first one`
             );
         }
@@ -125,8 +125,8 @@ export class GitRepository {
                 change: GitDeltaType.ADDED,
                 linesAdded: 0,
                 linesRemoved: 0,
-            }
-        })
+            };
+        });
     }
 
     public async getCommitByHash(hash: string): Promise<Commit> {
@@ -279,11 +279,11 @@ export class GitRepository {
     }
 
     private async _getRepository(): Promise<Repository> {
-        if (!this._repository) {
+        if (this._repository === null) {
             try {
                 this._repository = await Repository.open(this._root);
             } catch (e) {
-                console.log(e);
+                throw new Error(`Could not open Git repository in '${this._root}'`);
             }
         }
         return this._repository;
@@ -308,7 +308,7 @@ export class GitRepository {
         );
 
         if (errorCode) {
-            throw new Error(`Could not remove note from commit '${commit.summary()}'. Error code: ${errorCode}`)
+            throw new Error(`Could not remove note from commit '${commit.summary()}'. Error code: ${errorCode}`);
         }
     }
 

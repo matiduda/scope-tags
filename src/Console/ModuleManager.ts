@@ -1,4 +1,4 @@
-const { AutoComplete, Form, Confirm, Select } = require('enquirer')
+const { AutoComplete, Form, Confirm, Select } = require("enquirer");
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { Menu } from "./Menu";
@@ -11,7 +11,7 @@ export class ModuleManager {
     private _database: FileTagsDatabase;
     private _menu: Menu;
 
-    private _modulesWereModified: boolean;
+    private _modulesWereModified: boolean = false;
 
     constructor(tags: TagsDefinitionFile, database: FileTagsDatabase, menu: Menu) {
         this._tags = tags;
@@ -28,7 +28,7 @@ export class ModuleManager {
         const tagNames = fromModule ? this._tags.getModuleTagNames(fromModule) : [];
 
         const prompt = new Select({
-            name: 'Module manager',
+            name: "Module manager",
             message: this._getModulePathAsHeader(fromModule),
             choices: [
                 ...(fromModule ? [
@@ -39,26 +39,26 @@ export class ModuleManager {
                     { message: `Tags:\t\t${tagNames.length ? tagNames.join(", ") : "-"}`, role: "separator" },
                     ...(modulesMappedToOptions.length && modulesMappedToOptions.length < 5 ?
                         [
-                            { message: `── Children ──`, role: "separator" },
+                            { message: "── Children ──", role: "separator" },
                             ...modulesMappedToOptions,
                         ] : []),
                     ...(modulesMappedToOptions.length && modulesMappedToOptions.length >= 5 ?
                         [
-                            { message: `── Children ──`, role: "separator" },
-                            { name: 'Select child', value: this._selectChildModule },
+                            { message: "── Children ──", role: "separator" },
+                            { name: "Select child", value: this._selectChildModule },
                         ] : []),
                     { role: "separator" },
-                    { name: 'Add new module here', value: this._addModule },
-                    { name: 'Manage tags of: ' + fromModule.name, value: this._manageTagsFromModule },
+                    { name: "Add new module here", value: this._addModule },
+                    { name: "Manage tags of: " + fromModule.name, value: this._manageTagsFromModule },
                     ...(filesWithModuleCount ? [
-                        { name: 'List files', value: this._listFilesForModule },
+                        { name: "List files", value: this._listFilesForModule },
                     ] : []),
-                    { name: 'Delete this module', value: this._deleteModule },
+                    { name: "Delete this module", value: this._deleteModule },
                     { name: "Back to: " + (fromModule.parent || "root"), value: this._goBack },
                 ] : [
                     ...modulesMappedToOptions,
-                    { role: 'separator' },
-                    { name: 'Add new module here', value: this._addModule },
+                    { role: "separator" },
+                    { name: "Add new module here", value: this._addModule },
                     { name: this._modulesWereModified ? "Save and return to menu" : "Return to menu", value: this._exit },
                 ]),
             ],
@@ -82,7 +82,7 @@ export class ModuleManager {
         const modulesMappedToOptions = this._mapModulesToOptions(modulesToDisplay);
 
         const prompt = new AutoComplete({
-            name: 'Module manager',
+            name: "Module manager",
             message: this._getModulePathAsHeader(fromModule),
             choices: modulesMappedToOptions,
             result(value: any) {
@@ -93,7 +93,7 @@ export class ModuleManager {
 
         try {
             const answer = await prompt.run();
-            await this.start(answer)
+            await this.start(answer);
         } catch (e) {
             // User canceled - go back to module
             await this.start(fromModule);
@@ -106,11 +106,11 @@ export class ModuleManager {
         const defaultModuleDescription = "A module containing multiple functionalities";
 
         const moduleInfoPrompt = new Form({
-            name: 'user',
-            message: 'Fill in details about the new module:',
+            name: "user",
+            message: "Fill in details about the new module:",
             choices: [
-                { name: 'name', message: 'Name', initial: defaultModuleName },
-                { name: 'description', message: 'Description', initial: defaultModuleDescription },
+                { name: "name", message: "Name", initial: defaultModuleName },
+                { name: "description", message: "Description", initial: defaultModuleDescription },
             ],
             validate: (answer: any) => {
                 if (!answer.name.length
@@ -125,8 +125,8 @@ export class ModuleManager {
 
         const isExclusivePrompt = new Confirm({
             name: "exclusive",
-            message: 'Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)',
-            question: '2 Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)',
+            message: "Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)",
+            question: "2 Should the module be exclusive?\n(Meaning: only one tag per file can be added from this module)",
         });
 
 
@@ -197,8 +197,8 @@ export class ModuleManager {
     private async _listFilesForModule(module: Module) {
         const matchingFiles = this._database.getFilesWithModule(module);
         matchingFiles.forEach(entry => {
-            console.log(`${entry[0]} -> ${entry[1].map(id => `${id.module}/${id.tag}`).join(', ')}`);
-        })
+            console.log(`${entry[0]} -> ${entry[1].map(id => `${id.module}/${id.tag}`).join(", ")}`);
+        });
         await this.start.call(this, module);
     }
 

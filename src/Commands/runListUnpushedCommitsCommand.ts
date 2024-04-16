@@ -12,8 +12,8 @@ export function runListUnpushedCommitsCommand(args: Array<string>, root: string)
     // Lists the details about commits which will be automatically verified
 
     const repository = new GitRepository(root);
-    const database = new FileTagsDatabase(root).load();
-    const config = new ConfigFile(root).load();
+    const database = new FileTagsDatabase(root);
+    const config = new ConfigFile(root);
 
     repository.getUnpushedCommits().then(async (commits: Commit[]) => {
         if (!commits.length) {

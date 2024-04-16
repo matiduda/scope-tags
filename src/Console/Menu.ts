@@ -2,8 +2,9 @@ import { TagManager } from "./TagManager";
 import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { ModuleManager } from "./ModuleManager";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { CommandManager } from "./CommandManager";
 
-const { Select } = require('enquirer')
+const { Select } = require("enquirer");
 
 export class Menu {
 
@@ -17,12 +18,13 @@ export class Menu {
 
     public async start() {
         const prompt = new Select({
-            name: 'Menu',
+            name: "Menu",
             message: "Scope Tags",
             choices: [
-                { name: 'Manage tags', value: this._manageTags },
-                { name: 'Manage modules', value: this._manageModules },
-                { name: 'Exit', value: this._exit },
+                { name: "Manage tags", value: this._manageTags },
+                { name: "Manage modules", value: this._manageModules },
+                { name: "Commands", value: this._executeCommands },
+                { name: "Exit", value: this._exit },
             ],
             result(value: any) { // This is ugly, but we need it to retrieve the value
                 const mapped = this.map(value);
@@ -48,9 +50,13 @@ export class Menu {
         await tagManager.manageTagsFromModule(module);
     }
 
-
     private async _manageModules() {
         const moduleManager = new ModuleManager(this._tags, this._database, this);
+        await moduleManager.start();
+    }
+
+    private async _executeCommands() {
+        const moduleManager = new CommandManager(this._tags, this._database, this);
         await moduleManager.start();
     }
 

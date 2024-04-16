@@ -17,7 +17,7 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
     }).catch((reason: any) => {
         console.log("An error occured while verifying unpushed commits, reason: ", reason);
         process.exit(VerificationStatus.NOT_VERIFIED);
-    })
+    });
 
 }
 
@@ -31,8 +31,8 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string): 
     // Checks if all files from unpushed commits are present in database (or excluded)
 
     const repository = new GitRepository(root);
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
-    const config = new ConfigFile(root).load();
+    const fileTagsDatabase = new FileTagsDatabase(root);
+    const config = new ConfigFile(root);
     const relevancyManager = new RelevancyManager();
 
     const commitsVerificationInfo = new Map<string, VerificationInfo>();
@@ -45,7 +45,7 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string): 
     }
 
     for (const commit of unpushedCommits) {
-        console.log(`[Scope tags] Checking: '${commit.message().trim()}'`)
+        console.log(`[Scope tags] Checking: '${commit.message().trim()}'`);
         const verificationInfo = await repository.verifyCommit(commit, config, fileTagsDatabase, relevancyManager);
 
         if (verificationInfo.isSkipped) {
@@ -73,7 +73,7 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string): 
     }
 
     if ([...commitsVerificationInfo.values()].some(info => !info.isSkipped && !info.isMergeCommit && !info.includesOnlyIgnoredFiles && !info.hasRelevancy)) {
-        console.log(`[Scope tags] All commits are verified, but found no relevancy data. To add relevancy use:\n`);
+        console.log("[Scope tags] All commits are verified, but found no relevancy data. To add relevancy use:\n");
         console.log("\nTo add relevancy use\n\n\tnpx scope --add\n\n");
         return VerificationStatus.NOT_VERIFIED;
     }

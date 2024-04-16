@@ -11,9 +11,9 @@ export function runAddCommand(args: Array<string>, root: string) {
     const repository = new GitRepository(root);
     repository.getFileDataForUnpushedCommits().then(async fileData => {
 
-        const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-        const fileTagsDatabase = new FileTagsDatabase(root).load();
-        const config = new ConfigFile(root).load();
+        const tagsDefinitionFile = new TagsDefinitionFile(root);
+        const fileTagsDatabase = new FileTagsDatabase(root);
+        const config = new ConfigFile(root)
 
         const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 

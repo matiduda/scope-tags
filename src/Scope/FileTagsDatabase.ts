@@ -34,21 +34,47 @@ type SavedDatabaseType = {
     ignoredFiles: Array<string>,
 }
 
-export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
+export class FileTagsDatabase implements IJSONFileDatabase<LoadedDatabaseType> {
 
     private static PATH = ".scope/database.json";
 
     private _root: string;
     private _fileTagsDatabaseData: LoadedDatabaseType;
 
-    _loaded: boolean = false;
-
     constructor(root: string) {
         this._root = root;
+        this._fileTagsDatabaseData = this.load();
     }
 
-    private _getPath(): string {
-        return path.join(this._root, FileTagsDatabase.PATH);
+    public load(): LoadedDatabaseType {
+        const savedDatabase = JSONFile.loadFrom<SavedDatabaseType>(this._getPath());
+
+        const loadedDatabase: LoadedDatabaseType = {
+            files: {},
+            ignoredFiles: savedDatabase.ignoredFiles,
+        };
+
+        savedDatabase.files.forEach(file => {
+            const fileTags = loadedDatabase.files[file.path];
+            if (fileTags) {
+                // Append tags
+                loadedDatabase.files[file.path] = fileTags.concat(file.tags);
+            } else {
+                loadedDatabase.files[file.path] = file.tags;
+            }
+        });
+
+        // Remove duplicate tags
+        const allEntries = Object.entries(loadedDatabase.files);
+        if (allEntries) {
+            allEntries.forEach(entry => {
+                loadedDatabase.files[entry[0]] = entry[1].filter((tag: TagIdentifier, index: number, array: TagIdentifier[]) => {
+                    return array.findIndex((t: TagIdentifier) => t.tag === tag.tag && t.module === tag.module) === index;
+                });
+            });
+        }
+
+        return loadedDatabase;
     }
 
     public initDefault() {
@@ -59,34 +85,8 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         JSONFile.niceWrite(this._getPath(), defaultFileTagsDatabase);
     }
 
-    public load(): FileTagsDatabase {
-        const loadedDatabase = JSONFile.loadFrom<SavedDatabaseType>(this._getPath());
-
-        this._fileTagsDatabaseData = {
-            files: {},
-            ignoredFiles: loadedDatabase.ignoredFiles,
-        }
-
-        loadedDatabase.files.forEach(file => {
-            let fileTags = this._fileTagsDatabaseData.files[file.path];
-            if (fileTags) {
-                // Append tags
-                this._fileTagsDatabaseData.files[file.path] = fileTags.concat(file.tags);
-            } else {
-                this._fileTagsDatabaseData.files[file.path] = file.tags;
-            }
-        });
-
-        // Remove duplicate tags
-        const allEntries = Object.entries(this._fileTagsDatabaseData.files);
-        if (allEntries) {
-            allEntries.forEach(entry => {
-                this._fileTagsDatabaseData.files[entry[0]] = entry[1].filter((tag, index, array) => array.findIndex(t => t.tag === tag.tag && t.module === tag.module) === index);
-            })
-        }
-
-        this._loaded = true;
-        return this;
+    private _getPath(): string {
+        return path.join(this._root, FileTagsDatabase.PATH);
     }
 
     public isFileInDatabase(file: string): boolean {
@@ -140,7 +140,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
                 this._fileTagsDatabaseData.files[filePath].push(tagIdentifier);
                 addedTags.push(tagIdentifier);
             }
-        })
+        });
 
         return addedTags;
     }
@@ -148,7 +148,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public removeTagsForFiles(selectedFiles: string[]) {
         selectedFiles.forEach(file => {
             delete this._fileTagsDatabaseData.files[file];
-        })
+        });
     }
 
     private _isDirectory(path: string) {
@@ -189,7 +189,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
                 return entry[1].some(tagIdentifier => tagIdentifier.tag === tag.name && tagIdentifier.module === module.name);
             }
             return entry[1].some(tagIdentifier => tagIdentifier.tag === tag.name);
-        })
+        });
     }
 
     public countFilesWithModule(module: Module): number {
@@ -199,7 +199,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public getFilesWithModule(module: Module) {
         return Object.entries(this._fileTagsDatabaseData.files).filter(entry => {
             return entry[1].some(tagIdentifier => tagIdentifier.module === module.name);
-        })
+        });
     }
 
     public filterAlreadyTaggedFiles(fileData: Array<FileData>) {
@@ -208,7 +208,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
             if (this._fileTagsDatabaseData.ignoredFiles.includes(data.newPath)) {
                 return false;
             } else if (allFiles.includes(data.newPath)) {
-                return false
+                return false;
             }
             return true;
         });
@@ -233,12 +233,12 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     // Oh boy what a mess
     private _replacer(stringifiedOutput: string) {
         return stringifiedOutput
-            .replace(/{\n\s+"tag": "(.+)",\n\s+"module": "(.+)"\n\s+}/g, `{ "tag": "$1", "module": "$2" }`)
-            .replace(/(\s+)]\n\s+},\n\s+{\n\s+"path"/g, `]},$1{ "path"`)
-            .replace(/"tags"/g, `  "tags"`)
-            .replace(/}\n\s+]\n\s+}\n\s+],\n(\s+)"ignoredFiles"/g, `}]}],\n$1"ignoredFiles"`)
-            .replace(/\n\s+{\s\s+"path"/g, `\n            { "path"`)
-            .replace(/            /g, `        `);
+            .replace(/{\n\s+"tag": "(.+)",\n\s+"module": "(.+)"\n\s+}/g, "{ \"tag\": \"$1\", \"module\": \"$2\" }")
+            .replace(/(\s+)]\n\s+},\n\s+{\n\s+"path"/g, "]},$1{ \"path\"")
+            .replace(/"tags"/g, "  \"tags\"")
+            .replace(/}\n\s+]\n\s+}\n\s+],\n(\s+)"ignoredFiles"/g, "}]}],\n$1\"ignoredFiles\"")
+            .replace(/\n\s+{\s\s+"path"/g, "\n            { \"path\"")
+            .replace(/ {12}/g, "        ");
     }
 
     public checkFileStatus(filePath: string, configFile: ConfigFile): FileStatusInDatabase {
@@ -265,7 +265,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
         const FileStatusInDatabaseReasons = new Map<FileStatusInDatabase, string>([
             [FileStatusInDatabase.NOT_IN_DATABASE, "File is not present in database"],
             [FileStatusInDatabase.UNTAGGED, "File is present in database but without any tags"],
-            [FileStatusInDatabase.TAGGED, `File is correctly tagged with`],
+            [FileStatusInDatabase.TAGGED, "File is correctly tagged with"],
             [FileStatusInDatabase.IGNORED, "File is ignored by scope tags"],
         ]);
 

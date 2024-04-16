@@ -13,7 +13,7 @@ export function runLogCommitCommand(args: Array<string>, root: string) {
     }
 
     const repository = new GitRepository(root);
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    const fileTagsDatabase = new FileTagsDatabase(root);
     const relevancyTagger = new RelevancyManager();
 
     repository.getCommitByHash(commitHash).then(async commit => {

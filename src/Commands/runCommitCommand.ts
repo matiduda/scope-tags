@@ -15,9 +15,9 @@ export function runCommitCommand(args: Array<string>, root: string) {
     const repository = new GitRepository(root);
     repository.getCommitByHash(commitHash).then(async commit => {
 
-        const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-        const fileTagsDatabase = new FileTagsDatabase(root).load();
-        const config = new ConfigFile(root).load();
+        const tagsDefinitionFile = new TagsDefinitionFile(root);
+        const fileTagsDatabase = new FileTagsDatabase(root);
+        const config = new ConfigFile(root);
 
         const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
         const fileData = await repository.getFileDataForCommit(commit);

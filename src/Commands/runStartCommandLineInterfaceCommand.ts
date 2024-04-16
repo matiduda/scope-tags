@@ -34,7 +34,7 @@ export function runStartCommandLineInterfaceCommand(args: Array<string>, root: s
 }
 
 function startCLI(root: string) {
-    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    const tagsDefinitionFile = new TagsDefinitionFile(root);
+    const fileTagsDatabase = new FileTagsDatabase(root);
     new Menu(tagsDefinitionFile, fileTagsDatabase).start().then(() => console.log("Exit."));
 }

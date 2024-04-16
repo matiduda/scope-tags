@@ -14,8 +14,8 @@ export function runSeeCommand(args: Array<string>, root: string) {
     }
     const filesToSee = isDirectory(path) ? getAllFilesFromDirectory(path) : [path];
 
-    const config = new ConfigFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    const config = new ConfigFile(root);
+    const fileTagsDatabase = new FileTagsDatabase(root);
 
     const filesToCheck = filesToSee.filter(file => !config.isFileExtensionIgnored(file));
     const filesInDatabase = filesToCheck.filter(file => fileTagsDatabase.isFileInDatabase(file));
@@ -28,8 +28,8 @@ export function runSeeCommand(args: Array<string>, root: string) {
             console.log("\n── Tagged files ──\n");
             filesInDatabase.forEach(file => {
                 const tagsForFile = fileTagsDatabase.getTagIdentifiersForFile(file);
-                console.log(`${file}\t→ ${tagsForFile.map(tagIdentifier => `${tagIdentifier.tag}`).join(", ")}`)
-            })
+                console.log(`${file}\t→ ${tagsForFile.map(tagIdentifier => `${tagIdentifier.tag}`).join(", ")}`);
+            });
         }
         if (ignoredFilesInDatabase.length) {
             console.log("\n── Ignored files ──\n");

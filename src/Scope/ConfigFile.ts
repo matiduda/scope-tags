@@ -18,17 +18,16 @@ export type ConfigFileType = {
     logsURL?: string,
 };
 
-export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
+export class ConfigFile implements IJSONFileDatabase<ConfigFileType> {
     private static PATH = ".scope/config.json";
     private static LOGURL_BUILD_REPLACE_TAG = "__BUILD__";
 
     private _root: string;
     private _config: ConfigFileType;
 
-    _loaded: boolean = false;
-
     constructor(root: string) {
         this._root = root;
+        this._config = this.load();
     }
 
     public initDefault() {
@@ -48,10 +47,8 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFile> {
         return path.join(this._root, ConfigFile.PATH);
     }
 
-    public load(): ConfigFile {
-        this._config = JSONFile.loadFrom<ConfigFileType>(this._getPath());
-        this._loaded = true;
-        return this;
+    public load(): ConfigFileType {
+        return JSONFile.loadFrom<ConfigFileType>(this._getPath());
     }
 
     public save(): string {

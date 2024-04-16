@@ -13,8 +13,8 @@ export function runVerifyCommand(args: Array<string>, root: string) {
     }
 
     const repository = new GitRepository(root);
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
-    const config = new ConfigFile(root).load();
+    const fileTagsDatabase = new FileTagsDatabase(root);
+    const config = new ConfigFile(root);
     const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(commitHash).then(async (commit: Commit) => {

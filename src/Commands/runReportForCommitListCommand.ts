@@ -34,9 +34,9 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
     }
 
     const repository = new GitRepository(root);
-    const configFile = new ConfigFile(root).load();
-    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    const configFile = new ConfigFile(root);
+    const tagsDefinitionFile = new TagsDefinitionFile(root);
+    const fileTagsDatabase = new FileTagsDatabase(root);
 
     const referenceFinders: Array<IReferenceFinder> = [];
 
@@ -58,7 +58,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
                 Logger.setConfigurationProperty("Import map chunks", externalMapReferenceFinder.getImportMapChunkCount().toString());
             }
         }
-    })
+    });
 
     const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
     const relevancyTagger = new RelevancyManager();
@@ -86,14 +86,14 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
 
         totalCommitCount += commits.length;
 
-        console.log(`[Scope tags]: Loading relevancy map...'`);
+        console.log("[Scope tags]: Loading relevancy map...'");
         const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits(commits);
 
         console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
         const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
 
         if (generator.isReportEmpty(report)) {
-            console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
+            console.log("[Scope tags]: Report ommited because no tags for modified files were found'");
             continue;
         }
 

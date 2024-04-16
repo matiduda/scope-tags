@@ -21,10 +21,10 @@ export function runTagCommitCommand(args: Array<string>, root: string) {
         console.log(`There are no files to tag for ${path}`);
     }
 
-    const config = new ConfigFile(root).load();
+    const config = new ConfigFile(root);
     const repository = new GitRepository(root);
-    const tagsDefinitionFile = new TagsDefinitionFile(root).load();
-    const fileTagsDatabase = new FileTagsDatabase(root).load();
+    const tagsDefinitionFile = new TagsDefinitionFile(root);
+    const fileTagsDatabase = new FileTagsDatabase(root);
 
     const fileTagger = new FileTagger(tagsDefinitionFile, fileTagsDatabase, repository);
 

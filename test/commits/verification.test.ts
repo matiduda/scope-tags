@@ -10,7 +10,7 @@ import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
 import { ConfigFile } from "../../src/Scope/ConfigFile";
 
 
-const fs = require('fs');
+const fs = require("fs");
 
 beforeEach(() => {
     initMockRepository();
@@ -30,7 +30,7 @@ const appendSomeTextToFile = (fileName: string) => {
 
 const createEmptyFiles = (fileNames: string[]) => {
     fileNames.forEach(fileName => {
-        const fd = openSync(join(MOCK_REPO_DESTINATION_PATH, fileName), 'a');
+        const fd = openSync(join(MOCK_REPO_DESTINATION_PATH, fileName), "a");
         closeSync(fd);
     });
 };
@@ -39,26 +39,26 @@ const commitEmptyFiles = async (fileNames: string[]) => {
     createEmptyFiles(fileNames);
 
     const repository = new GitRepository(MOCK_REPO_DESTINATION_PATH);
-    const oid = await repository.commitFiles("test commit", fileNames)
+    const oid = await repository.commitFiles("test commit", fileNames);
 
-    console.debug(`Created new commit ${oid}`)
+    console.debug(`Created new commit ${oid}`);
 };
 
 const commitModitication = async (fileNames: string[]) => {
     fileNames.forEach(fileName => {
         appendSomeTextToFile(fileName);
-    })
+    });
 
     const repository = new GitRepository(MOCK_REPO_DESTINATION_PATH);
-    const oid = await repository.commitFiles("test commit", fileNames)
+    const oid = await repository.commitFiles("test commit", fileNames);
 
-    console.debug(`Created new commit ${oid}`)
+    console.debug(`Created new commit ${oid}`);
 };
 
 const commitAll = async () => {
     const repository = new GitRepository(MOCK_REPO_DESTINATION_PATH);
-    const oid = await repository.commitFiles("test commit")
-    console.debug(`Created new commit ${oid}`)
+    const oid = await repository.commitFiles("test commit");
+    console.debug(`Created new commit ${oid}`);
 };
 
 
@@ -69,7 +69,7 @@ describe("Commit verification by scope tags script", () => {
             console.debug("There is no content with mock repo, probably scope-tags repository was not correctly cloned, please refer to README.md");
         }
         expect(fileList.length).toBeGreaterThan(0);
-    })
+    });
 
     it("When commits consists only of files which extensions are ignored, the commit is marked as verified", async () => {
         const testFile = "assets/new_asset.jpg";
@@ -79,7 +79,7 @@ describe("Commit verification by scope tags script", () => {
 
         const verificationStatus = await verifyUnpushedCommits([], MOCK_REPO_DESTINATION_PATH);
 
-        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
+        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`);
 
         expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
     });
@@ -87,8 +87,8 @@ describe("Commit verification by scope tags script", () => {
     it("When commits consists only of ignored files (from database.json), the commit is marked as verified", async () => {
         const testFile = "src/file-ignored-by-database.js";
 
-        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH).load();
-        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH).load();
+        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH);
+        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH);
 
         expect(database.isIgnored(testFile, config.getIgnoredFileExtenstions())).toBe(true);
 
@@ -97,7 +97,7 @@ describe("Commit verification by scope tags script", () => {
 
         const verificationStatus = await verifyUnpushedCommits([], MOCK_REPO_DESTINATION_PATH);
 
-        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
+        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`);
 
         expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
     });
@@ -109,19 +109,19 @@ describe("Commit verification by scope tags script", () => {
             "src/newly-added-file3.js",
         ];
 
-        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH).load();
-        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH).load();
+        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH);
+        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH);
 
         newFiles.forEach(newFile => {
             expect(database.isFileInDatabase(newFile)).toBe(false);
-            expect(database.isIgnored(newFile, config.getIgnoredFileExtenstions())).toBe(false)
+            expect(database.isIgnored(newFile, config.getIgnoredFileExtenstions())).toBe(false);
         });
 
         await commitEmptyFiles(newFiles);
 
         const verificationStatus = await verifyUnpushedCommits([], MOCK_REPO_DESTINATION_PATH);
 
-        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
+        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`);
 
         expect(verificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
     });
@@ -145,8 +145,8 @@ describe("Commit verification by scope tags script", () => {
 
         await commitAll();
 
-        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH).load();
-        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH).load();
+        const database = new FileTagsDatabase(MOCK_REPO_DESTINATION_PATH);
+        const config = new ConfigFile(MOCK_REPO_DESTINATION_PATH);
 
         // Assertions
 
@@ -167,7 +167,7 @@ describe("Commit verification by scope tags script", () => {
 
         const verificationStatus = await verifyUnpushedCommits([], MOCK_REPO_DESTINATION_PATH);
 
-        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
+        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`);
 
         expect(verificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
     });

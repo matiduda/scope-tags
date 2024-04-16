@@ -8,15 +8,12 @@
     "target": "es2022",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true,
     "moduleResolution": "node16",
-
     "outDir": "./dist",
     "baseUrl": ".",
     "typeRoots": [
       "node_modules/@types",
     ],
-    "strictPropertyInitialization": false,
   },
   "include": [
     "src", "src/Git",
