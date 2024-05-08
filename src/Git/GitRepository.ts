@@ -164,11 +164,14 @@ export class GitRepository {
     }
 
     // Mostly from https://github.com/nodegit/nodegit/blob/master/examples/add-and-commit.js
-    public async commitFiles(commitMessage: string, pathspec?: string | string[]): Promise<Oid> {
+    public async commitFiles(commitMessage: string, filePaths: string[]): Promise<Oid> {
         const repository = await this._getRepository();
         const index = await repository.refreshIndex();
 
-        await index.addAll(pathspec);
+        for (const filePath of filePaths) {
+            await index.addByPath(filePath);
+        }
+
         await index.write();
 
         const oid = await index.writeTree();

@@ -1,9 +1,7 @@
 import { resolve, join, sep, posix } from "path";
 import { existsSync, mkdirSync } from "fs";
 
-import rimraf from "rimraf";
 import { MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
-
 
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,14 +33,14 @@ export const makeUniqueFolderForTest = (): string => {
 }
 
 export const removeUniqueFolderForTest = (path: string) => {
-    rimraf.sync(resolve(path));
+    // TODO: Make cleaning work
 }
 
 export const cloneMockRepositoryToFolder = (parentFolder: string): string => {
+    const { execSync } = require('child_process');
 
     const clonedRepoPath = join(parentFolder, CLONED_MOCK_REPO_NAME).split(sep).join(posix.sep);
 
-    const { execSync } = require('child_process');
     execSync(`git clone --no-hardlinks ${MOCK_REPOSITORY} ${clonedRepoPath} && cd ${clonedRepoPath} && git remote rm origin`, (err: any, stdout: any, stderr: any) => {
         if (err) {
             console.debug(err);

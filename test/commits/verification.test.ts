@@ -1,17 +1,11 @@
-import { resolve, join } from "path";
+import { join } from "path";
 import { closeSync, openSync } from "fs";
-import rimraf from "rimraf";
-import { cloneMockRepositoryToFolder, makeUniqueFolderForTest, removeUniqueFolderForTest } from "../_utils/utils";
-import { TEST_DATA_FOLDER } from "../_utils/globals";
-import { GitRepository } from "../../src/Git/GitRepository";
+import { cloneMockRepositoryToFolder, makeUniqueFolderForTest } from "../_utils/utils";
 import { VerificationStatus, verifyUnpushedCommits } from "../../src/Commands/runVerifyUnpushedCommitsCommand";
+import { GitRepository } from "../../src/Git/GitRepository";
 import { Utils } from "../../src/Scope/Utils";
 
 const fs = require('fs');
-
-afterAll(() => {
-    rimraf.sync(resolve(TEST_DATA_FOLDER));
-});
 
 // const appendSomeTextToFile = (fileName: string) => {
 //     appendFileSync(join(MOCK_REPO_DESTINATION_PATH, fileName), "some_appended_text");
@@ -24,13 +18,15 @@ const createEmptyFiles = (fileNames: string[], rootFolder: string) => {
     });
 };
 
-const commitEmptyFiles = async (fileNames: string[], repositoryPath: string) => {
+const commitEmptyFiles = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
     createEmptyFiles(fileNames, repositoryPath);
 
     const repository = new GitRepository(repositoryPath);
     const oid = await repository.commitFiles("test commit", fileNames)
 
     console.debug(`Created new commit ${oid}`)
+
+    return repository;
 };
 
 // const commitModitication = async (fileNames: string[]) => {
@@ -60,8 +56,6 @@ describe("Commit verification by scope tags script", () => {
         const fileList = fs.readdirSync(REPO_PATH);
 
         expect(fileList.length).toBeGreaterThan(0);
-
-        removeUniqueFolderForTest(FOLDER_PATH);
     })
 
     it("When commits consists only of files which extensions are ignored, the commit is marked as verified", async () => {
@@ -71,15 +65,13 @@ describe("Commit verification by scope tags script", () => {
         const testFile = "assets/new_asset.jpg";
 
         // Make a new .jpg asset which is marked as ignored by config.json
-        await commitEmptyFiles([testFile], REPO_PATH);
+        const repository = await commitEmptyFiles([testFile], REPO_PATH);
 
         const verificationStatus = await verifyUnpushedCommits([], REPO_PATH);
 
         console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
 
         expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
-
-        removeUniqueFolderForTest(FOLDER_PATH);
     });
 
     // it("When commits consists only of ignored files (from database.json), the commit is marked as verified", async () => {
