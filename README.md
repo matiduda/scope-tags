@@ -1,16 +1,15 @@
 [![npm version](https://badge.fury.io/js/scope-tags.svg)](https://www.npmjs.com/package/scope-tags)
 ![Auto test and deploy](https://github.com/matiduda/scope-tags/actions/workflows/test-and-deploy-to-npm.yml/badge.svg)
 
+> Currently in internal beta tests
 
-### Scope Tags
+# Scope Tags
 
 Command line tool for doing [change impact analysis](https://en.wikipedia.org/wiki/Change_impact_analysis) in large TypeScript projects.
 - Supports integration with JIRA using a local server (1 POST endpoint required).
 - Generates detailed HTML logs with every commit details
 - Commits can be *verified* (eg. by a git hook) to prevent those without saved metadata
 - Can be configured by the user
-
-Currently in internal beta tests
 
 ### Architecture diagram
 
