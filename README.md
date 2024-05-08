@@ -1,6 +1,20 @@
 [![npm version](https://badge.fury.io/js/scope-tags.svg)](https://www.npmjs.com/package/scope-tags)
 ![Auto test and deploy](https://github.com/matiduda/scope-tags/actions/workflows/test-and-deploy-to-npm.yml/badge.svg)
 
+### Architecture diagram
+
+![Alt text](img/architecture.png)
+
+### Scope Tags
+
+Command line tool for doing [change impact analysis](https://en.wikipedia.org/wiki/Change_impact_analysis) in large TypeScript projects.
+- Supports integration with JIRA using a local server (1 POST endpoint required).
+- Generates detailed HTML logs with every commit details
+- Commits can be *verified* (eg. by a git hook) to prevent those without saved metadata
+- Can be configured by the user
+
+Currently in internal beta tests
+
 ### How to install
 
 From the repository you want to test the package run
@@ -87,7 +101,3 @@ Publishing is made automatically by pushing a commit to the main branch, see [gi
 - [ ] Testing approach - how each functionality should be tested?
 - [ ] What actions can be performed on files?
     - Adding
-
-### Architecture diagram
-
-![Alt text](img/architecture.png)
