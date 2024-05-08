@@ -9,7 +9,7 @@ module.exports = {
   coverageDirectory: './coverage',
   coverageReporters: ['json', 'lcovonly', 'text', 'clover'],
   testPathIgnorePatterns: ['/_utils/'],
-  globalSetup: '<rootDir>/test/setup.ts',
-  globalTeardown: '<rootDir>/test/teardown.ts',
+  globalSetup: '<rootDir>/test/setup.js',
+  globalTeardown: '<rootDir>/test/teardown.js',
   setupTestFrameworkScriptFile: './jest.setup.js',
 };
