@@ -177,7 +177,22 @@ export class RelevancyManager {
     // }
 
     public doesCommitMessageHaveRelevancyData(commitMessage: string): boolean {
-        return commitMessage.includes(RelevancyManager.COMMIT_MSG_PREFIX);
+        const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+        const relevancyEndIndex = commitMessage.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+
+        if (prefixStartIndex === -1 || relevancyEndIndex === -1 || prefixStartIndex === relevancyEndIndex) {
+            return false;
+        }
+
+
+        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
+
+        try {
+            JSON.parse(relevancyJSON);
+            return true;
+        } catch (e) {
+            return false;
+        }
     }
 
     public loadRelevancyMapFromCommits(commits: Commit[]): RelevancyMap {
