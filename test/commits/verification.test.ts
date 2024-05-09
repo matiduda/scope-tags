@@ -3,6 +3,7 @@ import { VerificationStatus, verifyUnpushedCommits } from "../../src/Commands/ru
 import { Utils } from "../../src/Scope/Utils";
 import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
 import { ConfigFile } from "../../src/Scope/ConfigFile";
+import { join } from "path";
 
 const fs = require('fs');
 
@@ -117,7 +118,7 @@ describe("Commit verification by scope tags script", () => {
         const allFiles = newlyAddedFiles.concat(modifiedFiles);
 
         createEmptyFiles(newlyAddedFiles, REPO_PATH);
-        modifiedFiles.forEach(file => appendSomeTextToFile(file));
+        modifiedFiles.forEach(file => appendSomeTextToFile(join(REPO_PATH, file)));
 
         await commitFiles(allFiles, REPO_PATH);
 
