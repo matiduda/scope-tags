@@ -1,6 +1,7 @@
 import { Commit } from "nodegit";
 import { FileData, FilePath } from "../Git/Types";
 import { Relevancy } from "./Relevancy";
+import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 
 const { Scale } = require('enquirer');
 
@@ -34,7 +35,6 @@ export class RelevancyManager {
     private static COMMIT_MSG_PREFIX = "__relevancy__";
     private static CURRENT_COMMIT = "__current__";
 
-
     private _relevancyDescriptions = new Map<Relevancy, RelevancyDescription>([
         [Relevancy.LOW, { name: "Low", message: "Does not list file at all (example: formatting changes)" }],
         [Relevancy.MEDIUM, { name: "Medium", message: "Does list tags for file, but does not search references for it" }],
@@ -45,9 +45,11 @@ export class RelevancyManager {
 
     public constructor() { }
 
-    public async start(entries: Array<RelevancyEntry>): Promise<Map<FileData, Relevancy>> {
+    public async start(entries: Array<RelevancyEntry>, fileTagsDatabase: FileTagsDatabase): Promise<Map<FileData, Relevancy>> {
 
-        const uniqueEntries = entries.filter((value, index, self) =>
+        const notIgnoredEntries = entries.filter(entry => !fileTagsDatabase.isIgnored(entry.newPath));
+
+        const uniqueEntries = notIgnoredEntries.filter((value, index, self) =>
             index === self.findIndex((t) => (
                 t.newPath === value.newPath
             ))
@@ -68,7 +70,7 @@ export class RelevancyManager {
             currentPageEntries.forEach(uniqueEntry => {
                 // Set every matching fileData to the same relevancy, this doesn't neet to be change specific
 
-                const matchingFileData = entries.filter(entry => entry.newPath === uniqueEntry.newPath);
+                const matchingFileData = notIgnoredEntries.filter(entry => entry.newPath === uniqueEntry.newPath);
                 matchingFileData.forEach(fileData => answerMap.set(fileData, this._getRelevancyByIndex(answer[uniqueEntry.newPath])));
             });
         }

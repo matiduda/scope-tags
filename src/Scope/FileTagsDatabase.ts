@@ -302,6 +302,10 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     }
 
     public isIgnored(file: string, ignoredFileExtensions?: Array<string>): boolean {
+        if (file.startsWith(".scope")) {
+            return true;
+        }
+
         const fileExtenstion = path.extname(file);
         if (ignoredFileExtensions && fileExtenstion) {
             if (ignoredFileExtensions.includes(fileExtenstion)) {

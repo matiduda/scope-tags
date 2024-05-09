@@ -33,7 +33,7 @@ export function runAddCommand(args: Array<string>, root: string) {
             let fileDataRelevancy: Map<FileData, Relevancy> = new Map();
 
             try {
-                fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
+                fileDataRelevancy = await relevancyTagger.start(fileDataToTag, fileTagsDatabase);
             } catch (e) {
                 console.log("[Scope tags] Could not add relevancy, the changes won't be saved.");
                 return;
