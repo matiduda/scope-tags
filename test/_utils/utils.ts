@@ -1,9 +1,10 @@
 import { resolve, join, sep, posix } from "path";
-import { existsSync, mkdirSync } from "fs";
+import { appendFileSync, existsSync, mkdirSync } from "fs";
 
 import { MOCK_REMOTE_URL, MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
 
 import { v4 as uuidv4 } from 'uuid';
+import { GitRepository } from "../../src/Git/GitRepository";
 
 // Mocked repository
 
@@ -53,4 +54,33 @@ export const cloneMockRepositoryToFolder = (parentFolder: string): string => {
         });
 
     return clonedRepoPath;
+}
+
+export const getRandomUUID = () => uuidv4();
+
+export const appendSomeTextToFile = (filePath: string) => {
+    appendFileSync(filePath, getRandomUUID());
+};
+
+export const createEmptyFiles = (fileNames: string[], rootFolder: string) => {
+    fileNames.forEach(fileName => {
+        appendSomeTextToFile(join(rootFolder, fileName));
+    });
+};
+
+export const commitEmptyFiles = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
+    createEmptyFiles(fileNames, repositoryPath);
+
+    const repository = new GitRepository(repositoryPath);
+    const oid = await repository.commitFiles("[commitEmptyFiles] Test", fileNames);
+
+    console.debug(`[commitEmptyFiles] Created new commit ${oid.tostrS()}`);
+
+    return repository;
+};
+
+export const createFolder = (location: string): string => {
+    const folderPath = join(location, getRandomUUID());
+    mkdirSync(folderPath);
+    return folderPath
 }

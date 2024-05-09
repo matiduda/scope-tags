@@ -109,15 +109,23 @@ export class GitRepository {
 
         /**
          * Has the following format:
-         * M       src/path/to/file.ts
-         * D       test/teardown.js
+         * M       src/Git/GitRepository.ts
+         * R100    src/file-ignored-by-database.js src/file-ignored-by-database-2.js
+         * A       test/commits/fileData.test.ts
+         * M       test/commits/verification.test.ts
          * 
-         * Possible statuses are: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R), their type (i.e. regular file, symlink, submodule, …​) changed (T), Unmerged (U), Unknown (X), Broken (B)
+         * Possible statuses are: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R) (with calculated similarity index), their type (i.e. regular file, symlink, submodule, …​) changed (T), Unmerged (U), Unknown (X), Broken (B)
          * https://git-scm.com/docs/git-diff
          */
-        const nameStatusOutput = execSync(
-            `cd ${this._root} && git diff-tree --no-commit-id --name-status -r ${commit.sha()}`
-        ).toString();
+
+
+        // exec(`pwd && echo $PAGER && cd ${this._root} && git diff ${commit.sha()}^ ${commit.sha()} --name-status`, (error: any, stdout: any, stderr: any) => {
+        //     console.debug("STDOUT:", stdout, ", STDERR:", stderr);
+        // });
+
+        const nameStatusOutput = execSync(`cd ${this._root} && git --no-pager diff ${commit.sha()}~ ${commit.sha()} --name-status`).toString().trim().split('\n');
+
+        console.debug(nameStatusOutput);
 
         /**
          * Has the following format:
@@ -129,9 +137,13 @@ export class GitRepository {
          * 9       9       test/teardown.js
          * https://git-scm.com/docs/git-diff
          */
-        const nunstatOutput = execSync(
-            `cd ${this._root} && git diff-tree --no-commit-id --numstat -r ${commit.sha()}`
-        ).toString();
+        const numstatOutput = execSync(
+            `cd ${this._root} && git update-index && git diff-tree --no-commit-id --numstat -r ${commit.sha()}`
+        ).toString().trim().split('\n');
+
+        if (nameStatusOutput.length !== numstatOutput.length) {
+            throw new Error(`Output of git-diff --name-status does not match one for --no-commit-id for commit ${commit.sha()}`);
+        }
 
         const statusesToGitDeltaTypeMap = new Map<string, GitDeltaType>([
             ["A", GitDeltaType.ADDED],
@@ -147,9 +159,26 @@ export class GitRepository {
             // ["", GitDeltaType.CONFLICTED],
         ]);
 
-        console.log();
-
         const fileDataArray: FileData[] = [];
+
+        numstatOutput.forEach((numStatLine: string, i: number) => {
+            const [linesAdded, linesRemoved, filePath] = numStatLine.split('\t');
+
+            const [changeType, relatedFilePath, optionalRenamedPath] = nameStatusOutput[i].split('\t');
+
+            if (filePath !== relatedFilePath) {
+                throw new Error(`Error while processing git-diff: File path '${filePath}' does not match one of '${relatedFilePath}'`);
+            }
+
+            fileDataArray.push({
+                oldPath: filePath,
+                newPath: optionalRenamedPath || filePath,
+                change: statusesToGitDeltaTypeMap.get(changeType[0]) || GitDeltaType.UNREADABLE,
+                linesAdded: parseInt(linesAdded),
+                linesRemoved: parseInt(linesRemoved),
+                commitedIn: commit
+            } as FileData);
+        })
 
         return fileDataArray;
     }
