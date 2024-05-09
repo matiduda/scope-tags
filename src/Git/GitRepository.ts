@@ -165,22 +165,26 @@ export class GitRepository {
 
     // Mostly from https://github.com/nodegit/nodegit/blob/master/examples/add-and-commit.js
     public async commitFiles(commitMessage: string, filePaths: string[]): Promise<Oid> {
+        const { execSync } = require('child_process');
+
         const repository = await this._getRepository();
-        const index = await repository.refreshIndex();
+        // const index = await repository.refreshIndex();
 
-        for (const filePath of filePaths) {
-            await index.addByPath(filePath);
-        }
+        // for (const filePath of filePaths) {
+        //     await index.addByPath(filePath);
+        // }
 
-        await index.write();
+        // await index.write();
 
-        const oid = await index.writeTree();
+        // const oid = await index.writeTree();
 
-        const parent = await repository.getHeadCommit();
+        // const parent = await repository.getHeadCommit();
         const author = Signature.now("Scott Chacon", "schacon@gmail.com");
         const committer = Signature.now("Scott A Chacon", "scott@github.com");
 
-        const commitId = await repository.createCommit("HEAD", author, committer, commitMessage, oid, [parent]);
+        const commitId = await repository.createCommitOnHead(filePaths, author, committer, commitMessage);
+
+        repository.createCommitOnHead
 
         return commitId;
     }
