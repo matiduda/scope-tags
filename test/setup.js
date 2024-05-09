@@ -20,6 +20,7 @@ module.exports = async function(globalConfig, projectConfig) {
         }
     });
     
+    // Could probably be deleted safely
     const mockRepositoryPath = path.join(GLOBAL_TEST_FOLDER, "_scopeTagsMockRepositoryForTestingOnly");
     console.debug(`[Setup] Cloning mock repository ${repositorySourceURL} to '${mockRepositoryPath}'...`);
     await cloneMockRepository(repositorySourceURL, mockRepositoryPath);

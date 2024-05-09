@@ -304,7 +304,7 @@ export class GitRepository {
         await index.write();
     }
 
-    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager): Promise<VerificationInfo> {
+    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager, useGitNatively = false): Promise<VerificationInfo> {
         const commitInfo: VerificationInfo = {
             isVerified: false,
             filesToTag: [],
@@ -325,7 +325,7 @@ export class GitRepository {
             return commitInfo;
         }
 
-        const fileDataArray = await this.getFileDataForCommit(commit);
+        const fileDataArray = useGitNatively ? this.getFileDataUsingNativeGitCommand(commit) : await this.getFileDataForCommit(commit);
         const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray, config);
 
         const allFilesAreIgnored = fileDataArray.every(fileData => {

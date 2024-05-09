@@ -79,8 +79,30 @@ export const commitEmptyFiles = async (fileNames: string[], repositoryPath: stri
     return repository;
 };
 
+export const commitFiles = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
+    const repository = new GitRepository(repositoryPath);
+    const oid = await repository.commitFiles("[commitFiles] Test", fileNames);
+
+    console.debug(`[commitFiles] Created new commit ${oid.tostrS()}`);
+
+    return repository;
+};
+
 export const createFolder = (location: string): string => {
     const folderPath = join(location, getRandomUUID());
     mkdirSync(folderPath);
     return folderPath
 }
+
+export const commitModitication = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
+    fileNames.forEach(fileName => {
+        appendSomeTextToFile(join(repositoryPath, fileName));
+    })
+
+    const repository = new GitRepository(repositoryPath);
+    const oid = await repository.commitFiles("test commit", fileNames)
+
+    console.debug(`[Modified files] Created new commit ${oid}`)
+
+    return repository;
+};

@@ -9,7 +9,6 @@ describe("Tesing if file data is retrieved correctly", () => {
 
         const testFile = "src/_NEW_FILE_.txt";
 
-        // Make a new .jpg asset which is marked as ignored by config.json
         const repo = await commitEmptyFiles([testFile], REPO_PATH);
 
         const unpushedCommits = await repo.getUnpushedCommits();
