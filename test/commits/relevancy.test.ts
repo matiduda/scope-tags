@@ -1,4 +1,3 @@
-import { cloneMockRepositoryToFolder, makeUniqueFolderForTest } from "../_utils/utils";
 import { CommitMessageRelevancyInfo, RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { FileData, GitDeltaType } from "../../src/Git/Types";
 import { Relevancy } from "../../src/Relevancy/Relevancy";
@@ -49,9 +48,6 @@ describe("Relevancy manager tests", () => {
     })
 
     it("Correctly encodes relevancy data in a commit", async () => {
-        const FOLDER_PATH = makeUniqueFolderForTest();
-        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
-
         const relevancyManager = new RelevancyManager();
 
         const mockFileData1: FileData = {
