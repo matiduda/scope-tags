@@ -4,6 +4,7 @@ import path from "path";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
+import { execSync } from "child_process";
 
 export class GitRepository {
 
@@ -65,7 +66,18 @@ export class GitRepository {
         return this.getFileDataForCommit(mostRecentCommit);
     }
 
+    /**
+     * Gets file data of a specific commit
+     * 
+     * IMPORTANT: USE getFileDataUsingNativeGitCommand WHEN RUNNING FROM TESTS
+     * OTHERWISE IT JUST DOES NOT WORK AND WILL BLOCK ALL THE TESTS
+     * @public
+     * @async
+     * @param {Commit} commit
+     * @returns {Promise<FileData[]>}
+     */
     public async getFileDataForCommit(commit: Commit): Promise<FileData[]> {
+
         // Ignore whitespaces using a combination of git diff flags
         // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42 -- TODO: Still not quite working as expected...
         const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
@@ -91,6 +103,55 @@ export class GitRepository {
             }
             resolve(fileDataArray);
         });
+    }
+
+    public getFileDataUsingNativeGitCommand(commit: Commit): FileData[] {
+
+        /**
+         * Has the following format:
+         * M       src/path/to/file.ts
+         * D       test/teardown.js
+         * 
+         * Possible statuses are: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R), their type (i.e. regular file, symlink, submodule, …​) changed (T), Unmerged (U), Unknown (X), Broken (B)
+         * https://git-scm.com/docs/git-diff
+         */
+        const nameStatusOutput = execSync(
+            `cd ${this._root} && git diff-tree --no-commit-id --name-status -r ${commit.sha()}`
+        ).toString();
+
+        /**
+         * Has the following format:
+         * 1       1       .vscode/launch.json
+         * 12      8       src/Git/GitRepository.ts
+         * 2       0       test/_utils/globals.ts
+         * 18      16      test/_utils/utils.ts
+         * 69      23      test/commits/verification.test.ts
+         * 9       9       test/teardown.js
+         * https://git-scm.com/docs/git-diff
+         */
+        const nunstatOutput = execSync(
+            `cd ${this._root} && git diff-tree --no-commit-id --numstat -r ${commit.sha()}`
+        ).toString();
+
+        const statusesToGitDeltaTypeMap = new Map<string, GitDeltaType>([
+            ["A", GitDeltaType.ADDED],
+            ["C", GitDeltaType.COPIED],
+            ["D", GitDeltaType.DELETED],
+            ["M", GitDeltaType.MODIFIED],
+            ["R", GitDeltaType.RENAMED],
+            ["T", GitDeltaType.TYPECHANGE],
+            // ["", GitDeltaType.UNMODIFIED],
+            // ["", GitDeltaType.IGNORED],
+            // ["", GitDeltaType.UNTRACKED],
+            // ["", GitDeltaType.UNREADABLE],
+            // ["", GitDeltaType.CONFLICTED],
+        ]);
+
+        console.log();
+
+        const fileDataArray: FileData[] = [];
+
+        return fileDataArray;
     }
 
     public async getFileDataForCommits(commits: Array<Commit>): Promise<FileData[]> {
