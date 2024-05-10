@@ -45,6 +45,7 @@ export enum GitDeltaType {
 export type VerificationInfo = {
     isVerified: boolean,
     filesToTag: Array<FileData>,
+    filesToBeRelevancyTagged: Array<FileData>,
     isSkipped: boolean,
     hasRelevancy: boolean,
     isMergeCommit: boolean,

@@ -72,18 +72,26 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
         return VerificationStatus.VERIFIED;
     }
 
-    // if ([...commitsVerificationInfo.entries()].some(([commitSHA, info]) => {
-
     for (const [commitSHA, info] of [...commitsVerificationInfo.entries()]) {
         if (!info.isSkipped && !info.isMergeCommit && !info.includesOnlyIgnoredFiles) {
             const commit = await repository.getCommitByHash(commitSHA);
 
-            const filesWithoutRelevancy = info.filesToTag.filter(file => !info.relevancy.some(relevancyInfo => relevancyInfo.path === file.newPath));
+            const filesWhichShouldHaveRelevancyAdded: string[] = [];
 
-            console.log(`Commit '${commit.summary()}' not verified, found no relevancy for required files:\n`);
-            filesWithoutRelevancy.forEach(file => console.log(`- ${file.newPath}`));
+            info.filesToBeRelevancyTagged.forEach(fileData => {
+                const fileHasRelevancy = info.relevancy.some(relevancy => relevancy.path === fileData.newPath);
 
-            return VerificationStatus.NOT_VERIFIED;
+                if (!fileHasRelevancy) {
+                    filesWhichShouldHaveRelevancyAdded.push(fileData.newPath);
+                }
+            });
+
+            if (filesWhichShouldHaveRelevancyAdded.length > 0) {
+                console.log(`Commit '${commit.summary()}' not verified, found no relevancy for required files:\n`);
+                filesWhichShouldHaveRelevancyAdded.forEach(path => console.log(`- ${path}`));
+
+                return VerificationStatus.NOT_VERIFIED;
+            }
         }
     };
 

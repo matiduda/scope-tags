@@ -301,6 +301,7 @@ export class GitRepository {
         const commitInfo: VerificationInfo = {
             isVerified: false,
             filesToTag: [],
+            filesToBeRelevancyTagged: [],
             isSkipped: false,
             includesOnlyIgnoredFiles: false,
             isMergeCommit: false,
@@ -336,6 +337,11 @@ export class GitRepository {
         });
 
         commitInfo.filesToTag = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
+
+        commitInfo.filesToBeRelevancyTagged = fileDataArray.filter(fileData => {
+            const fileStatus = statusMap.get(fileData);
+            return fileStatus !== FileStatusInDatabase.IGNORED;
+        });
 
         if (!commitInfo.filesToTag.length) {
             commitInfo.isVerified = true;

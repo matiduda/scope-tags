@@ -51,5 +51,12 @@ export function runAddCommand(args: Array<string>, root: string) {
             await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage);
 
         }); // TODO: Save already tagged files
-    }).catch(e => console.log("Canceled")); // TODO: Save already tagged files - ???
+    }).catch(e => {
+        // Two possible cases:
+
+        // 1. User requested exit
+        // 2. Some real error happened
+
+        console.log(e);
+    }); // TODO: Save already tagged files - ???
 }
