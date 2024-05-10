@@ -32,7 +32,8 @@ export class TSReferenceFinder implements IReferenceFinder {
         const sourceFile = this._project.getSourceFile(fileNameOrPath);
 
         if (!sourceFile) {
-            throw new Error(`Could not open file ${fileNameOrPath} in project ${this._tsConfigPath}`);
+            console.log(`[TSReferenceFinder] File '${fileNameOrPath}' is not in scope of tsconfig.json of the project.`);
+            return [];
         }
 
         const exportedDeclarations = sourceFile.getExportedDeclarations();

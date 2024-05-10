@@ -1,22 +1,9 @@
 import { Commit } from "nodegit";
-import { FileData, FilePath } from "../Git/Types";
-import { Relevancy } from "./Relevancy";
+import { FileData } from "../Git/Types";
+import { CommitMessageRelevancyInfo, Relevancy, RelevancyDescriptions, RelevancyMap } from "./Relevancy";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 
 const { Scale } = require('enquirer');
-
-export type CommitMessageRelevancyInfo = {
-    path: string,
-    relevancy: Relevancy,
-    commit: string
-};
-
-export type RelevancyMap = Map<FilePath, Array<CommitMessageRelevancyInfo>>;
-
-type RelevancyDescription = {
-    name: string,
-    message: string,
-};
 
 type RelevancyEntry = FileData;
 
@@ -34,12 +21,6 @@ export class RelevancyManager {
 
     private static COMMIT_MSG_PREFIX = "__relevancy__";
     private static CURRENT_COMMIT = "__current__";
-
-    private _relevancyDescriptions = new Map<Relevancy, RelevancyDescription>([
-        [Relevancy.LOW, { name: "Low", message: "Does not list file at all (example: formatting changes)" }],
-        [Relevancy.MEDIUM, { name: "Medium", message: "Does list tags for file, but does not search references for it" }],
-        [Relevancy.HIGH, { name: "High", message: "Does list tags for file and performs full reference search" }],
-    ])
 
     private static PAGE_LIMIT = 10;
 
@@ -257,7 +238,7 @@ export class RelevancyManager {
     }
 
     private _getScale() {
-        return Object.values(Relevancy).map((relevancy) => this._relevancyDescriptions.get(relevancy));
+        return Object.values(Relevancy).map((relevancy) => RelevancyDescriptions.get(relevancy));
     }
 
     private _mapEntriesToChoices(entries: Array<RelevancyEntry>, initial = 1): Array<RelevancyChoice> {

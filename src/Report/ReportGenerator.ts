@@ -6,8 +6,7 @@ import { FileData } from "../Git/Types";
 import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
 import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
-import { RelevancyMap } from "../Relevancy/RelevancyManager";
-import { Relevancy } from "../Relevancy/Relevancy";
+import { Relevancy, RelevancyMap } from "../Relevancy/Relevancy";
 import { Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
 
@@ -140,11 +139,8 @@ export class ReportGenerator {
         return fileInfoArray;
     }
     private _getUsedIn(fileData: FileData, relevancy: Relevancy | null) {
-        if (relevancy === Relevancy.HIGH) {
-            return this._getFileReferences(fileData.newPath);
-        } else {
-            return [];
-        }
+        // TODO: Add HIGH relevancy back
+        return this._getFileReferences(fileData.newPath);
     }
 
     private _getAffectedModules(fileInfoArray: Array<FileInfo>): Array<Module> {
@@ -173,6 +169,8 @@ export class ReportGenerator {
                 return;
             }
             const foundReferences = referenceFinder.findReferences(file);
+
+            debugger;
 
             foundReferences.forEach(reference => {
                 const fileReference: FileReference = {

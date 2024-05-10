@@ -1,5 +1,5 @@
 import { Commit } from "nodegit/commit";
-import { CommitMessageRelevancyInfo } from "../Relevancy/RelevancyManager";
+import { CommitMessageRelevancyInfo } from "../Relevancy/Relevancy";
 
 export type FilePath = string;
 

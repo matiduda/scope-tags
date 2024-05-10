@@ -8,7 +8,7 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists, getExtension, removeFile, resolvePath, saveHTMLLogs } from "../FileSystem/fileSystemUtils";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
-import { Logger } from "../Logger/Logger";
+import { ConfigurationProperty, Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
 
 const os = require("os");
@@ -25,7 +25,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         return;
     }
 
-    Logger.setConfigurationProperty("Build data file", resolvePath(buildDataFile));
+    Logger.setConfigurationProperty(ConfigurationProperty.BUILD_DATA_FILE_LOCATION, resolvePath(buildDataFile));
 
     const logFilePath = args[2];
     if (logFilePath && getExtension(logFilePath) !== ".html") {
@@ -55,7 +55,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
             } else {
                 const externalMapReferenceFinder = new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles);
                 referenceFinders.push(externalMapReferenceFinder);
-                Logger.setConfigurationProperty("Import map chunks", externalMapReferenceFinder.getImportMapChunkCount().toString());
+                Logger.setConfigurationProperty(ConfigurationProperty.EXTERNAL_IMPORT_MAP_CHUNK_COUNT, externalMapReferenceFinder.getImportMapChunkCount().toString());
             }
         }
     })
@@ -66,6 +66,8 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
     const uniqueIssues = buildIntegration.getUniqueIssues();
 
     let totalCommitCount = 0;
+    let reportsGenerated = 0;
+    let reportsPosted = 0;
 
     for (const issue of uniqueIssues) {
         console.log(`[Scope tags]: Checking commits of issue '${issue}'`);
@@ -73,7 +75,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         const issueCommits = buildIntegration.getIssueCommits(issue);
         const buildTag = buildIntegration.getBuildTag();
 
-        Logger.setConfigurationProperty("Build tag", buildTag);
+        Logger.setConfigurationProperty(ConfigurationProperty.BUILD_TAG, buildTag);
 
         // const commits = await repository.getCommitsByHashes(commits.map(commit => commit.hash)).then(async (commits: Commit[]) => {
         const commits = await repository.getCommitsByHashes(issueCommits.map(commit => commit.hash));
@@ -101,12 +103,20 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
 
         console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
 
-        await buildIntegration.updateIssue({
+        const reportPostedSuccessfully = await buildIntegration.updateIssue({
             issue: issue,
             report: commentReportJSON,
             hostname: os.hostname(),
         });
+
+        if (reportPostedSuccessfully) {
+            reportsPosted++;
+        }
+
+        reportsGenerated++;
     }
+
+    Logger.setConfigurationProperty(ConfigurationProperty.POSTED_REPORTS, `${reportsPosted} of ${reportsGenerated} generated`);
 
     if (logFilePath) {
         if (fileExists(logFilePath)) {
@@ -118,6 +128,6 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         console.log(`[Scope tags]: Saved HTML logs to '${logFilePath}'...'`);
     }
 
-    console.log(`[Scope tags]: Posted comments: ${uniqueIssues.length}`);
+    console.log(`[Scope tags]: Posted comments: ${reportsPosted}`);
     console.log(`[Scope tags]: Commits processed: ${totalCommitCount}`);
 }

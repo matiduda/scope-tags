@@ -21,6 +21,14 @@ hr {
     color: #606060;
 }
 
+.addotional-data-on-hover-light {
+    color: #00E0FF;
+}
+
+.addotional-data-on-hover-light:hover {
+    color: #606060;
+}
+
 .ignored-file {
     background-color: #ffffff;
     color: #cccccc;
