@@ -5,6 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "command": "scope --report-for-commit-list buildData.json log.html",
+            "name": "Run test of --report-for-commit-list",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
             "name": "Debug Jest Tests (Windows)",
             "type": "node",
             "request": "launch",

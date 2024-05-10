@@ -1,6 +1,6 @@
-import { CommitMessageRelevancyInfo, RelevancyManager } from "../../src/Relevancy/RelevancyManager";
+import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { FileData, GitDeltaType } from "../../src/Git/Types";
-import { Relevancy } from "../../src/Relevancy/Relevancy";
+import { CommitMessageRelevancyInfo, Relevancy } from "../../src/Relevancy/Relevancy";
 import { Commit } from "nodegit";
 
 const fs = require('fs');
