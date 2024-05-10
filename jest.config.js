@@ -5,7 +5,7 @@ module.exports = {
   transformIgnorePatterns: ['<rootDir>/node_modules/'],
   roots: ["<rootDir>/test/", "<rootDir>/src/"],
   collectCoverage: true,
-  collectCoverageFrom: ["**/src/**", "!**/node_modules/**"],
+  collectCoverageFrom: ["src/**", "!**/node_modules/**"],
   coverageDirectory: './coverage',
   coverageReporters: ['json', 'lcovonly', 'text', 'clover'],
   testPathIgnorePatterns: ['/_utils/'],

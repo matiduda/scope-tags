@@ -72,11 +72,20 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
         return VerificationStatus.VERIFIED;
     }
 
-    if ([...commitsVerificationInfo.values()].some(info => !info.isSkipped && !info.isMergeCommit && !info.includesOnlyIgnoredFiles && !info.hasRelevancy)) {
-        console.log(`[Scope tags] All commits are verified, but found no relevancy data. To add relevancy use:\n`);
-        console.log("\nTo add relevancy use\n\n\tnpx scope --add\n\n");
-        return VerificationStatus.NOT_VERIFIED;
-    }
+    // if ([...commitsVerificationInfo.entries()].some(([commitSHA, info]) => {
+
+    for (const [commitSHA, info] of [...commitsVerificationInfo.entries()]) {
+        if (!info.isSkipped && !info.isMergeCommit && !info.includesOnlyIgnoredFiles) {
+            const commit = await repository.getCommitByHash(commitSHA);
+
+            const filesWithoutRelevancy = info.filesToTag.filter(file => !info.relevancy.some(relevancyInfo => relevancyInfo.path === file.newPath));
+
+            console.log(`Commit '${commit.summary()}' not verified, found no relevancy for required files:\n`);
+            filesWithoutRelevancy.forEach(file => console.log(`- ${file.newPath}`));
+
+            return VerificationStatus.NOT_VERIFIED;
+        }
+    };
 
     return VerificationStatus.VERIFIED;
 }

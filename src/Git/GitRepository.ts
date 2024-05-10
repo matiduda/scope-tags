@@ -118,14 +118,7 @@ export class GitRepository {
          * https://git-scm.com/docs/git-diff
          */
 
-
-        // exec(`pwd && echo $PAGER && cd ${this._root} && git diff ${commit.sha()}^ ${commit.sha()} --name-status`, (error: any, stdout: any, stderr: any) => {
-        //     console.debug("STDOUT:", stdout, ", STDERR:", stderr);
-        // });
-
         const nameStatusOutput = execSync(`cd ${this._root} && git --no-pager diff ${commit.sha()}~ ${commit.sha()} --name-status`).toString().trim().split('\n');
-
-        console.debug(nameStatusOutput);
 
         /**
          * Has the following format:
@@ -312,6 +305,7 @@ export class GitRepository {
             includesOnlyIgnoredFiles: false,
             isMergeCommit: false,
             hasRelevancy: false,
+            relevancy: [],
         };
 
         // Check if commit should be skipped
@@ -349,6 +343,10 @@ export class GitRepository {
 
         // Check relevancy
         commitInfo.hasRelevancy = relevancyManager.doesCommitMessageHaveRelevancyData(commit.message());
+
+        if (commitInfo.hasRelevancy) {
+            commitInfo.relevancy = relevancyManager.convertCommitMessageToRelevancyData(commit)
+        }
 
         return commitInfo;
     }

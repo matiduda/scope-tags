@@ -101,7 +101,7 @@ export class RelevancyManager {
             } as CommitMessageRelevancyInfo;
         });
 
-        // Merge relevancies - if some are duplicates, select those with higher relevancy
+        // Merge relevancies - if some are duplicates, select those with higher relevancy - TODO: This should be testable -> add test
         const allRelevancies: CommitMessageRelevancyInfo[] = relevancyArray.concat(relevancyArrayFromCurrentCommit);
         const mergedRelevancies: CommitMessageRelevancyInfo[] = [];
 
@@ -139,34 +139,47 @@ export class RelevancyManager {
     }
 
     public convertCommitMessageToRelevancyData(commit: Commit, replaceCurrentCommitSHA = true): Array<CommitMessageRelevancyInfo> {
-        const commitMessage = commit.message();
 
-        const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
-        const relevancyEndIndex = commitMessage.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
-
-        if (prefixStartIndex === -1) {
-            throw new Error(`Commit message '${commitMessage}' does not include relevancy info`);
+        if (!this.doesCommitMessageHaveRelevancyData(commit.message())) {
+            throw new Error(`Commit message '${commit.message()}' does not include correct relevancy data`);
         }
 
-        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
+        const info: CommitMessageRelevancyInfo[] = [];
 
-        let relevancyInfo = [];
+        // Check every line, as commit could have multiple relevancies
 
-        try {
-            relevancyInfo = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
-        } catch (e) {
-            throw new Error(`Could not parse relevancy data from commit message: '${commitMessage}', found relevancy data: '${relevancyJSON}'`);
+        let currentLine = 0;
+
+        for (const line of commit.message().split("\n")) {
+            currentLine++;
+
+            const prefixStartIndex = line.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+            const relevancyEndIndex = line.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+
+            if (prefixStartIndex === -1 || relevancyEndIndex === -1 || prefixStartIndex === relevancyEndIndex) {
+                continue;
+            }
+
+            const relevancyJSON = line.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
+
+            try {
+                const parsedRelevancy = JSON.parse(relevancyJSON) as Array<CommitMessageRelevancyInfo>;
+
+                parsedRelevancy.forEach(relevancy => {
+                    // Replace current commit' sha
+                    if (replaceCurrentCommitSHA) {
+                        if (relevancy.commit === RelevancyManager.CURRENT_COMMIT) {
+                            relevancy.commit = commit.sha();
+                        }
+                    }
+                    info.push(relevancy)
+                });
+            } catch (e) {
+                throw new Error(`Could not parse relevancy data from line ${currentLine}: '${line}', found relevancy data: '${relevancyJSON}'`);
+            }
         }
 
-        // Replace current commit' sha
-        if (replaceCurrentCommitSHA) {
-            relevancyInfo.forEach(info => {
-                if (info.commit === RelevancyManager.CURRENT_COMMIT) {
-                    info.commit = commit.sha();
-                }
-            });
-        }
-        return relevancyInfo;
+        return info;
     }
 
     // public addRelevancyFromCommit(fileDataRelevancy: Map<FileData, Relevancy>, commit: Commit) {
@@ -177,22 +190,30 @@ export class RelevancyManager {
     // }
 
     public doesCommitMessageHaveRelevancyData(commitMessage: string): boolean {
-        const prefixStartIndex = commitMessage.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
-        const relevancyEndIndex = commitMessage.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
 
-        if (prefixStartIndex === -1 || relevancyEndIndex === -1 || prefixStartIndex === relevancyEndIndex) {
-            return false;
+        // Check every line, as commit could have multiple relevancies
+
+        let commitMessageHasRelevancy = false;
+
+        for (const line of commitMessage.split("\n")) {
+            const prefixStartIndex = line.indexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+            const relevancyEndIndex = line.lastIndexOf(RelevancyManager.COMMIT_MSG_PREFIX);
+
+            if (prefixStartIndex === -1 || relevancyEndIndex === -1 || prefixStartIndex === relevancyEndIndex) {
+                continue;
+            }
+
+            const relevancyJSON = line.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
+
+            try {
+                JSON.parse(relevancyJSON);
+                commitMessageHasRelevancy = true;
+            } catch (e) {
+                return false;
+            }
         }
 
-
-        const relevancyJSON = commitMessage.substring(prefixStartIndex + RelevancyManager.COMMIT_MSG_PREFIX.length, relevancyEndIndex);
-
-        try {
-            JSON.parse(relevancyJSON);
-            return true;
-        } catch (e) {
-            return false;
-        }
+        return commitMessageHasRelevancy;
     }
 
     public loadRelevancyMapFromCommits(commits: Commit[]): RelevancyMap {

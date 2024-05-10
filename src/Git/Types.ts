@@ -1,4 +1,5 @@
 import { Commit } from "nodegit/commit";
+import { CommitMessageRelevancyInfo } from "../Relevancy/RelevancyManager";
 
 export type FilePath = string;
 
@@ -48,4 +49,5 @@ export type VerificationInfo = {
     hasRelevancy: boolean,
     isMergeCommit: boolean,
     includesOnlyIgnoredFiles: boolean,
+    relevancy: Array<CommitMessageRelevancyInfo>,
 }
