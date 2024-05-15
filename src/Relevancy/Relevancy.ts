@@ -6,6 +6,9 @@ export enum Relevancy {
     HIGH = "HIGH",          // Does list tags for file and performs full reference search
 }
 
+// Default Relevancy is HIGH, and it can be reduced via user prompt
+export const DEFAULT_RELEVANCY = Relevancy.HIGH;
+
 export type CommitMessageRelevancyInfo = {
     path: string,
     relevancy: Relevancy,

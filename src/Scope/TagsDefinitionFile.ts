@@ -121,7 +121,15 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
             return 0;
         });
         // Sort defined tags
-        this._tagsDatabaseData.tags = this._tagsDatabaseData.tags.sort();
+        this._tagsDatabaseData.tags = this._tagsDatabaseData.tags.sort((a: Tag, b: Tag) => {
+            if (a.name < b.name) {
+                return -1;
+            }
+            if (a.name > b.name) {
+                return 1;
+            }
+            return 0;
+        });
     }
 
     public addModule(newModule: Module) {

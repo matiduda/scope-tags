@@ -1,5 +1,6 @@
 import { JSONFile } from "../FileSystem/JSONFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
+import { DEFAULT_RELEVANCY, Relevancy } from "../Relevancy/Relevancy";
 import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
 
 type FileImport = { file: string, imports: Array<string> };
@@ -46,14 +47,15 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
         return this._supportedFileExtensions;
     }
 
-    public findReferences(fileNameOrPath: string): Array<ReferencedFileInfo> {
+    public findReferences(fileNameOrPath: string, relevancy: Relevancy | null): Array<ReferencedFileInfo> {
         const referenceList: Array<ReferencedFileInfo> = [];
 
         this._importMap.forEach(importData => {
             if (importData.imports.includes(fileNameOrPath)) {
                 referenceList.push({
                     filename: importData.file,
-                    unused: false
+                    unused: false,
+                    relevancy: relevancy || DEFAULT_RELEVANCY
                 });
             }
         });

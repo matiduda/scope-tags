@@ -71,9 +71,10 @@ export class ReportGenerator {
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
             if (printDebugInfo) {
-                // TODO: Add back
-                // console.log(fileInfoArray);
-                // console.log(affectedModules);
+                console.log("---- File Info ----")
+                console.log(fileInfoArray);
+                console.log("---- Affected Modules ----")
+                console.log(affectedModules);
             }
 
             const report: Report = {
@@ -159,8 +160,7 @@ export class ReportGenerator {
         return fileInfoArray;
     }
     private _getUsedIn(fileData: FileData, relevancy: Relevancy | null) {
-        // TODO: Add HIGH relevancy back
-        return this._getFileReferences(fileData.newPath);
+        return this._getFileReferences(fileData.newPath, relevancy);
     }
 
     private _getAffectedModules(fileInfoArray: Array<FileInfo>): Array<Module> {
@@ -177,7 +177,7 @@ export class ReportGenerator {
         return this._tagsDefinitionFile.getModulesByNames(moduleNames);
     }
 
-    private _getFileReferences(file: string): Array<FileReference> {
+    private _getFileReferences(file: string, relevancy: Relevancy | null): Array<FileReference> {
         const references: Array<FileReference> = [];
 
         if (!fileExists(file)) {
@@ -188,7 +188,7 @@ export class ReportGenerator {
             if (!referenceFinder.getSupportedFilesExtension().includes(getExtension(file))) {
                 return;
             }
-            const foundReferences = referenceFinder.findReferences(file);
+            const foundReferences = referenceFinder.findReferences(file, relevancy);
 
             foundReferences.forEach(reference => {
                 const fileReference: FileReference = {
@@ -283,11 +283,6 @@ export class ReportGenerator {
                     if (reference.fileInfo.unused) {
                         unusedReferences.push(reference.fileInfo);
                     }
-
-                    // if (!reference.tagIdentifiers.length) {
-                    //     debugger;
-                    //     untaggedReferences.push(reference.fileInfo);
-                    // }
 
                     reference.tagIdentifiers.forEach(identifier => {
                         if (identifier.tag === referencedTag

@@ -11,6 +11,12 @@
             "type": "node-terminal"
         },
         {
+            "command": "npm run build && scope --report-for-commit 35077cb91ab71c20eef1d13482c26af45a51238b",
+            "name": "Run test of --report-for-commit",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
             "name": "Debug Jest Tests (Windows)",
             "type": "node",
             "request": "launch",

@@ -1,4 +1,5 @@
 import { TSReferenceFinder } from "../References/TSReferenceFinder";
+import { Relevancy } from "../Relevancy/Relevancy";
 
 export function runFindReferencesCommand(args: Array<string>, root: string) {
     const filePath = args[1];
@@ -8,5 +9,5 @@ export function runFindReferencesCommand(args: Array<string>, root: string) {
     }
 
     const tsReferenceFinder = new TSReferenceFinder(root, "tsconfig.json");
-    tsReferenceFinder.findReferences(filePath);
+    tsReferenceFinder.findReferences(filePath, Relevancy.HIGH);
 }

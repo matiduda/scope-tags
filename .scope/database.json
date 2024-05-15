@@ -26,10 +26,11 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
-        { "path": "src/FileSystem/fileSystemUtils.ts",
+              { "path": "src/FileSystem/fileSystemUtils.ts",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
-            { "tag": "asdflkj", "module": "Second module" }]}],
+            { "tag": "asdflkj", "module": "Second module" }]}
+          ],
     "ignoredFiles": [
         "src/Git/GitRepository.ts",
         "src/Relevancy/RelevancyManager.ts",

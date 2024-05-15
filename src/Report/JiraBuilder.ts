@@ -4,6 +4,7 @@ import { getScriptVersion } from "../scope";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
 import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { FileInfo } from "./ReportGenerator";
+import { Relevancy } from "../Relevancy/Relevancy";
 
 export type TagInfo = {
     tag: string,
@@ -128,18 +129,33 @@ export class JiraBuilder {
             return [];
         }
 
+        const referencesWithHighRelevancy = untaggedReferences.filter(reference => reference.relevancy === Relevancy.HIGH);
+        const referencesWithOtherThanHighRelevancy = untaggedReferences.filter(reference => reference.relevancy !== Relevancy.HIGH);
+
         let title = `${untaggedReferences.length} untagged file`;
 
         if (untaggedReferences.length > 1) {
             title += "s";
         }
 
+        let content: string = referencesWithHighRelevancy
+            .map(reference => reference.unused ? `${reference.filename} (unused)` : reference.filename)
+            .join("\n");
+
+        if (referencesWithOtherThanHighRelevancy.length) {
+            content += `\nand ${referencesWithOtherThanHighRelevancy.length} hidden by relevancy`;
+        }
+
+        // TODO: [ ] It is tested
+        // TODO: [ ] Add the same for
+        // - Tags
+        // - Modules
+        // - [ ] Add similar to table entries themserves for Relevancy.LOW
+
+
         // Careful, nestedExpand cannot be empty inside
         return [nestedExpand({ title: title })(
-            p(untaggedReferences
-                .map(reference => reference.unused ? `${reference.filename} (unused)` : reference.filename)
-                .join("\n")
-            )
+            p(content)
         )];
     }
 

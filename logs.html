@@ -6,10 +6,11 @@
       name="viewport"
       content="width=device-width, initial-scale=1, shrink-to-fit=no"
     />
-    <link rel="stylesheet" href="https://unpkg.com/mvp.css" />
+    <link rel="stylesheet" href="https://andybrewer.github.io/mvp/mvp.css" />
     <style>
       :root {
         --justify-important: left;
+        --width-content: 1800px;
       }
 
       hr {
@@ -29,16 +30,30 @@
         color: #606060;
       }
 
+      .addotional-data-on-hover-light {
+        color: #00e0ff;
+      }
+
+      .addotional-data-on-hover-light:hover {
+        color: #606060;
+      }
+
+      .ignored-file {
+        background-color: #ffffff;
+        color: #cccccc;
+      }
+
       table > p {
         margin-block-start: 0em;
         margin-block-end: 0em;
       }
     </style>
-    <title>Scope Tags</title>
+    <title>build-123 - Scope Tags</title>
   </head>
   <body>
     <main id="main">
-      <h3>Scope tags report logs</h3>
+      <a href="#instructions">Instructions</a>
+      <h2 id="page-title">build-123</h2>
       <hr />
       <div id="configuration-table">
         <table>
@@ -48,15 +63,23 @@
           </thead>
           <tr>
             <td>Package version</td>
-            <td>0.1.14</td>
+            <td>0.2.9</td>
           </tr>
           <tr>
-            <td>Build data file</td>
-            <td>C:\Users\mateusz.duda\scope-tags\commitfile.txt</td>
+            <td>Current date</td>
+            <td>2024-5-15 14:54:17</td>
+          </tr>
+          <tr>
+            <td>Build data file location</td>
+            <td>C:\Users\mateusz.duda\scope-tags\buildData.json</td>
           </tr>
           <tr>
             <td>Build tag</td>
             <td>build-123</td>
+          </tr>
+          <tr>
+            <td>Posted reports</td>
+            <td>0 of 1 generated</td>
           </tr>
         </table>
         <hr />
@@ -64,244 +87,303 @@
       <div id="table-of-contents">
         <h3>Issues to be updated</h3>
         <ul>
-          <li><a href="#JIRA-KEY3">JIRA-KEY3</a></li>
-          <li><a href="#JIRA-KEY2">JIRA-KEY2</a></li>
-          <li><a href="#JIRA-KEY4">JIRA-KEY4</a></li>
+          <li><a href="#JIRA-KEY">JIRA-KEY</a></li>
         </ul>
         <hr />
       </div>
-      <div id="JIRA-KEY3">
+      <div id="JIRA-KEY">
         <div class="issue-header">
-          <h3>JIRA-KEY3</h3>
+          <h3>JIRA-KEY</h3>
           <a href="#main">Back to top</a>
         </div>
         <div>
           <p>
             <span>From commit: </span
             ><span
-              title="testing relevancy v2
-
-__relevancy__[{'path':'src/Console/RelevancyTagger.ts','relevancy':'LOW','commit':'__current__'},{'path':'src/Scope/FileTagsDatabase.ts','relevancy':'MEDIUM','commit':'__current__'},{'path':'src/Scope/Utils.ts','relevancy':'HIGH','commit':'__current__'}]"
+              title="added tests for tags definition file"
               class="addotional-data-on-hover"
-              ><strong>testing relevancy v2 </strong>
-              (e27f0baf0c9c9853a6c6cef84103cebf2f6df157)</span
+              ><strong>added tests for tags definition file </strong>
+              <a
+                href="https://bitbucket.org/ampsgroupadmin/engin3/commits/35077cb91ab71c20eef1d13482c26af45a51238b"
+                >(35077cb91ab71c20eef1d13482c26af45a51238b)</a
+              ></span
             >
           </p>
-          <p>Has relevancy data?: <strong>yes</strong></p>
+          <p>Has relevancy data?: <strong>no</strong></p>
           <table>
             <thead>
               <th>File path</th>
               <th>Change</th>
-              <th>New</th>
-              <th>Relevancy</th>
-              <th>Tag / module</th>
+              <th>Renamed</th>
+              <th>
+                <span
+                  title="LOW - Does not list file at all (example: formatting changes)
+MEDIUM - Does list tags for file, but does not search references for it
+HIGH - Does list tags for file and performs full reference search"
+                  class="addotional-data-on-hover-light"
+                  >Relevancy</span
+                >
+              </th>
+              <th>Lines</th>
+              <th>Module / Tag</th>
               <th>Referenced files</th>
             </thead>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/package.json"
+                  >package.json</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++1</td>
+              <td>
+                <p>
+                  <strong>Default module</strong> / <strong>Tag</strong
+                  ><br /><strong>Second module</strong> /
+                  <strong>asdflkj</strong>
+                </p>
+              </td>
+              <td>-</td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/src/Commands/runAddCommand.ts"
+                  >src/Commands/runAddCommand.ts</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++8</td>
+              <td>
+                <p><strong>Default module</strong> / <strong>Tag</strong></p>
+              </td>
+              <td>
+                <div title="Untagged" class="undefined">src/scope.ts</div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/src/Commands/runVerifyUnpushedCommitsCommand.ts"
+                  >src/Commands/runVerifyUnpushedCommitsCommand.ts</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++12</td>
+              <td><p></p></td>
+              <td>
+                <div title="Untagged" class="undefined">src/scope.ts</div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/src/Git/GitRepository.ts"
+                  >src/Git/GitRepository.ts</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++6</td>
+              <td><p></p></td>
+              <td>
+                <div
+                  title="- 'Tag' from module 'Default module'
+- 'asdflkj' from module 'Second module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Console/FileTagger.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runCommitCommand.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Commands/runAddCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runVerifyCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runVerifyUnpushedCommitsCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Report/ReportGenerator.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runReportForCommitCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runReportForCommitListCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runTagCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runSkipVerificationAndPushCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runLogCommitCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runListUnpushedCommitsCommand.ts
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/src/Git/Types.ts"
+                  >src/Git/Types.ts</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++1</td>
+              <td><p></p></td>
+              <td>
+                <div title="Untagged" class="undefined">
+                  src/Relevancy/Relevancy.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Scope/FileTagsDatabase.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Relevancy/RelevancyManager.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Git/GitRepository.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'
+- 'asdflkj' from module 'Second module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Console/FileTagger.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Commands/runAddCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Logger/Logger.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Report/ReportGenerator.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runLogCommitCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runVerifyUnpushedCommitsCommand.ts
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/src/Scope/TagsDefinitionFile.ts"
+                  >src/Scope/TagsDefinitionFile.ts</a
+                >
+              </td>
+              <td>MODIFIED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++20</td>
+              <td><p></p></td>
+              <td>
+                <div title="Untagged" class="undefined">
+                  src/Scope/FileTagsDatabase.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'
+- 'asdflkj' from module 'Second module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Console/TagManager.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Report/ReportGenerator.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Console/ModuleManager.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Console/Menu.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'
+- 'asdflkj' from module 'Second module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Console/FileTagger.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runCommitCommand.ts
+                </div>
+                <div
+                  title="- 'Tag' from module 'Default module'"
+                  class="addotional-data-on-hover"
+                >
+                  src/Commands/runAddCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runReportForCommitCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runReportForCommitListCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runStartCommandLineInterfaceCommand.ts
+                </div>
+                <div title="Untagged" class="undefined">
+                  src/Commands/runTagCommand.ts
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <a
+                  href="https://bitbucket.org/ampsgroupadmin/engin3/src/development/test/scope/tagsDefinitionFile.test.ts"
+                  >test/scope/tagsDefinitionFile.test.ts</a
+                >
+              </td>
+              <td>ADDED</td>
+              <td>-</td>
+              <td>-</td>
+              <td>++60</td>
+              <td><p></p></td>
+              <td>-</td>
+            </tr>
           </table>
         </div>
         <hr />
       </div>
-      <div id="JIRA-KEY2">
-        <div class="issue-header">
-          <h3>JIRA-KEY2</h3>
-          <a href="#main">Back to top</a>
-        </div>
-        <div>
-          <p>
-            <span>From commit: </span
-            ><span
-              title="testing relevancy v2
-
-__relevancy__[{'path':'src/Console/RelevancyTagger.ts','relevancy':'LOW','commit':'__current__'},{'path':'src/Scope/FileTagsDatabase.ts','relevancy':'MEDIUM','commit':'__current__'},{'path':'src/Scope/Utils.ts','relevancy':'HIGH','commit':'__current__'}]"
-              class="addotional-data-on-hover"
-              ><strong>testing relevancy v2 </strong>
-              (e27f0baf0c9c9853a6c6cef84103cebf2f6df157)</span
-            >
-          </p>
-          <p>Has relevancy data?: <strong>yes</strong></p>
-          <table>
-            <thead>
-              <th>File path</th>
-              <th>Change</th>
-              <th>New</th>
-              <th>Relevancy</th>
-              <th>Tag / module</th>
-              <th>Referenced files</th>
-            </thead>
-          </table>
-        </div>
-        <hr />
-      </div>
-      <div id="JIRA-KEY4">
-        <div class="issue-header">
-          <h3>JIRA-KEY4</h3>
-          <a href="#main">Back to top</a>
-        </div>
-        <div>
-          <p>
-            <span>From commit: </span
-            ><span
-              title="testing relevancy v2
-
-__relevancy__[{'path':'src/Console/RelevancyTagger.ts','relevancy':'LOW','commit':'__current__'},{'path':'src/Scope/FileTagsDatabase.ts','relevancy':'MEDIUM','commit':'__current__'},{'path':'src/Scope/Utils.ts','relevancy':'HIGH','commit':'__current__'}]"
-              class="addotional-data-on-hover"
-              ><strong>testing relevancy v2 </strong>
-              (e27f0baf0c9c9853a6c6cef84103cebf2f6df157)</span
-            >
-          </p>
-          <p>Has relevancy data?: <strong>yes</strong></p>
-          <table>
-            <thead>
-              <th>File path</th>
-              <th>Change</th>
-              <th>New</th>
-              <th>Relevancy</th>
-              <th>Tag / module</th>
-              <th>Referenced files</th>
-            </thead>
-            <tr>
-              <td>.scope/database.json</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>-</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Console/RelevancyTagger.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>LOW</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/FileTagsDatabase.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>MEDIUM</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/Utils.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>HIGH</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td>
-                <div title="Not tagged" class="undefined">
-                  src/Logger/Logger.ts
-                </div>
-                <div title="Not tagged" class="undefined">
-                  src/Commands/runLogCommitCommand.ts
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>.scope/database.json</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>-</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Console/RelevancyTagger.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>LOW</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/FileTagsDatabase.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>MEDIUM</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/Utils.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>HIGH</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td>
-                <div title="Not tagged" class="undefined">
-                  src/Logger/Logger.ts
-                </div>
-                <div title="Not tagged" class="undefined">
-                  src/Commands/runLogCommitCommand.ts
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>.scope/database.json</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>-</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Console/RelevancyTagger.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>LOW</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/FileTagsDatabase.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>MEDIUM</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td></td>
-            </tr>
-            <tr>
-              <td>src/Scope/Utils.ts</td>
-              <td>MODIFIED</td>
-              <td>-</td>
-              <td>HIGH</td>
-              <td>
-                <p><strong>Tag</strong> / <strong>Default module</strong></p>
-              </td>
-              <td>
-                <div title="Not tagged" class="undefined">
-                  src/Logger/Logger.ts
-                </div>
-                <div title="Not tagged" class="undefined">
-                  src/Commands/runLogCommitCommand.ts
-                </div>
-              </td>
-            </tr>
-          </table>
-        </div>
+      <div id="instructions">
+        <h3>Instructions</h3>
+        <details>
+          <summary>Reading additional data</summary>
+          <span>Some entries have </span
+          ><span title="Some extra data!!" class="addotional-data-on-hover"
+            >additional data on hover</span
+          ><span
+            >. You can hover over them to read the associated data - full commit
+            message, tags associated with a file, etc.</span
+          >
+        </details>
         <hr />
       </div>
     </main>
