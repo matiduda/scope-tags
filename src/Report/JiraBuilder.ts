@@ -1,18 +1,9 @@
 import { formatDate } from "./TimeUtils";
-import {
-    expand,
-    table,
-    doc,
-    tableRow,
-    tableHeader,
-    nestedExpand,
-    p,
-    strong,
-    text,
-    link,
-} from "./AdfUtils";
+import { expand, table, doc, tableRow, tableHeader, p, strong, text, link, nestedExpand } from "./AdfUtils";
 import { getScriptVersion } from "../scope";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
+import { TagIdentifier } from "../Scope/FileTagsDatabase";
+import { FileInfo } from "./ReportGenerator";
 
 export type TagInfo = {
     tag: string,
@@ -30,23 +21,34 @@ export type LinesInfo = {
 }
 
 export type ReportTableRow = {
-    affectedTags: Array<string>,
+    affectedTags: Array<TagIdentifier>,
     lines: LinesInfo
     uniqueModules: Array<ModuleInfo>,
     referencedTags: Array<TagInfo>,
+    untaggedReferences: Array<ReferencedFileInfo>,
     unusedReferences: Array<ReferencedFileInfo>,
 };
+
+export type UntaggedFilesTableRow = {
+    affectedFiles: Array<FileInfo>,
+    lines: LinesInfo
+    uniqueModules: Array<ModuleInfo>,
+    referencedTags: Array<TagInfo>,
+    untaggedReferences: Array<ReferencedFileInfo>,
+    unusedReferences: Array<ReferencedFileInfo>,
+}
 
 export class JiraBuilder {
     public constructor() { }
 
     public parseReport(
         entries: Array<ReportTableRow>,
+        untaggedFilesRow: UntaggedFilesTableRow,
         date: Date,
         projectName: string,
         buildTag: string,
         printToConsole = false,
-        logURL?: string
+        logURL?: string,
     ): string {
         let tableTitle = `'${projectName}' scope tags v${getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
         tableTitle += buildTag ? ` │ ${buildTag}` : "";
@@ -55,6 +57,7 @@ export class JiraBuilder {
             ...table(
                 this._getHeaderRow(),
                 ...entries.map(entry => this._getEntryRow(entry)),
+                ...this._getUntaggedFilesRow(untaggedFilesRow),
             ),
             ...{ attrs: { layout: "full-width" } }
         };
@@ -94,11 +97,71 @@ export class JiraBuilder {
 
     private _getEntryRow(entry: ReportTableRow): any {
         return tableRow([
-            tableHeader({})(p(entry.affectedTags.join('\n'))),
+            tableHeader({})(p(entry.affectedTags.map(tag => `${tag.module} / ${tag.tag}`).join('\n'))),
             tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
-            tableHeader({})(...this._referencedModulesAsNestedExpands(entry.uniqueModules)),
+            tableHeader({})(
+                ...this._referencedModulesAsNestedExpands(entry.uniqueModules),
+                ...this._untaggedReferencesAsNextedExpand(entry.untaggedReferences)
+            ),
             tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
         ]);
+    }
+
+    private _getUntaggedFilesRow(entry: UntaggedFilesTableRow): any[] {
+        if (!entry.affectedFiles.length) {
+            return [];
+        }
+
+        return [tableRow([
+            tableHeader({})(this._getFileListAsNestedExpand(entry.affectedFiles)),
+            tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
+            tableHeader({})(
+                ...this._referencedModulesAsNestedExpands(entry.uniqueModules),
+                ...this._untaggedReferencesAsNextedExpand(entry.untaggedReferences)
+            ),
+            tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
+        ])];
+    }
+
+    private _untaggedReferencesAsNextedExpand(untaggedReferences: ReferencedFileInfo[]): any[] {
+        if (!untaggedReferences.length) {
+            return [];
+        }
+
+        let title = `${untaggedReferences.length} untagged file`;
+
+        if (untaggedReferences.length > 1) {
+            title += "s";
+        }
+
+        // Careful, nestedExpand cannot be empty inside
+        return [nestedExpand({ title: title })(
+            p(untaggedReferences
+                .map(reference => reference.unused ? `${reference.filename} (unused)` : reference.filename)
+                .join("\n")
+            )
+        )];
+    }
+
+    // Practically the same as above
+    private _getFileListAsNestedExpand(files: FileInfo[]) {
+        if (!files.length) {
+            return [];
+        }
+
+        let title = `${files.length} untagged file`;
+
+        if (files.length > 1) {
+            title += "s";
+        }
+
+        // Careful, nestedExpand cannot be empty inside
+        return nestedExpand({ title: title })(
+            p(files
+                .map(file => file.file)
+                .join("\n")
+            )
+        );
     }
 
     private _referencedModulesAsNestedExpands(
@@ -109,8 +172,13 @@ export class JiraBuilder {
         }
 
         return uniqueModules.map(uniqueModule => {
+            const tags: string = uniqueModule.tags.length > 0
+                ? uniqueModule.tags.join("\n")
+                : "No tags";
+
+            // Careful, nestedExpand cannot be empty inside
             return nestedExpand({ title: uniqueModule.module })(
-                p(uniqueModule.tags.join('\n'))
+                p(tags)
             );
         });
     }
@@ -124,8 +192,13 @@ export class JiraBuilder {
         }
 
         return referencedTags.map(referenced => {
+            const modules: string = referenced.tag.length > 0
+                ? referenced.modules.join("\n")
+                : "No modules";
+
+            // Careful, nestedExpand cannot be empty inside
             return nestedExpand({ title: referenced.tag })(
-                p(referenced.modules.join('\n'))
+                p(modules)
             );
         });
     }

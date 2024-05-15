@@ -96,12 +96,28 @@ export class FileTagsDatabase implements IJSONFileDatabase<FileTagsDatabase> {
     public save(): string {
         const savedFilePath = this._getPath();
 
+        // We sort it to reduce possible conflicts when two users modify the database at the same place
+
         const databaseToSave: SavedDatabaseType = {
-            files: Object.entries(this._fileTagsDatabaseData.files).map(entry => ({
-                path: entry[0],
-                tags: entry[1]
-            })),
-            ignoredFiles: this._fileTagsDatabaseData.ignoredFiles
+            files: Object.entries(this._fileTagsDatabaseData.files)
+                .sort((entryA, entryB) => {
+                    const pathA = entryA[0].toUpperCase(); // ignore upper and lowercase
+                    const pathB = entryB[0].toUpperCase(); // ignore upper and lowercase
+                    if (pathA < pathB) {
+                        return -1;
+                    }
+                    if (pathA > pathB) {
+                        return 1;
+                    }
+
+                    // paths must be equal
+                    return 0;
+                })
+                .map(entry => ({
+                    path: entry[0],
+                    tags: entry[1]
+                })),
+            ignoredFiles: this._fileTagsDatabaseData.ignoredFiles.sort()
         };
 
         JSONFile.niceWrite<SavedDatabaseType>(savedFilePath, databaseToSave, this._replacer);

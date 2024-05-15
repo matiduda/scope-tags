@@ -28,21 +28,38 @@ export const tableRow = (content: any) => ({
     content
 });
 
-export const nestedExpand = (attrs: any) => (...content: any) => ({
-    type: 'nestedExpand',
-    attrs,
-    content
-});
+
+/**
+ * Careful, nestedExpand cannot be empty inside
+ */
+export const nestedExpand = (attrs: any) => (...content: any) => {
+    // Check for empty text, as it won't be parsed by Jira
+    // if (Array.isArray(content) && content.some(c => c?.content?.type === "text" && c?.content?.text?.length === 0)) {
+    //     throw new Error("[AdfUtils] Nested expands cannot have empty text field");
+    // }
+
+    return {
+        type: 'nestedExpand',
+        attrs,
+        content
+    };
+};
 
 export const p = (...content: any) => ({
     type: 'paragraph',
     content: createTextNodes(content)
 });
 
-export const text = (text: any) => ({
-    type: 'text',
-    text
-});
+export const text = (text: any) => {
+    if (!text.length) {
+        throw new Error("[AdfUtils] Text node cannot be empty");
+    }
+
+    return {
+        type: 'text',
+        text
+    }
+};
 
 export const strong = (maybeNode: any) => applyMark({
     type: 'strong'

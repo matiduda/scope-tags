@@ -5,7 +5,7 @@ import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
-import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo } from "./JiraBuilder";
+import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo, UntaggedFilesTableRow } from "./JiraBuilder";
 import { Relevancy, RelevancyMap } from "../Relevancy/Relevancy";
 import { Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
@@ -28,16 +28,20 @@ export type FileInfo = {
 export type FileReference = {
     fileInfo: ReferencedFileInfo,
     tagIdentifiers: Array<TagIdentifier>,
+    toString: () => string;
 }
 
 export type Report = {
-    allModules: Array<ModuleReport>
+    allModules: Array<ModuleReport>,
     date: Date,
     projectName: string,
     jobName: string,
+    untaggedFilesAsModule: ModuleReport,
 };
 
 export class ReportGenerator {
+    public static UNTAGGED_FILES_MODULE_NAME: Module["name"] = "__UNTAGGED_FILES_MODULE_NAME__";
+
     constructor(
         private _repository: GitRepository,
         private _tagsDefinitionFile: TagsDefinitionFile,
@@ -61,19 +65,26 @@ export class ReportGenerator {
 
         return new Promise<Report>(async (resolve, reject) => {
 
-            const fileInfoArray: FileInfo[] = this._getFileInfo(filesAffectedByCommits, relevancyMap)
+            // All modified files
+            const fileInfoArray: FileInfo[] = this._getFileInfo(filesAffectedByCommits, relevancyMap);
+
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
             if (printDebugInfo) {
-                console.log(fileInfoArray);
-                console.log(affectedModules);
+                // TODO: Add back
+                // console.log(fileInfoArray);
+                // console.log(affectedModules);
             }
 
             const report: Report = {
                 allModules: [],
                 date: new Date(),
                 projectName: projectName,
-                jobName: jobName
+                jobName: jobName,
+                untaggedFilesAsModule: {
+                    module: ReportGenerator.UNTAGGED_FILES_MODULE_NAME,
+                    files: []
+                },
             };
 
             for (const module of affectedModules) {
@@ -87,6 +98,15 @@ export class ReportGenerator {
                 }
 
                 report.allModules.push(moduleReport);
+            }
+
+            // Find files which are not tagged
+            for (const fileInfo of fileInfoArray) {
+                const anyModuleReportHasIt = report.allModules.some(moduleReport => moduleReport.files.some(moduleFileInfo => moduleFileInfo.file === fileInfo.file));
+
+                if (!anyModuleReportHasIt) {
+                    report.untaggedFilesAsModule.files.push(fileInfo);
+                }
             }
 
             resolve(report);
@@ -170,13 +190,19 @@ export class ReportGenerator {
             }
             const foundReferences = referenceFinder.findReferences(file);
 
-            debugger;
-
             foundReferences.forEach(reference => {
                 const fileReference: FileReference = {
                     fileInfo: reference,
                     tagIdentifiers: this._fileTagsDatabase.getTagIdentifiersForFile(reference.filename),
+                    toString: function() {
+                        return this.tagIdentifiers.length > 0
+                            ? this.tagIdentifiers.map(tagIdentifier => `${tagIdentifier.module} / ${tagIdentifier.tag}`).join(', ')
+                            : this.fileInfo.filename
+                    }
                 };
+
+                console.log(fileReference.toString());
+
                 references.push(fileReference);
             });
         });
@@ -184,12 +210,12 @@ export class ReportGenerator {
         return references;
     }
 
-    private _calculateLines(moduleReport: ModuleReport): { added: number, removed: number } {
+    private _calculateLines(fileInfoArray: FileInfo[]): { added: number, removed: number } {
         let combinedLinesAdded = 0;
         let combinedLinesRemoved = 0;
         let output = "";
 
-        moduleReport.files.forEach(file => {
+        fileInfoArray.forEach(file => {
             combinedLinesAdded += file.linesAdded;
             combinedLinesRemoved += file.linesRemoved;
         })
@@ -207,30 +233,36 @@ export class ReportGenerator {
         };
     }
 
-    private _getAffectedTags(moduleReport: ModuleReport): Array<string> {
-        const allTags: Array<Tag["name"]> = [];
+    private _getAffectedTags(moduleReport: ModuleReport): Array<TagIdentifier> {
+        const allTags: Array<TagIdentifier> = [];
         const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
 
         moduleReport.files.forEach(file => {
             file.tagIdentifiers.forEach(tagIdentifier => {
-                if (!allTags.includes(tagIdentifier.tag)) {
-                    allTags.push(tagIdentifier.tag);
+                if (!allTags.includes(tagIdentifier) && !currentModule?.tags.includes(tagIdentifier.tag)) {
+                    allTags.push(tagIdentifier);
                 }
             })
         })
 
-        return allTags.filter(tag => currentModule?.tags.includes(tag)).map(tag => tag);
+        return allTags.map(tag => tag);
     }
 
     private _getReferencedTags(moduleReport: ModuleReport): {
         uniqueModules: Array<ModuleInfo>,
         tagInfo: Array<TagInfo>,
+        untaggedReferences: Array<ReferencedFileInfo>
         unusedReferences: Array<ReferencedFileInfo>
     } {
         const uniqueReferencedTags: Array<Tag["name"]> = [];
+        const untaggedReferences: Array<ReferencedFileInfo> = [];
 
         moduleReport.files.forEach(fileInfo => {
             fileInfo.usedIn.forEach(reference => {
+                if (!reference.tagIdentifiers.length) {
+                    untaggedReferences.push(reference.fileInfo);
+                }
+
                 reference.tagIdentifiers.forEach(identifier => {
                     if (!uniqueReferencedTags.includes(identifier.tag)) {
                         uniqueReferencedTags.push(identifier.tag);
@@ -251,6 +283,12 @@ export class ReportGenerator {
                     if (reference.fileInfo.unused) {
                         unusedReferences.push(reference.fileInfo);
                     }
+
+                    // if (!reference.tagIdentifiers.length) {
+                    //     debugger;
+                    //     untaggedReferences.push(reference.fileInfo);
+                    // }
+
                     reference.tagIdentifiers.forEach(identifier => {
                         if (identifier.tag === referencedTag
                             && !referencedModulesMatchingTag.includes(identifier.module)
@@ -264,7 +302,7 @@ export class ReportGenerator {
                             } else {
                                 uniqueModules.push({
                                     module: identifier.module,
-                                    tags: [],
+                                    tags: [identifier.tag],
                                 });
                             }
                         }
@@ -279,6 +317,7 @@ export class ReportGenerator {
         return {
             uniqueModules: uniqueModules.sort((uniqueA, uniqueB) => uniqueB.tags.length - uniqueA.tags.length),
             tagInfo: tagInfo.sort((tagInfoA, tagInfoB) => tagInfoB.modules.length - tagInfoA.modules.length),
+            untaggedReferences: untaggedReferences,
             unusedReferences: unusedReferences
         }
     };
@@ -289,17 +328,30 @@ export class ReportGenerator {
 
             return {
                 affectedTags: this._getAffectedTags(moduleReport),
-                lines: this._calculateLines(moduleReport),
+                lines: this._calculateLines(moduleReport.files),
                 lastChange: report.date,
                 uniqueModules: modulesAndTagsInfo.uniqueModules,
                 referencedTags: modulesAndTagsInfo.tagInfo,
-                unusedReferences: modulesAndTagsInfo.unusedReferences
+                untaggedReferences: modulesAndTagsInfo.untaggedReferences,
+                unusedReferences: modulesAndTagsInfo.unusedReferences,
             };
         });
+
+        const untaggedFilesTableRowInfo = this._getReferencedTags(report.untaggedFilesAsModule);
+
+        const untaggedFilesTableRow: UntaggedFilesTableRow = {
+            affectedFiles: report.untaggedFilesAsModule.files,
+            lines: this._calculateLines(report.untaggedFilesAsModule.files),
+            uniqueModules: untaggedFilesTableRowInfo.uniqueModules,
+            referencedTags: untaggedFilesTableRowInfo.tagInfo,
+            untaggedReferences: untaggedFilesTableRowInfo.untaggedReferences,
+            unusedReferences: untaggedFilesTableRowInfo.unusedReferences,
+        };
 
         const jiraBuilder = new JiraBuilder();
         return jiraBuilder.parseReport(
             finalReportTableData,
+            untaggedFilesTableRow,
             report.date,
             report.projectName,
             report.jobName,

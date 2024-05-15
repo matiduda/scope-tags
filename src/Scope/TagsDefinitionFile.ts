@@ -100,8 +100,28 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDefinitionFile>
 
     public save(): string {
         const savedFilePath = this._getPath();
+        this._sortDatabase();
         JSONFile.niceWrite<TagsDatabaseType>(savedFilePath, this._tagsDatabaseData, this._replacer);
         return savedFilePath;
+    }
+
+    private _sortDatabase() {
+        this._tagsDatabaseData.modules.forEach(module => {
+            module.children = module.children.sort();
+            module.tags = module.tags.sort();
+        });
+        // Sort modules themselves
+        this._tagsDatabaseData.modules = this._tagsDatabaseData.modules.sort((a: Module, b: Module) => {
+            if (a.name < b.name) {
+                return -1;
+            }
+            if (a.name > b.name) {
+                return 1;
+            }
+            return 0;
+        });
+        // Sort defined tags
+        this._tagsDatabaseData.tags = this._tagsDatabaseData.tags.sort();
     }
 
     public addModule(newModule: Module) {

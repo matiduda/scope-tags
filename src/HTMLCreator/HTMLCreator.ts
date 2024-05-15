@@ -364,7 +364,7 @@ export class HTMLCreator {
                                 },
                                 {
                                     type: "th",
-                                    content: "Tag / module"
+                                    content: "Module / Tag"
                                 },
                                 {
                                     type: "th",
@@ -421,7 +421,7 @@ export class HTMLCreator {
     private _renderTagIdentifiers(tagIdentifiers: TagIdentifier[]) {
         return [{
             type: "p",
-            content: tagIdentifiers.map(tagIdentifier => `<strong>${tagIdentifier.tag}</strong> / <strong>${tagIdentifier.module}</strong>`).join('<br>')
+            content: tagIdentifiers.map(tagIdentifier => `<strong>${tagIdentifier.module}</strong> / <strong>${tagIdentifier.tag}</strong>`).join('<br>')
         }]
     }
 
