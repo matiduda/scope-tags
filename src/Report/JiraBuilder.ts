@@ -143,7 +143,7 @@ export class JiraBuilder {
             .join("\n");
 
         if (referencesWithOtherThanHighRelevancy.length) {
-            content += `\nand ${referencesWithOtherThanHighRelevancy.length} hidden by relevancy`;
+            content += `\nand ${referencesWithOtherThanHighRelevancy.length} hidden by low relevancy`;
         }
 
         // TODO: [ ] It is tested
