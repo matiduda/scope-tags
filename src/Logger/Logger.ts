@@ -101,7 +101,7 @@ export class Logger {
             updatedPath: fileData.oldPath !== fileData.newPath ? fileData.newPath : "-",
             changeType: Utils.getEnumKeyByEnumValue(GitDeltaType, fileData.change) || `= ${fileData.change} (unknown)`,
             linesAdded: fileInfo.linesAdded,
-            linesRemoved: 0,
+            linesRemoved: fileInfo.linesRemoved,
             relevancy: fileInfo.relevancy,
             databaseContent: fileInfo.tagIdentifiers,
             referencedFiles: fileInfo.usedIn,

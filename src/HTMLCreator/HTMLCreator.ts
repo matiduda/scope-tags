@@ -368,7 +368,7 @@ export class HTMLCreator {
                                 },
                                 {
                                     type: "th",
-                                    content: "Referenced files"
+                                    content: "Used by"
                                 },
                             ]
                         },
@@ -407,7 +407,7 @@ export class HTMLCreator {
         if (linesAdded > 0) {
             linesAddedRemovedText += `++${linesAdded}`;
             if (linesRemoved > 0) {
-                linesAddedRemovedText += ` `;
+                linesAddedRemovedText += `  `;
             }
         }
 

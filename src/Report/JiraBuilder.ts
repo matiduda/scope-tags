@@ -86,8 +86,8 @@ export class JiraBuilder {
         const headers = [
             { name: "Affected tags", width: 50 },
             { name: "Lines", width: 20 },
-            { name: "Referenced modules" },
-            { name: "Referenced tags" },
+            { name: "Used by module" },
+            { name: "Used by tags" },
         ];
         return tableRow(headers.map(header => {
             return header.width
@@ -99,13 +99,24 @@ export class JiraBuilder {
     private _getEntryRow(entry: ReportTableRow): any {
         return tableRow([
             tableHeader({})(p(entry.affectedTags.map(tag => `${tag.module} / ${tag.tag}`).join('\n'))),
-            tableHeader({})(p(`++ ${entry.lines.added}\n-- ${entry.lines.removed}`)),
+            tableHeader({})(p(this._formatLinesAddedRemoved(entry.lines))),
             tableHeader({})(
                 ...this._referencedModulesAsNestedExpands(entry.uniqueModules),
                 ...this._untaggedReferencesAsNextedExpand(entry.untaggedReferences)
             ),
             tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
         ]);
+    }
+
+    private _formatLinesAddedRemoved(lines: LinesInfo): string {
+        if (lines.added === 0 && lines.removed) {
+            return "-"
+        } else if (lines.removed === 0) {
+            return `++ ${lines.added}`;
+        } else if (lines.added === 0) {
+            return `-- ${lines.removed}`;
+        }
+        return `++ ${lines.added}\n-- ${lines.removed}`;
     }
 
     private _getUntaggedFilesRow(entry: UntaggedFilesTableRow): any[] {
@@ -143,7 +154,7 @@ export class JiraBuilder {
             .join("\n");
 
         if (referencesWithOtherThanHighRelevancy.length) {
-            content += `\nand ${referencesWithOtherThanHighRelevancy.length} hidden by low relevancy`;
+            content += `\n${referencesWithOtherThanHighRelevancy.length} references hidden by low relevancy`;
         }
 
         // TODO: [ ] It is tested
@@ -184,7 +195,7 @@ export class JiraBuilder {
         uniqueModules: ModuleInfo[],
     ): any[] {
         if (!uniqueModules.length) {
-            return [p("-")];
+            return [];
         }
 
         return uniqueModules.map(uniqueModule => {

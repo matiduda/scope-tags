@@ -5,13 +5,13 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "command": "scope --report-for-commit-list buildData.json log.html",
+            "command": "npm run build && scope --report-for-commit-list buildData.json log.html",
             "name": "Run test of --report-for-commit-list",
             "request": "launch",
             "type": "node-terminal"
         },
         {
-            "command": "npm run build && scope --report-for-commit 35077cb91ab71c20eef1d13482c26af45a51238b",
+            "command": "npm run build && scope --report-for-commit 0417cc011a9c53b308584e2cc79e47d5568cf99b",
             "name": "Run test of --report-for-commit",
             "request": "launch",
             "type": "node-terminal"

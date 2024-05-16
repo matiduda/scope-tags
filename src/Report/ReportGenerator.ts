@@ -89,9 +89,9 @@ export class ReportGenerator {
             };
 
             for (const module of affectedModules) {
-                const fileInfoMatchingModule = fileInfoArray.filter(
-                    fileInfo => fileInfo.tagIdentifiers.some(identifier => identifier.module === module.name)
-                );
+                const fileInfoMatchingModule = fileInfoArray
+                    .filter(fileInfo => !fileInfo.ignored)
+                    .filter(fileInfo => fileInfo.tagIdentifiers.some(identifier => identifier.module === module.name))
 
                 const moduleReport: ModuleReport = {
                     module: module.name,
@@ -103,9 +103,12 @@ export class ReportGenerator {
 
             // Find files which are not tagged
             for (const fileInfo of fileInfoArray) {
-                const anyModuleReportHasIt = report.allModules.some(moduleReport => moduleReport.files.some(moduleFileInfo => moduleFileInfo.file === fileInfo.file));
 
-                if (!anyModuleReportHasIt) {
+                const anyModuleReportHasIt = report.allModules.some(moduleReport => moduleReport.files.some(moduleFileInfo => {
+                    return moduleFileInfo.file === fileInfo.file;
+                }));
+
+                if (!anyModuleReportHasIt && !fileInfo.ignored && (fileInfo.linesAdded > 0 || fileInfo.linesRemoved > 0)) {
                     report.untaggedFilesAsModule.files.push(fileInfo);
                 }
             }
@@ -215,10 +218,14 @@ export class ReportGenerator {
         let combinedLinesRemoved = 0;
         let output = "";
 
-        fileInfoArray.forEach(file => {
-            combinedLinesAdded += file.linesAdded;
-            combinedLinesRemoved += file.linesRemoved;
-        })
+        debugger;
+
+        fileInfoArray
+            .filter(fileInfo => !fileInfo.ignored && !(fileInfo.linesAdded === 0 && fileInfo.linesRemoved === 0))
+            .forEach(file => {
+                combinedLinesAdded += file.linesAdded;
+                combinedLinesRemoved += file.linesRemoved;
+            })
 
         if (combinedLinesAdded) {
             output += `++${combinedLinesAdded}`;
@@ -239,7 +246,8 @@ export class ReportGenerator {
 
         moduleReport.files.forEach(file => {
             file.tagIdentifiers.forEach(tagIdentifier => {
-                if (!allTags.includes(tagIdentifier) && !currentModule?.tags.includes(tagIdentifier.tag)) {
+                if (tagIdentifier.module === currentModule?.name
+                    && !allTags.some(tag => tag.module === tagIdentifier.module && tag.tag === tagIdentifier.tag)) {
                     allTags.push(tagIdentifier);
                 }
             })
@@ -257,19 +265,21 @@ export class ReportGenerator {
         const uniqueReferencedTags: Array<Tag["name"]> = [];
         const untaggedReferences: Array<ReferencedFileInfo> = [];
 
-        moduleReport.files.forEach(fileInfo => {
-            fileInfo.usedIn.forEach(reference => {
-                if (!reference.tagIdentifiers.length) {
-                    untaggedReferences.push(reference.fileInfo);
-                }
-
-                reference.tagIdentifiers.forEach(identifier => {
-                    if (!uniqueReferencedTags.includes(identifier.tag)) {
-                        uniqueReferencedTags.push(identifier.tag);
+        moduleReport.files
+            .filter(fileInfo => !fileInfo.ignored && !(fileInfo.linesAdded === 0 && fileInfo.linesRemoved === 0))
+            .forEach(fileInfo => {
+                fileInfo.usedIn.forEach(reference => {
+                    if (!reference.tagIdentifiers.length) {
+                        untaggedReferences.push(reference.fileInfo);
                     }
+
+                    reference.tagIdentifiers.forEach(identifier => {
+                        if (!uniqueReferencedTags.includes(identifier.tag)) {
+                            uniqueReferencedTags.push(identifier.tag);
+                        }
+                    })
                 })
-            })
-        });
+            });
 
         const uniqueModules: Array<ModuleInfo> = [];
         const unusedReferences: Array<ReferencedFileInfo> = [];
@@ -278,32 +288,35 @@ export class ReportGenerator {
 
             const referencedModulesMatchingTag: Array<Module["name"]> = [];
 
-            moduleReport.files.forEach(fileInfo => {
-                fileInfo.usedIn.forEach(reference => {
-                    if (reference.fileInfo.unused) {
-                        unusedReferences.push(reference.fileInfo);
-                    }
+            moduleReport.files
+                .filter(fileInfo => !fileInfo.ignored && !(fileInfo.linesAdded === 0 && fileInfo.linesRemoved === 0))
+                .forEach(fileInfo => {
 
-                    reference.tagIdentifiers.forEach(identifier => {
-                        if (identifier.tag === referencedTag
-                            && !referencedModulesMatchingTag.includes(identifier.module)
-                        ) {
-                            referencedModulesMatchingTag.push(identifier.module);
-
-                            const infoInUniqueModules = uniqueModules.find(info => info.module === identifier.module)
-
-                            if (infoInUniqueModules && !infoInUniqueModules.tags.includes(identifier.tag)) {
-                                infoInUniqueModules.tags.push(identifier.tag);
-                            } else {
-                                uniqueModules.push({
-                                    module: identifier.module,
-                                    tags: [identifier.tag],
-                                });
-                            }
+                    fileInfo.usedIn.forEach(reference => {
+                        if (reference.fileInfo.unused) {
+                            unusedReferences.push(reference.fileInfo);
                         }
+
+                        reference.tagIdentifiers.forEach(identifier => {
+                            if (identifier.tag === referencedTag
+                                && !referencedModulesMatchingTag.includes(identifier.module)
+                            ) {
+                                referencedModulesMatchingTag.push(identifier.module);
+
+                                const infoInUniqueModules = uniqueModules.find(info => info.module === identifier.module)
+
+                                if (infoInUniqueModules && !infoInUniqueModules.tags.includes(identifier.tag)) {
+                                    infoInUniqueModules.tags.push(identifier.tag);
+                                } else {
+                                    uniqueModules.push({
+                                        module: identifier.module,
+                                        tags: [identifier.tag],
+                                    });
+                                }
+                            }
+                        })
                     })
-                })
-            });
+                });
             return {
                 tag: referencedTag,
                 modules: referencedModulesMatchingTag,
@@ -318,19 +331,22 @@ export class ReportGenerator {
     };
 
     public getReportAsJiraComment(report: Report, printToConsole = false): string {
-        const finalReportTableData: Array<ReportTableRow> = report.allModules.map(moduleReport => {
-            const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
+        const finalReportTableData: Array<ReportTableRow> = report.allModules
+            .map(moduleReport => {
+                const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
 
-            return {
-                affectedTags: this._getAffectedTags(moduleReport),
-                lines: this._calculateLines(moduleReport.files),
-                lastChange: report.date,
-                uniqueModules: modulesAndTagsInfo.uniqueModules,
-                referencedTags: modulesAndTagsInfo.tagInfo,
-                untaggedReferences: modulesAndTagsInfo.untaggedReferences,
-                unusedReferences: modulesAndTagsInfo.unusedReferences,
-            };
-        });
+                return {
+                    affectedTags: this._getAffectedTags(moduleReport),
+                    lines: this._calculateLines(moduleReport.files),
+                    lastChange: report.date,
+                    uniqueModules: modulesAndTagsInfo.uniqueModules,
+                    referencedTags: modulesAndTagsInfo.tagInfo,
+                    untaggedReferences: modulesAndTagsInfo.untaggedReferences,
+                    unusedReferences: modulesAndTagsInfo.unusedReferences,
+                };
+            })
+            .filter(moduleReport => moduleReport.affectedTags.length > 0)
+            .filter(moduleReport => moduleReport.lines.added > 0 || moduleReport.lines.removed > 0);
 
         const untaggedFilesTableRowInfo = this._getReferencedTags(report.untaggedFilesAsModule);
 
