@@ -17,11 +17,21 @@ export const table = (...content: any) => ({
     content
 });
 
-export const tableHeader = (attrs?: any) => (...content: any) => ({
-    type: 'tableHeader',
-    attrs,
-    content: content
-});
+export const tableHeader = (attrs?: any) => (...content: any) => {
+    if (Array.isArray(content) && content.some(c => c?.content?.type === "paragraph" && c?.content?.text?.length === 0)) {
+        throw new Error("[AdfUtils] tableHeader cannot have empty text field");
+    }
+
+    if (Array.isArray(content) && content.length === 0) {
+        throw new Error("[AdfUtils] tableHeader cannot have empty content");
+    }
+
+    return {
+        type: 'tableHeader',
+        attrs,
+        content: content
+    }
+};
 
 export const tableRow = (content: any) => ({
     type: 'tableRow',

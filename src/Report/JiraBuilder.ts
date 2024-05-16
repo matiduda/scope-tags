@@ -84,7 +84,7 @@ export class JiraBuilder {
 
     private _getHeaderRow(): any {
         const headers = [
-            { name: "Affected tags", width: 50 },
+            { name: "Affected tags" },
             { name: "Lines", width: 20 },
             { name: "Used by module" },
             { name: "Used by tags" },
@@ -195,7 +195,7 @@ export class JiraBuilder {
         uniqueModules: ModuleInfo[],
     ): any[] {
         if (!uniqueModules.length) {
-            return [];
+            return [p("-")];
         }
 
         return uniqueModules.map(uniqueModule => {
@@ -248,7 +248,7 @@ export class JiraBuilder {
         ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――
         To see the generated output paste the code above line to the online viewer:
 
-        https://developer.atlassian.com/cloud/jira/platform/apis/document/viewer/
+        https://atlaskit.atlassian.com/examples.html?groupId=editor&packageId=renderer&exampleId=dac-viewer
         `);
     }
 }

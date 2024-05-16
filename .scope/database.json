@@ -48,10 +48,20 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "Some new tag", "module": "Third module" }]},
+        { "path": "src/Report/AdfUtils.ts",
+          "tags": [
+            { "tag": "Fourth tag", "module": "Fourth module" }]},
+        { "path": "src/Report/BuildIntegration.ts",
+          "tags": [
+            { "tag": "asdflkj", "module": "Second module" },
+            { "tag": "Some new tag", "module": "Third module" }]},
         { "path": "src/Report/JiraBuilder.ts",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
-            { "tag": "Fourth tag", "module": "Fourth module" }]}],
+            { "tag": "Fourth tag", "module": "Fourth module" }]},
+        { "path": "src/Report/ReportGenerator.ts",
+          "tags": [
+            { "tag": "Some new tag", "module": "Third module" }]}],
     "ignoredFiles": [
         ".scope/database.json",
         "src/Git/GitRepository.ts",

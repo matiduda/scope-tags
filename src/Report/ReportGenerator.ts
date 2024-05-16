@@ -218,8 +218,6 @@ export class ReportGenerator {
         let combinedLinesRemoved = 0;
         let output = "";
 
-        debugger;
-
         fileInfoArray
             .filter(fileInfo => !fileInfo.ignored && !(fileInfo.linesAdded === 0 && fileInfo.linesRemoved === 0))
             .forEach(file => {

@@ -1,6 +1,7 @@
 import { JSONFile } from "../FileSystem/JSONFile";
 import { ConfigFile } from "../Scope/ConfigFile";
-import fetch from "node-fetch";
+
+const nodeFetch = require("node-fetch");
 const os = require("os");
 
 type CommitData = {
@@ -80,7 +81,7 @@ export class BuildIntegration {
 
         process.stdout.write(`Sending report to issue '${request.issue}' ... `);
 
-        const rawResponse = await fetch(updateURL, {
+        const rawResponse = await nodeFetch(updateURL, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',

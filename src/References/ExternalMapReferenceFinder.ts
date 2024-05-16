@@ -31,12 +31,16 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
                     return loadedImportMap;
                 }
 
-                const loadedChunk = JSONFile.loadFrom<ImportMapFile>(path);
+                const loadedChunk = JSONFile.loadFrom<ImportMapFile>(currentChunkFilePath);
                 loadedImportMap = loadedImportMap.concat(loadedChunk);
 
                 this._chunks++;
             }
         }
+    }
+
+    public static importMapExistsAt(path: string): boolean {
+        return path.includes("{x}") ? fileExists(path.replace("{x}", "0")) : fileExists(path);
     }
 
     public getImportMapChunkCount(): number {

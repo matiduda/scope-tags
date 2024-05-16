@@ -50,7 +50,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
                     `You have to specify supported file extenstions for project ${project.name}: add 'supportedFiles: [".extension"]' to config file`
                 );
             }
-            if (!fileExists(project.useExternalImportMap)) {
+            if (!ExternalMapReferenceFinder.importMapExistsAt(project.useExternalImportMap)) {
                 console.log(`[Scope tags] 'useExternalImportMap' - External map for project ${project.name} not found at ${project.useExternalImportMap}, so there won't be references found for files: ${project.supportedFiles}`);
             } else {
                 const externalMapReferenceFinder = new ExternalMapReferenceFinder(project.useExternalImportMap, project.supportedFiles);
