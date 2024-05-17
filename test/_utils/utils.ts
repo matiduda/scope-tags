@@ -56,6 +56,21 @@ export const cloneMockRepositoryToFolder = (parentFolder: string): string => {
     return clonedRepoPath;
 }
 
+export const mergeBranchToCurrent = (repositoryPath: string, branchName: string): void => {
+    const { execSync } = require('child_process');
+
+    execSync(
+        `cd ${repositoryPath} && git merge --no-ff origin/${branchName}`,
+        (err: any, stdout: any, stderr: any) => {
+            if (err) {
+                console.debug(err);
+                return;
+            }
+            console.debug(`stdout: ${stdout}`);
+            console.debug(`stderr: ${stderr}`);
+        });
+}
+
 export const getRandomUUID = () => uuidv4();
 
 export const appendSomeTextToFile = (filePath: string) => {
@@ -94,13 +109,17 @@ export const createFolder = (location: string): string => {
     return folderPath
 }
 
-export const commitModitication = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
+export const commitModitication = async (
+    fileNames: string[],
+    repositoryPath: string,
+    commitMessage = "test commit"
+): Promise<GitRepository> => {
     fileNames.forEach(fileName => {
         appendSomeTextToFile(join(repositoryPath, fileName));
     })
 
     const repository = new GitRepository(repositoryPath);
-    const oid = await repository.commitFiles("test commit", fileNames)
+    const oid = await repository.commitFiles(commitMessage, fileNames)
 
     console.debug(`[Modified files] Created new commit ${oid}`)
 

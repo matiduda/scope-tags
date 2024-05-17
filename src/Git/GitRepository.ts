@@ -376,7 +376,18 @@ export class GitRepository {
     }
 
     public isMergeCommit(commit: Commit): boolean {
-        return commit.parentcount() > 1;
+        if (commit.parentcount() > 1) {
+            return true;
+        }
+
+        const trimmedCommitMessage = commit.summary();
+
+        // Ugly, but works
+        if (trimmedCommitMessage.includes("Merge")) {
+            return true;
+        }
+
+        return false;
     }
 
     private async _getRepository(): Promise<Repository> {
