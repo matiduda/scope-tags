@@ -65,12 +65,15 @@ export class BuildIntegration {
         return this._issueKeyToCommitsMap.get(issueKey) || [];
     }
 
-    public async updateIssue(request: UpdateRequest): Promise<void> {
+    /**
+     * @returns {Promise<boolean>} True if the report was posted successfully, false otherwise
+     */
+    public async updateIssue(request: UpdateRequest): Promise<boolean> {
         const updateURL = this._config.getUpdateIssueURL();
         if (!updateURL) {
             console.warn(
                 `Cannot send report to issue '${request.issue}' because there is no 'updateIssueURL' set in config file`);
-            return;
+            return false;
         }
 
         process.stdout.write(`Sending report to issue '${request.issue}' ... `);
@@ -86,6 +89,8 @@ export class BuildIntegration {
 
         const content = await rawResponse.json();
         console.log(content);
+
+        return rawResponse.ok;
     }
 
     public getBuildTag() {

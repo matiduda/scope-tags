@@ -9,6 +9,15 @@
             "parent": null,
             "children": []
         }, {
+            "name": "Fourth module",
+            "exclusive": false,
+            "tags": [
+                "Fourth tag"
+            ],
+            "parent": null,
+            "children": [],
+            "description": "A module containing multiple functionalities"
+        }, {
             "name": "Second module",
             "exclusive": false,
             "tags": [
@@ -17,9 +26,20 @@
             "parent": null,
             "children": [],
             "description": "A module containing multiple functionalities"
+        }, {
+            "name": "Third module",
+            "exclusive": false,
+            "tags": [
+                "Some new tag"
+            ],
+            "parent": null,
+            "children": [],
+            "description": "A module containing multiple functionalities"
         }
     ],
     "tags": [
+        { "name": "Fourth tag" },
+        { "name": "Some new tag" },
         { "name": "Tag" },
         { "name": "asdflkj" }
     ]

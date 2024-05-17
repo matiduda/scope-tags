@@ -4,9 +4,29 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": ".scope/tags.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": "package-lock.json",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
         { "path": "package.json",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/Commands/runAddCommand.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": "src/Commands/runFindReferencesCommand.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": "src/Commands/runReportForCommitCommand.ts",
+          "tags": [
+            { "tag": "Fourth tag", "module": "Fourth module" },
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/Commands/runReportForCommitListCommand.ts",
+          "tags": [
             { "tag": "asdflkj", "module": "Second module" }]},
         { "path": "src/Console/FileTagger.ts",
           "tags": [
@@ -16,23 +36,39 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
-        { "path": "src/Commands/runAddCommand.ts",
-          "tags": [
-            { "tag": "Tag", "module": "Default module" }]},
-        { "path": ".scope/tags.json",
-          "tags": [
-            { "tag": "Tag", "module": "Default module" }]},
-        { "path": "package-lock.json",
-          "tags": [
-            { "tag": "Tag", "module": "Default module" },
-            { "tag": "asdflkj", "module": "Second module" }]},
         { "path": "src/FileSystem/fileSystemUtils.ts",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
-            { "tag": "asdflkj", "module": "Second module" }]}],
+            { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "src/References/ExternalMapReferenceFinder.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "Some new tag", "module": "Third module" }]},
+        { "path": "src/References/IReferenceFinder.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "Some new tag", "module": "Third module" }]},
+        { "path": "src/Relevancy/Relevancy.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
+        { "path": "src/Report/AdfUtils.ts",
+          "tags": [
+            { "tag": "Fourth tag", "module": "Fourth module" }]},
+        { "path": "src/Report/BuildIntegration.ts",
+          "tags": [
+            { "tag": "asdflkj", "module": "Second module" },
+            { "tag": "Some new tag", "module": "Third module" }]},
+        { "path": "src/Report/JiraBuilder.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "Fourth tag", "module": "Fourth module" }]},
+        { "path": "src/Report/ReportGenerator.ts",
+          "tags": [
+            { "tag": "Some new tag", "module": "Third module" }]}],
     "ignoredFiles": [
+        ".scope/database.json",
         "src/Git/GitRepository.ts",
-        "src/Relevancy/RelevancyManager.ts",
-        ".scope/database.json"
+        "src/References/TSReferenceFinder.ts",
+        "src/Relevancy/RelevancyManager.ts"
     ]
 }

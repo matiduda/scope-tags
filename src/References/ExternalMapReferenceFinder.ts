@@ -1,5 +1,6 @@
 import { JSONFile } from "../FileSystem/JSONFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
+import { DEFAULT_RELEVANCY, Relevancy } from "../Relevancy/Relevancy";
 import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
 
 type FileImport = { file: string, imports: Array<string> };
@@ -30,12 +31,16 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
                     return loadedImportMap;
                 }
 
-                const loadedChunk = JSONFile.loadFrom<ImportMapFile>(path);
+                const loadedChunk = JSONFile.loadFrom<ImportMapFile>(currentChunkFilePath);
                 loadedImportMap = loadedImportMap.concat(loadedChunk);
 
                 this._chunks++;
             }
         }
+    }
+
+    public static importMapExistsAt(path: string): boolean {
+        return path.includes("{x}") ? fileExists(path.replace("{x}", "0")) : fileExists(path);
     }
 
     public getImportMapChunkCount(): number {
@@ -46,14 +51,15 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
         return this._supportedFileExtensions;
     }
 
-    public findReferences(fileNameOrPath: string): Array<ReferencedFileInfo> {
+    public findReferences(fileNameOrPath: string, relevancy: Relevancy | null): Array<ReferencedFileInfo> {
         const referenceList: Array<ReferencedFileInfo> = [];
 
         this._importMap.forEach(importData => {
             if (importData.imports.includes(fileNameOrPath)) {
                 referenceList.push({
                     filename: importData.file,
-                    unused: false
+                    unused: false,
+                    relevancy: relevancy || DEFAULT_RELEVANCY
                 });
             }
         });

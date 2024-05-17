@@ -15,7 +15,7 @@ export type Module = {
     children: Array<Module["name"]>,
 };
 
-type TagsDatabaseType = {
+export type TagsDatabaseType = {
     modules: Array<Module>;
     tags: Array<Tag>;
 }
@@ -51,11 +51,20 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
 
     public load(): TagsDatabaseType {
         const loadedDatabase = JSONFile.loadFrom<TagsDatabaseType>(this._getPath());
-        this._validateDatabase(loadedDatabase);
+
+        const undefinedTagNames = this._validateDatabase(loadedDatabase);
+
+        // For some reason tags are sometimes not added
+        undefinedTagNames.forEach(undefinedTagName => loadedDatabase.tags.push({
+            name: undefinedTagName
+        }))
+
         return loadedDatabase;
     }
 
-    private _validateDatabase(loadedDatabase: TagsDatabaseType) {
+    private _validateDatabase(loadedDatabase: TagsDatabaseType): string[] {
+        const notDefinedTags: string[] = [];
+
         loadedDatabase.modules.forEach(module => {
             // Check if any modules are duplicated
             const moduleWithSameName = loadedDatabase.modules.filter(m => m.name === module.name);
@@ -66,10 +75,14 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
             // Check if all tags are defined in 'tags' array
             module.tags.forEach(tag => {
                 if (!loadedDatabase.tags.some(definedTag => definedTag.name === tag)) {
-                    throw new Error(`Module ${module.name} has tag ${tag}, which is not defined in 'tags' array`);
+                    notDefinedTags.push(tag);
                 }
             });
         });
+
+        if (notDefinedTags.length > 0) {
+            console.log(`Found not defined tags ${notDefinedTags} (not present in 'tags' array), which could mean they were supposed to be deleted. They will be automatically added to 'tags' array after next database update`);
+        }
 
         // Check if any tags are duplicated
         loadedDatabase.tags.forEach(tag => {
@@ -78,12 +91,42 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
                 throw new Error(`Cannot have more than one module named ${tag.name}, every module needs unique name`);
             }
         });
+
+        return notDefinedTags;
     }
 
     public save(): string {
         const savedFilePath = this._getPath();
+        this._sortDatabase();
         JSONFile.niceWrite<TagsDatabaseType>(savedFilePath, this._tagsDatabaseData, this._replacer);
         return savedFilePath;
+    }
+
+    private _sortDatabase() {
+        this._tagsDatabaseData.modules.forEach(module => {
+            module.children = module.children.sort();
+            module.tags = module.tags.sort();
+        });
+        // Sort modules themselves
+        this._tagsDatabaseData.modules = this._tagsDatabaseData.modules.sort((a: Module, b: Module) => {
+            if (a.name < b.name) {
+                return -1;
+            }
+            if (a.name > b.name) {
+                return 1;
+            }
+            return 0;
+        });
+        // Sort defined tags
+        this._tagsDatabaseData.tags = this._tagsDatabaseData.tags.sort((a: Tag, b: Tag) => {
+            if (a.name < b.name) {
+                return -1;
+            }
+            if (a.name > b.name) {
+                return 1;
+            }
+            return 0;
+        });
     }
 
     public addModule(newModule: Module) {

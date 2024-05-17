@@ -33,7 +33,7 @@ export function runAddCommand(args: Array<string>, root: string) {
             let fileDataRelevancy: Map<FileData, Relevancy> = new Map();
 
             try {
-                fileDataRelevancy = await relevancyTagger.start(fileDataToTag);
+                fileDataRelevancy = await relevancyTagger.start(fileDataToTag, fileTagsDatabase);
             } catch (e) {
                 console.log("[Scope tags] Could not add relevancy, the changes won't be saved.");
                 return;
@@ -51,5 +51,12 @@ export function runAddCommand(args: Array<string>, root: string) {
             await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage);
 
         }); // TODO: Save already tagged files
-    }).catch(e => console.log("Canceled")); // TODO: Save already tagged files - ???
+    }).catch(e => {
+        // Two possible cases:
+
+        // 1. User requested exit
+        // 2. Some real error happened
+
+        console.log(e);
+    }); // TODO: Save already tagged files - ???
 }

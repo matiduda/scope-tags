@@ -16,6 +16,8 @@ export type ConfigFileType = {
     ignoredExtensions?: Array<string>,
     viewIssueURL?: string, // Used only for linking to issues in HTML logs
     logsURL?: string,
+    repositoryURL?: string, // Used only in HTML logs to link to the files directly, expandable with file paths
+    seeCommitURL?: string, // Used only in HTML logs to link to the commits directly, expandable with commit SHA
 };
 
 export class ConfigFile implements IJSONFileDatabase<ConfigFileType> {
@@ -78,6 +80,14 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFileType> {
 
     public getViewIssueUrl(): string | undefined {
         return this._config.viewIssueURL;
+    }
+
+    public getRepositoryURL(): string | undefined {
+        return this._config.repositoryURL;
+    }
+
+    public getSeeCommitURL(): string | undefined {
+        return this._config.seeCommitURL;
     }
 
     public getLogsURL(buildTag: string): string | undefined {

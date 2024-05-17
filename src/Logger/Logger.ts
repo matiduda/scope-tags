@@ -15,7 +15,17 @@ import { ConfigFile } from "../Scope/ConfigFile";
 //   - A list of tags associated which each file
 // - Reports which were generated for each task
 
-export type ConfigurationMap = Map<string, string>;
+
+export enum ConfigurationProperty {
+    PACKAGE_VERSION = "PACKAGE_VERSION",
+    BUILD_TAG = "BUILD_TAG",
+    BUILD_DATA_FILE_LOCATION = "BUILD_DATA_FILE_LOCATION",
+    CURRENT_DATE = "CURRENT_DATE",
+    EXTERNAL_IMPORT_MAP_CHUNK_COUNT = "EXTERNAL_IMPORT_MAP_CHUNK_COUNT",
+    POSTED_REPORTS = "POSTED_REPORTS",
+}
+
+export type ConfigurationMap = Map<ConfigurationProperty, string>;
 
 export type IssueLog = {
     key: string,
@@ -45,8 +55,8 @@ export type FileLog = {
 export class Logger {
 
     private static _configuration: ConfigurationMap = new Map([
-        ["Package version", require("../../package.json").version],
-        ["Date", new Date().toLocaleString()],
+        [ConfigurationProperty.PACKAGE_VERSION, require("../../package.json").version],
+        [ConfigurationProperty.CURRENT_DATE, new Date().toLocaleString()],
     ]);
 
     private static _issues: IssueLog[] = [];
@@ -56,8 +66,8 @@ export class Logger {
 
     private constructor() { }
 
-    public static setConfigurationProperty(name: string, value: string) {
-        Logger._configuration.set(name, value);
+    public static setConfigurationProperty(property: ConfigurationProperty, value: string) {
+        Logger._configuration.set(property, value);
     }
 
     public static pushIssueInfo(issueKey: string, commits: Commit[]) {
@@ -91,7 +101,7 @@ export class Logger {
             updatedPath: fileData.oldPath !== fileData.newPath ? fileData.newPath : "-",
             changeType: Utils.getEnumKeyByEnumValue(GitDeltaType, fileData.change) || `= ${fileData.change} (unknown)`,
             linesAdded: fileInfo.linesAdded,
-            linesRemoved: 0,
+            linesRemoved: fileInfo.linesRemoved,
             relevancy: fileInfo.relevancy,
             databaseContent: fileInfo.tagIdentifiers,
             referencedFiles: fileInfo.usedIn,
@@ -129,8 +139,14 @@ export class Logger {
 
         htmlCreator.appendConfiguration(Logger._configuration);
         htmlCreator.appendIssueTableOfContents(Logger._issues);
-        htmlCreator.appendIssueLogs(Logger._issues, configFile.getViewIssueUrl());
+        htmlCreator.appendIssueLogs(Logger._issues, configFile.getViewIssueUrl(), configFile.getRepositoryURL(), configFile.getSeeCommitURL());
+        htmlCreator.appendInstructions();
 
         return htmlCreator.renderHTML();
+    }
+
+    public static parseConfigurationPropertyName(configurationProperty: ConfigurationProperty) {
+        const name = configurationProperty.toString().replace(/_/g, " ");
+        return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
     }
 }

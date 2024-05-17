@@ -4,6 +4,7 @@ import path from "path";
 import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
+import { execSync } from "child_process";
 
 export class GitRepository {
 
@@ -65,7 +66,18 @@ export class GitRepository {
         return this.getFileDataForCommit(mostRecentCommit);
     }
 
+    /**
+     * Gets file data of a specific commit
+     * 
+     * IMPORTANT: USE getFileDataUsingNativeGitCommand WHEN RUNNING FROM TESTS
+     * OTHERWISE IT JUST DOES NOT WORK AND WILL BLOCK ALL THE TESTS
+     * @public
+     * @async
+     * @param {Commit} commit
+     * @returns {Promise<FileData[]>}
+     */
     public async getFileDataForCommit(commit: Commit): Promise<FileData[]> {
+
         // Ignore whitespaces using a combination of git diff flags
         // @see https://github.com/libgit2/libgit2/blob/d9475611fec95cacec30fbd2c334b270e5265d3b/include/git2/diff.h#L145C42-L145C42 -- TODO: Still not quite working as expected...
         const commitDiffs = await commit.getDiffWithOptions({ flags: 30932992 } as any);
@@ -91,6 +103,77 @@ export class GitRepository {
             }
             resolve(fileDataArray);
         });
+    }
+
+    public getFileDataUsingNativeGitCommand(commit: Commit): FileData[] {
+
+        /**
+         * Has the following format:
+         * M       src/Git/GitRepository.ts
+         * R100    src/file-ignored-by-database.js src/file-ignored-by-database-2.js
+         * A       test/commits/fileData.test.ts
+         * M       test/commits/verification.test.ts
+         * 
+         * Possible statuses are: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R) (with calculated similarity index), their type (i.e. regular file, symlink, submodule, …​) changed (T), Unmerged (U), Unknown (X), Broken (B)
+         * https://git-scm.com/docs/git-diff
+         */
+
+        const nameStatusOutput = execSync(`cd ${this._root} && git --no-pager diff ${commit.sha()}~ ${commit.sha()} --name-status`).toString().trim().split('\n');
+
+        /**
+         * Has the following format:
+         * 1       1       .vscode/launch.json
+         * 12      8       src/Git/GitRepository.ts
+         * 2       0       test/_utils/globals.ts
+         * 18      16      test/_utils/utils.ts
+         * 69      23      test/commits/verification.test.ts
+         * 9       9       test/teardown.js
+         * https://git-scm.com/docs/git-diff
+         */
+        const numstatOutput = execSync(
+            `cd ${this._root} && git update-index && git diff-tree --no-commit-id --numstat -r ${commit.sha()}`
+        ).toString().trim().split('\n');
+
+        if (nameStatusOutput.length !== numstatOutput.length) {
+            throw new Error(`Output of git-diff --name-status does not match one for --no-commit-id for commit ${commit.sha()}`);
+        }
+
+        const statusesToGitDeltaTypeMap = new Map<string, GitDeltaType>([
+            ["A", GitDeltaType.ADDED],
+            ["C", GitDeltaType.COPIED],
+            ["D", GitDeltaType.DELETED],
+            ["M", GitDeltaType.MODIFIED],
+            ["R", GitDeltaType.RENAMED],
+            ["T", GitDeltaType.TYPECHANGE],
+            // ["", GitDeltaType.UNMODIFIED],
+            // ["", GitDeltaType.IGNORED],
+            // ["", GitDeltaType.UNTRACKED],
+            // ["", GitDeltaType.UNREADABLE],
+            // ["", GitDeltaType.CONFLICTED],
+        ]);
+
+        const fileDataArray: FileData[] = [];
+
+        numstatOutput.forEach((numStatLine: string, i: number) => {
+            const [linesAdded, linesRemoved, filePath] = numStatLine.split('\t');
+
+            const [changeType, relatedFilePath, optionalRenamedPath] = nameStatusOutput[i].split('\t');
+
+            if (filePath !== relatedFilePath) {
+                throw new Error(`Error while processing git-diff: File path '${filePath}' does not match one of '${relatedFilePath}'`);
+            }
+
+            fileDataArray.push({
+                oldPath: filePath,
+                newPath: optionalRenamedPath || filePath,
+                change: statusesToGitDeltaTypeMap.get(changeType[0]) || GitDeltaType.UNREADABLE,
+                linesAdded: parseInt(linesAdded),
+                linesRemoved: parseInt(linesRemoved),
+                commitedIn: commit
+            } as FileData);
+        })
+
+        return fileDataArray;
     }
 
     public async getFileDataForCommits(commits: Array<Commit>): Promise<FileData[]> {
@@ -164,20 +247,27 @@ export class GitRepository {
     }
 
     // Mostly from https://github.com/nodegit/nodegit/blob/master/examples/add-and-commit.js
-    public async commitFiles(commitMessage: string, pathspec?: string | string[]): Promise<Oid> {
+    public async commitFiles(commitMessage: string, filePaths: string[]): Promise<Oid> {
+        const { execSync } = require('child_process');
+
         const repository = await this._getRepository();
-        const index = await repository.refreshIndex();
+        // const index = await repository.refreshIndex();
 
-        await index.addAll(pathspec);
-        await index.write();
+        // for (const filePath of filePaths) {
+        //     await index.addByPath(filePath);
+        // }
 
-        const oid = await index.writeTree();
+        // await index.write();
 
-        const parent = await repository.getHeadCommit();
+        // const oid = await index.writeTree();
+
+        // const parent = await repository.getHeadCommit();
         const author = Signature.now("Scott Chacon", "schacon@gmail.com");
         const committer = Signature.now("Scott A Chacon", "scott@github.com");
 
-        const commitId = await repository.createCommit("HEAD", author, committer, commitMessage, oid, [parent]);
+        const commitId = await repository.createCommitOnHead(filePaths, author, committer, commitMessage);
+
+        repository.createCommitOnHead
 
         return commitId;
     }
@@ -207,14 +297,16 @@ export class GitRepository {
         await index.write();
     }
 
-    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager): Promise<VerificationInfo> {
+    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager, useGitNatively = false): Promise<VerificationInfo> {
         const commitInfo: VerificationInfo = {
             isVerified: false,
             filesToTag: [],
+            filesToBeRelevancyTagged: [],
             isSkipped: false,
             includesOnlyIgnoredFiles: false,
             isMergeCommit: false,
             hasRelevancy: false,
+            relevancy: [],
         };
 
         // Check if commit should be skipped
@@ -228,7 +320,7 @@ export class GitRepository {
             return commitInfo;
         }
 
-        const fileDataArray = await this.getFileDataForCommit(commit);
+        const fileDataArray = useGitNatively ? this.getFileDataUsingNativeGitCommand(commit) : await this.getFileDataForCommit(commit);
         const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray, config);
 
         const allFilesAreIgnored = fileDataArray.every(fileData => {
@@ -246,12 +338,21 @@ export class GitRepository {
 
         commitInfo.filesToTag = filesNotPresentInDatabase.filter(file => !config.isFileExtensionIgnored(file.newPath));
 
+        commitInfo.filesToBeRelevancyTagged = fileDataArray.filter(fileData => {
+            const fileStatus = statusMap.get(fileData);
+            return fileStatus !== FileStatusInDatabase.IGNORED;
+        });
+
         if (!commitInfo.filesToTag.length) {
             commitInfo.isVerified = true;
         }
 
         // Check relevancy
         commitInfo.hasRelevancy = relevancyManager.doesCommitMessageHaveRelevancyData(commit.message());
+
+        if (commitInfo.hasRelevancy) {
+            commitInfo.relevancy = relevancyManager.convertCommitMessageToRelevancyData(commit)
+        }
 
         return commitInfo;
     }

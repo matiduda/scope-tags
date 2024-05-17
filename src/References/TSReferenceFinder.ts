@@ -1,6 +1,7 @@
 import { Project, ReferencedSymbol, SourceFile, SyntaxKind } from "ts-morph";
 import path from "path";
 import { IReferenceFinder, ReferencedFileInfo } from "./IReferenceFinder";
+import { DEFAULT_RELEVANCY, Relevancy } from "../Relevancy/Relevancy";
 
 export class TSReferenceFinder implements IReferenceFinder {
 
@@ -25,14 +26,15 @@ export class TSReferenceFinder implements IReferenceFinder {
         return this._supportedFileExtensions;
     }
 
-    public findReferences(fileNameOrPath: string): Array<ReferencedFileInfo> {
+    public findReferences(fileNameOrPath: string, relevancy: Relevancy | null): Array<ReferencedFileInfo> {
         const referenceList: Array<ReferencedFileInfo> = [];
         const languageService = this._project.getLanguageService();
 
         const sourceFile = this._project.getSourceFile(fileNameOrPath);
 
         if (!sourceFile) {
-            throw new Error(`Could not open file ${fileNameOrPath} in project ${this._tsConfigPath}`);
+            console.log(`[TSReferenceFinder] File '${fileNameOrPath}' is not in scope of tsconfig.json of the project.`);
+            return [];
         }
 
         const exportedDeclarations = sourceFile.getExportedDeclarations();
@@ -72,7 +74,8 @@ export class TSReferenceFinder implements IReferenceFinder {
 
                     const referencedFileInfo: ReferencedFileInfo = {
                         filename: referenceFilePath,
-                        unused: isUnused
+                        unused: isUnused,
+                        relevancy: relevancy || DEFAULT_RELEVANCY,
                     }
 
                     if (referenceFilePath !== sourceFilePath

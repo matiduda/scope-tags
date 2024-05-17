@@ -1,0 +1,32 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "command": "npm run build && scope --report-for-commit-list buildData.json log.html",
+            "name": "Run test of --report-for-commit-list",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "command": "npm run build && scope --report-for-commit 0417cc011a9c53b308584e2cc79e47d5568cf99b",
+            "name": "Run test of --report-for-commit",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
+            "name": "Debug Jest Tests (Windows)",
+            "type": "node",
+            "request": "launch",
+            "runtimeArgs": [
+                "--inspect-brk",
+                "${workspaceRoot}/node_modules/jest/bin/jest.js",
+                "--runInBand"
+            ],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+        }
+    ]
+}
