@@ -27,6 +27,8 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFileType> {
     private _root: string;
     private _config: ConfigFileType;
 
+    _loaded: boolean = false;
+
     constructor(root: string) {
         this._root = root;
         this._config = this.load();
@@ -50,6 +52,7 @@ export class ConfigFile implements IJSONFileDatabase<ConfigFileType> {
     }
 
     public load(): ConfigFileType {
+        this._loaded = true;
         return JSONFile.loadFrom<ConfigFileType>(this._getPath());
     }
 

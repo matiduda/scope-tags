@@ -16,7 +16,7 @@
     "local-build": "npm run build && npm link",
     "start": "npm run build && scope",
     "tag": "npm run build && scope --tag-unpushed-commits",
-    "test": "jest ./test --verbose --silent=false --runInBand",
+    "test": "npm run build && jest ./test --verbose --silent=false --runInBand",
     "clean": "rimraf .scope/"
   },
   "repository": {
@@ -38,30 +38,19 @@
   "homepage": "https://github.com/matiduda/scope-tags#readme",
   "devDependencies": {
     "@types/fs-extra": "^11.0.4",
+    "@types/jest": "^29.5.12",
     "@types/nodegit": "^0.27.10",
-<<<<<<< HEAD
     "@typescript-eslint/eslint-plugin": "^7.3.1",
     "@typescript-eslint/parser": "^7.3.1",
-    "@types/jest": "^29.5.12",
-    "jest": "^29.7.0",
-    "ts-jest": "^29.1.2",
     "fs-extra": "^11.2.0",
+    "jest": "^29.7.0",
     "rimraf": "^5.0.5",
-    "typescript": "^5.4.3"
-=======
-    "@types/rimraf": "^3.0.2",
-    "@typescript-eslint/eslint-plugin": "^6.9.1",
-    "@typescript-eslint/parser": "^6.9.1",
-    "@types/uuid": "^9.0.8",
-    "fs-extra": "5.0.0",
-    "jest": "^23.6.0",
-    "rimraf": "^3.0.2",
-    "ts-jest": "^23.10.4",
-    "typescript": "^3.9.10",
+    "ts-jest": "^29.1.2",
+    "typescript": "^5.4.3",
     "uuid": "^9.0.1"
->>>>>>> origin
   },
   "dependencies": {
+    "@types/uuid": "^9.0.8",
     "enquirer": "^2.4.1",
     "html-creator": "^0.7.2",
     "nodegit": "^0.27.0",

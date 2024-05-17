@@ -352,7 +352,7 @@ export class FileTagsDatabase implements IJSONFileDatabase<LoadedDatabaseType> {
             }
             // If file deleted - remove from database
             if (fileData.change === GitDeltaType.DELETED) {
-
+                // TODO: Add
             }
         });
         return fileDataArray.filter(fileData => fileData.change !== GitDeltaType.DELETED);

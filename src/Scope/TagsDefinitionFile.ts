@@ -21,7 +21,7 @@ export type TagsDatabaseType = {
 }
 
 export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
-    private static PATH = ".scope/tags.json";
+    public static PATH = ".scope/tags.json";
 
     private _root: string;
     private _tagsDatabaseData: TagsDatabaseType;
@@ -57,7 +57,7 @@ export class TagsDefinitionFile implements IJSONFileDatabase<TagsDatabaseType> {
         // For some reason tags are sometimes not added
         undefinedTagNames.forEach(undefinedTagName => loadedDatabase.tags.push({
             name: undefinedTagName
-        }))
+        }));
 
         return loadedDatabase;
     }

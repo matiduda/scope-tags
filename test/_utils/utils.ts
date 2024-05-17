@@ -3,7 +3,7 @@ import { appendFileSync, existsSync, mkdirSync } from "fs";
 
 import { MOCK_REMOTE_URL, MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
 
-import { v4 as uuidv4 } from 'uuid';
+import * as uuid from "uuid";
 import { GitRepository } from "../../src/Git/GitRepository";
 
 // Mocked repository
@@ -19,7 +19,7 @@ export const assertTemporaryFolderExists = () => {
     if (!existsSync(folderPath)) {
         mkdirSync(folderPath);
     }
-}
+};
 
 /**
  * Temporary folder for test based on auto generated ID.
@@ -30,15 +30,15 @@ export const assertTemporaryFolderExists = () => {
  */
 export const makeUniqueFolderForTest = (): string => {
 
-    const testID = uuidv4();
+    const testID = uuid.v4();
     const tempFolderPath = join(TEST_DATA_FOLDER, testID);
     mkdirSync(join(TEST_DATA_FOLDER, testID));
     return tempFolderPath;
-}
+};
 
 
 export const cloneMockRepositoryToFolder = (parentFolder: string): string => {
-    const { execSync } = require('child_process');
+    const { execSync } = require("child_process");
 
     const clonedRepoPath = join(parentFolder, CLONED_MOCK_REPO_NAME).split(sep).join(posix.sep);
 
@@ -54,9 +54,9 @@ export const cloneMockRepositoryToFolder = (parentFolder: string): string => {
         });
 
     return clonedRepoPath;
-}
+};
 
-export const getRandomUUID = () => uuidv4();
+export const getRandomUUID = () => uuid.v4();
 
 export const appendSomeTextToFile = (filePath: string) => {
     appendFileSync(filePath, getRandomUUID());
@@ -91,18 +91,18 @@ export const commitFiles = async (fileNames: string[], repositoryPath: string): 
 export const createFolder = (location: string): string => {
     const folderPath = join(location, getRandomUUID());
     mkdirSync(folderPath);
-    return folderPath
-}
+    return folderPath;
+};
 
 export const commitModitication = async (fileNames: string[], repositoryPath: string): Promise<GitRepository> => {
     fileNames.forEach(fileName => {
         appendSomeTextToFile(join(repositoryPath, fileName));
-    })
+    });
 
     const repository = new GitRepository(repositoryPath);
-    const oid = await repository.commitFiles("test commit", fileNames)
+    const oid = await repository.commitFiles("test commit", fileNames);
 
-    console.debug(`[Modified files] Created new commit ${oid}`)
+    console.debug(`[Modified files] Created new commit ${oid}`);
 
     return repository;
 };
