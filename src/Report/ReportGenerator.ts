@@ -1,12 +1,12 @@
 import { Commit } from "nodegit";
 import { GitRepository } from "../Git/GitRepository";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
-import { Module, Tag, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
+import { Module, TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { FileData } from "../Git/Types";
 import { IReferenceFinder, ReferencedFileInfo } from "../References/IReferenceFinder";
 import { fileExists, getExtension } from "../FileSystem/fileSystemUtils";
-import { JiraBuilder, ModuleInfo, ReportTableRow, TagInfo, UntaggedFilesTableRow } from "./JiraBuilder";
-import { Relevancy, RelevancyMap } from "../Relevancy/Relevancy";
+import { JiraBuilder, ModuleInfo, ReportTableRow, TagIdentifierWithRelevancy, TagInfo, UntaggedFilesTableRow } from "./JiraBuilder";
+import { DEFAULT_RELEVANCY, Relevancy, RelevancyMap } from "../Relevancy/Relevancy";
 import { Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
 
@@ -238,15 +238,19 @@ export class ReportGenerator {
         };
     }
 
-    private _getAffectedTags(moduleReport: ModuleReport): Array<TagIdentifier> {
-        const allTags: Array<TagIdentifier> = [];
+    private _getAffectedTags(moduleReport: ModuleReport): Array<TagIdentifierWithRelevancy> {
+        const allTags: Array<TagIdentifierWithRelevancy> = [];
         const currentModule = this._tagsDefinitionFile.getModuleByName(moduleReport.module);
 
         moduleReport.files.forEach(file => {
             file.tagIdentifiers.forEach(tagIdentifier => {
                 if (tagIdentifier.module === currentModule?.name
                     && !allTags.some(tag => tag.module === tagIdentifier.module && tag.tag === tagIdentifier.tag)) {
-                    allTags.push(tagIdentifier);
+                    allTags.push({
+                        tag: tagIdentifier.tag,
+                        module: tagIdentifier.module,
+                        relevancy: file.relevancy || DEFAULT_RELEVANCY,
+                    });
                 }
             })
         })
@@ -260,7 +264,7 @@ export class ReportGenerator {
         untaggedReferences: Array<ReferencedFileInfo>
         unusedReferences: Array<ReferencedFileInfo>
     } {
-        const uniqueReferencedTags: Array<Tag["name"]> = [];
+        const uniqueReferencedTags: Array<{ tagName: string, relevancy: Relevancy }> = [];
         const untaggedReferences: Array<ReferencedFileInfo> = [];
 
         moduleReport.files
@@ -272,8 +276,11 @@ export class ReportGenerator {
                     }
 
                     reference.tagIdentifiers.forEach(identifier => {
-                        if (!uniqueReferencedTags.includes(identifier.tag)) {
-                            uniqueReferencedTags.push(identifier.tag);
+                        if (!uniqueReferencedTags.some(uniqueReferencedTag => uniqueReferencedTag.tagName === identifier.tag)) {
+                            uniqueReferencedTags.push({
+                                tagName: identifier.tag,
+                                relevancy: fileInfo.relevancy || DEFAULT_RELEVANCY,
+                            });
                         }
                     })
                 })
@@ -296,7 +303,7 @@ export class ReportGenerator {
                         }
 
                         reference.tagIdentifiers.forEach(identifier => {
-                            if (identifier.tag === referencedTag
+                            if (identifier.tag === referencedTag.tagName
                                 && !referencedModulesMatchingTag.includes(identifier.module)
                             ) {
                                 referencedModulesMatchingTag.push(identifier.module);
@@ -309,6 +316,7 @@ export class ReportGenerator {
                                     uniqueModules.push({
                                         module: identifier.module,
                                         tags: [identifier.tag],
+                                        relevancy: fileInfo.relevancy || DEFAULT_RELEVANCY,
                                     });
                                 }
                             }
@@ -316,8 +324,9 @@ export class ReportGenerator {
                     })
                 });
             return {
-                tag: referencedTag,
+                tag: referencedTag.tagName,
                 modules: referencedModulesMatchingTag,
+                relevancy: referencedTag.relevancy
             }
         })
         return {
@@ -343,7 +352,7 @@ export class ReportGenerator {
                     unusedReferences: modulesAndTagsInfo.unusedReferences,
                 };
             })
-            .filter(moduleReport => moduleReport.affectedTags.length > 0)
+            .filter(moduleReport => moduleReport.affectedTags.filter.length > 0)
             .filter(moduleReport => moduleReport.lines.added > 0 || moduleReport.lines.removed > 0);
 
         const untaggedFilesTableRowInfo = this._getReferencedTags(report.untaggedFilesAsModule);

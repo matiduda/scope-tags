@@ -241,7 +241,7 @@ export class RelevancyManager {
         return Object.values(Relevancy).map((relevancy) => RelevancyDescriptions.get(relevancy));
     }
 
-    private _mapEntriesToChoices(entries: Array<RelevancyEntry>, initial = 2): Array<RelevancyChoice> {
+    private _mapEntriesToChoices(entries: Array<RelevancyEntry>, initial = 1): Array<RelevancyChoice> {
         return entries.map(entry => ({
             name: entry.newPath,
             message: entry.newPath,

@@ -48,6 +48,9 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "Some new tag", "module": "Third module" }]},
+        { "path": "src/Relevancy/Relevancy.ts",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
         { "path": "src/Report/AdfUtils.ts",
           "tags": [
             { "tag": "Fourth tag", "module": "Fourth module" }]},

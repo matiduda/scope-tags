@@ -6,14 +6,20 @@ import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { FileInfo } from "./ReportGenerator";
 import { Relevancy } from "../Relevancy/Relevancy";
 
+export type TagIdentifierWithRelevancy = TagIdentifier & {
+    relevancy: Relevancy;
+}
+
 export type TagInfo = {
     tag: string,
-    modules: Array<string>
+    modules: Array<string>,
+    relevancy: Relevancy,
 }
 
 export type ModuleInfo = {
     module: string,
-    tags: Array<string>
+    tags: Array<string>,
+    relevancy: Relevancy,
 }
 
 export type LinesInfo = {
@@ -22,7 +28,7 @@ export type LinesInfo = {
 }
 
 export type ReportTableRow = {
-    affectedTags: Array<TagIdentifier>,
+    affectedTags: Array<TagIdentifierWithRelevancy>,
     lines: LinesInfo
     uniqueModules: Array<ModuleInfo>,
     referencedTags: Array<TagInfo>,
@@ -98,7 +104,7 @@ export class JiraBuilder {
 
     private _getEntryRow(entry: ReportTableRow): any {
         return tableRow([
-            tableHeader({})(p(entry.affectedTags.map(tag => `${tag.module} / ${tag.tag}`).join('\n'))),
+            tableHeader({})(p(this._formatAffectedTags(entry.affectedTags))),
             tableHeader({})(p(this._formatLinesAddedRemoved(entry.lines))),
             tableHeader({})(
                 ...this._referencedModulesAsNestedExpands(entry.uniqueModules),
@@ -106,6 +112,10 @@ export class JiraBuilder {
             ),
             tableHeader({})(...this._referencedTagsAsNestedExpands(entry.referencedTags, entry.unusedReferences)),
         ]);
+    }
+
+    private _formatAffectedTags(affectedTags: TagIdentifierWithRelevancy[]): any {
+        return affectedTags.map(tag => `${tag.module} / ${tag.tag}`).join('\n');
     }
 
     private _formatLinesAddedRemoved(lines: LinesInfo): string {
@@ -157,13 +167,6 @@ export class JiraBuilder {
             content += `\n${referencesWithOtherThanHighRelevancy.length} references hidden by low relevancy`;
         }
 
-        // TODO: [ ] It is tested
-        // TODO: [ ] Add the same for
-        // - Tags
-        // - Modules
-        // - [ ] Add similar to table entries themserves for Relevancy.LOW
-
-
         // Careful, nestedExpand cannot be empty inside
         return [nestedExpand({ title: title })(
             p(content)
@@ -198,36 +201,68 @@ export class JiraBuilder {
             return [p("-")];
         }
 
-        return uniqueModules.map(uniqueModule => {
-            const tags: string = uniqueModule.tags.length > 0
+        // Check for Relevancy
+        const referencesWithHighRelevancy = uniqueModules.filter(uniqueModule => uniqueModule.relevancy === Relevancy.HIGH);
+        const referencesWithOtherThanHighRelevancy = uniqueModules.filter(uniqueModule => uniqueModule.relevancy !== Relevancy.HIGH);
+
+        const cellContent: any[] = [];
+
+        referencesWithHighRelevancy.forEach(uniqueModule => {
+            const content: string = uniqueModule.tags.length > 0
                 ? uniqueModule.tags.join("\n")
                 : "No tags";
 
             // Careful, nestedExpand cannot be empty inside
-            return nestedExpand({ title: uniqueModule.module })(
-                p(tags)
+            cellContent.push(
+                nestedExpand({ title: uniqueModule.module })(
+                    p(content)
+                )
             );
         });
+
+        if (referencesWithOtherThanHighRelevancy.length > 0) {
+            cellContent.push(
+                p(`${referencesWithOtherThanHighRelevancy.length} modules hidden by low relevancy`)
+            );
+        }
+
+        return cellContent;
     }
 
     private _referencedTagsAsNestedExpands(
-        referencedTags: { tag: string; modules: string[]; }[],
+        referencedTags: TagInfo[],
         unusedReferences: Array<ReferencedFileInfo>
     ): any[] {
         if (!referencedTags.length && !unusedReferences.length) {
             return [p("-")];
         }
 
-        return referencedTags.map(referenced => {
-            const modules: string = referenced.tag.length > 0
-                ? referenced.modules.join("\n")
+        // Check for Relevancy
+        const referencesWithHighRelevancy = referencedTags.filter(referencedTag => referencedTag.relevancy === Relevancy.HIGH);
+        const referencesWithOtherThanHighRelevancy = referencedTags.filter(referencedTag => referencedTag.relevancy !== Relevancy.HIGH);
+
+        const cellContent: any[] = [];
+
+        referencesWithHighRelevancy.forEach(uniqueTag => {
+            const content: string = uniqueTag.modules.length > 0
+                ? uniqueTag.modules.join("\n")
                 : "No modules";
 
             // Careful, nestedExpand cannot be empty inside
-            return nestedExpand({ title: referenced.tag })(
-                p(modules)
+            cellContent.push(
+                nestedExpand({ title: uniqueTag.tag })(
+                    p(content)
+                )
             );
         });
+
+        if (referencesWithOtherThanHighRelevancy.length > 0) {
+            cellContent.push(
+                p(`${referencesWithOtherThanHighRelevancy.length} tags hidden by low relevancy`)
+            );
+        }
+
+        return cellContent;
     }
 
     private _createLink(url: string, description: string) {
