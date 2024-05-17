@@ -16,7 +16,6 @@ export type ConfigFileType = {
     ignoredExtensions?: Array<string>,
     viewIssueURL?: string, // Used only for linking to issues in HTML logs
     logsURL?: string,
-    forceShowReferencedFilesAsPaths?: boolean,
     repositoryURL?: string, // Used only in HTML logs to link to the files directly, expandable with file paths
     seeCommitURL?: string, // Used only in HTML logs to link to the commits directly, expandable with commit SHA
 };

@@ -47,7 +47,7 @@ const mockFileData3: FileData = {
 
 const mockRelevancyData = new Map<FileData, Relevancy>([
     [mockFileData1, Relevancy.LOW],
-    [mockFileData2, Relevancy.MEDIUM],
+    [mockFileData2, Relevancy.LOW],
     [mockFileData3, Relevancy.HIGH],
 ]);
 
@@ -102,7 +102,7 @@ describe("Relevancy manager tests", () => {
             
                 __relevancy__[{"path":"src/basic/commands/command.ts","relevancy":"LOW","commit":"__current__"}]__relevancy__
 
-                __relevancy__[{"path":"assets/basic/assets/asset.jpg","relevancy":"MEDIUM","commit":"__current__"},{"path":"config/basic/config/data.log","relevancy":"HIGH","commit":"__current__"}]__relevancy__
+                __relevancy__[{"path":"assets/basic/assets/asset.jpg","relevancy":"LOW","commit":"__current__"},{"path":"config/basic/config/data.log","relevancy":"HIGH","commit":"__current__"}]__relevancy__
             `,
         ];
 
@@ -120,12 +120,6 @@ describe("Relevancy manager tests", () => {
 
     it("Correctly encodes relevancy data in a commit", async () => {
         const relevancyManager = new RelevancyManager();
-
-        const mockRelevancyData = new Map<FileData, Relevancy>([
-            [mockFileData1, Relevancy.LOW],
-            [mockFileData2, Relevancy.MEDIUM],
-            [mockFileData3, Relevancy.HIGH],
-        ]);
 
         const mockCommit: Commit = {
             message: () => `[TEST-1234] This is a commit message
@@ -163,7 +157,7 @@ describe("Relevancy manager tests", () => {
             
                 __relevancy__[{"path":"src/basic/commands/command.ts","relevancy":"LOW","commit":"__current__"}]__relevancy__
 
-                __relevancy__[{"path":"assets/basic/assets/asset.jpg","relevancy":"MEDIUM","commit":"__current__"},{"path":"config/basic/config/data.log","relevancy":"HIGH","commit":"__current__"}]__relevancy__
+                __relevancy__[{"path":"assets/basic/assets/asset.jpg","relevancy":"LOW","commit":"__current__"},{"path":"config/basic/config/data.log","relevancy":"HIGH","commit":"__current__"}]__relevancy__
             `,
             sha: () => "sha",
         } as Commit;

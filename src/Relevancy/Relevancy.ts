@@ -1,8 +1,8 @@
 import { FilePath } from "../Git/Types";
 
 export enum Relevancy {
-    HIGH = "HIGH",      // Searches for references
     LOW = "LOW",        // Does not search for references
+    HIGH = "HIGH",      // Searches for references
 }
 
 // Default Relevancy is HIGH, and it can be reduced via user prompt
