@@ -95,7 +95,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
 
         if (generator.isReportEmpty(report)) {
-            console.log(`[Scope tags]: Report ommited because no tags for modified files were found'`);
+            console.log(`[Scope tags]: Report ommited because no tags for modified files were found`);
             continue;
         }
 

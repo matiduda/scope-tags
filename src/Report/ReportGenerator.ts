@@ -379,6 +379,6 @@ export class ReportGenerator {
     }
 
     public isReportEmpty(report: Report): boolean {
-        return report.allModules.length === 0;
+        return report.allModules.length === 0 && report.untaggedFilesAsModule.files.length === 0;
     }
 }
