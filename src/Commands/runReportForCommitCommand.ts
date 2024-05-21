@@ -45,12 +45,12 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
         }
     })
 
-    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
+    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders, true);
     const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
         const relevancyMap = relevancyManager.loadRelevancyMapFromCommits([commit]);
-        const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap);
+        const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap, false);
         if (generator.isReportEmpty(report)) {
             console.log("Report is empty (no tags were found in modified files).");
             return;

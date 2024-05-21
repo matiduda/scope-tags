@@ -1,10 +1,10 @@
 import { formatDate } from "./TimeUtils";
 import { expand, table, doc, tableRow, tableHeader, p, strong, text, link, nestedExpand } from "./AdfUtils";
-import { getScriptVersion } from "../scope";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
 import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { FileInfo } from "./ReportGenerator";
 import { Relevancy } from "../Relevancy/Relevancy";
+import { Utils } from "../Scope/Utils";
 
 export type TagIdentifierWithRelevancy = TagIdentifier & {
     relevancy: Relevancy;
@@ -60,7 +60,7 @@ export class JiraBuilder {
         adfDocument: string,
         comment: string
     } {
-        let tableTitle = `'${projectName}' scope tags v${getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
+        let tableTitle = `'${projectName}' scope tags v${Utils.getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
         tableTitle += buildTag ? ` │ ${buildTag}` : "";
 
         let reportTable = {

@@ -1,6 +1,6 @@
 import { Repository } from "nodegit";
-import { TEST_DATA_FOLDER } from "../_utils/globals";
-import { createFolder } from "../_utils/utils";
+import { TEST_DATA_FOLDER } from "../utils/globals";
+import { createFolder } from "../utils/utils";
 const execSync = require('child_process').execSync;
 
 describe("nodegit is correctly initialized", () => {

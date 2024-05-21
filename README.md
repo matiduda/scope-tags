@@ -23,6 +23,11 @@ From the repository you want to test the package run
 npm i scope-tags -D
 ```
 
+Make sure your Git configuration has case-sensitivity enabled
+```
+git config --global core.ignorecase false
+```
+
 ### How to run
 
 From the repository you want to test the package run

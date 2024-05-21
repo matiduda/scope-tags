@@ -17,6 +17,13 @@
             "type": "node-terminal"
         },
         {
+            "command": "scope --find-refs src/ts/models/Model.ts",
+            "name": "scope --find-refs",
+            "request": "launch",
+            "type": "node-terminal",
+            "cwd": "${workspaceFolder}/test/_repo"
+        },
+        {
             "name": "Debug Jest Tests (Windows)",
             "type": "node",
             "request": "launch",

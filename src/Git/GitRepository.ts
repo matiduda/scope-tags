@@ -176,11 +176,14 @@ export class GitRepository {
         return fileDataArray;
     }
 
-    public async getFileDataForCommits(commits: Array<Commit>): Promise<FileData[]> {
+    public async getFileDataForCommits(commits: Array<Commit>, useGitNatively = false): Promise<FileData[]> {
         const fileDataForCommits: Array<FileData> = [];
 
         for (const commit of commits) {
-            const fileDataForCommit = await this.getFileDataForCommit(commit);
+            const fileDataForCommit = useGitNatively
+                ? this.getFileDataUsingNativeGitCommand(commit)
+                : await this.getFileDataForCommit(commit);
+
             fileDataForCommit.forEach(fileData => fileDataForCommits.push(fileData));
         }
 

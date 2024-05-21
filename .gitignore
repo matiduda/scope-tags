@@ -7,4 +7,4 @@ commitfile.txt
 logs.html
 buildData.json
 __temporaryTestData__/
-log*.html
+*.html

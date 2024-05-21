@@ -1,4 +1,4 @@
-import { cloneMockRepositoryToFolder, commitEmptyFiles, makeUniqueFolderForTest } from "../_utils/utils";
+import { cloneMockRepositoryToFolder, commitEmptyFiles, makeUniqueFolderForTest } from "../utils/utils";
 import { FileData, GitDeltaType } from "../../src/Git/Types";
 
 describe("Tesing if file data is retrieved correctly", () => {

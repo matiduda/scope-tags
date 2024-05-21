@@ -14,6 +14,7 @@ import { getGitProjectRoot } from "./Git/Project";
 import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
 import { runSeeCommand } from "./Commands/runSeeCommand";
+import { Utils } from "./Scope/Utils";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -25,9 +26,11 @@ if (!root) {
     process.exit(1);
 }
 
+// IMPORTANT: Do not export anything from here, is breaks tests
+
 switch (args[0]) {
     case "--version": {
-        console.log(getScriptVersion());
+        console.log(Utils.getScriptVersion());
         break;
     }
     case "--tag": {
@@ -66,7 +69,7 @@ switch (args[0]) {
         runReportForCommitListCommand(args, root);
         break;
     }
-    case "--find-references": {
+    case "--find-refs": {
         runFindReferencesCommand(args, root);
         break;
     }
@@ -86,8 +89,4 @@ switch (args[0]) {
         runStartCommandLineInterfaceCommand(args, root);
         break;
     }
-}
-
-export function getScriptVersion(): string {
-    return require('../package.json').version;
 }

@@ -1,4 +1,4 @@
-import { appendSomeTextToFile, cloneMockRepositoryToFolder, commitEmptyFiles, commitFiles, commitModitication, createEmptyFiles, makeUniqueFolderForTest, mergeBranchToCurrent } from "../_utils/utils";
+import { appendSomeTextToFile, cloneMockRepositoryToFolder, commitEmptyFiles, commitFiles, commitModitication, createEmptyFiles, makeUniqueFolderForTest, mergeBranchToCurrent } from "../utils/utils";
 import { VerificationStatus, verifyUnpushedCommits } from "../../src/Commands/runVerifyUnpushedCommitsCommand";
 import { GitRepository } from "../../src/Git/GitRepository";
 import { ConfigFile } from "../../src/Scope/ConfigFile";

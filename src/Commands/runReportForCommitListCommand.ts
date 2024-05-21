@@ -93,7 +93,7 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits(commits);
 
         console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
-        const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
+        const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, relevancyMap);
 
         if (generator.isReportEmpty(report)) {
             console.log(`[Scope tags]: Report ommited because no tags for modified files were found`);
