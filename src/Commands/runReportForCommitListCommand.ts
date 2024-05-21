@@ -10,6 +10,7 @@ import { fileExists, getExtension, removeFile, resolvePath, saveHTMLLogs } from 
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigurationProperty, Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
+import { ADFValidator } from "../Report/ADFValidator";
 
 const os = require("os");
 
@@ -99,13 +100,26 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
             continue;
         }
 
-        const commentReportJSON = generator.getReportAsJiraComment(report, false);
+        const commentReport = generator.getReportAsJiraComment(report, false);
+        const commentReportADF = `{adf:display=block}${commentReport.comment}{adf}`;
+
+        console.log(`[Scope tags]: Validating ADF of report for issue '${issue}'...'`);
+
+        const validator = new ADFValidator();
+
+        await validator.loadSchema();
+        const reportIsValid = validator.validateADF(commentReport.adfDocument, issue);
+
+        if (!reportIsValid) {
+            console.log(`[Scope tags]: Ommiting report for issue ${issue} as it have not passed ADF validation`);
+            continue;
+        }
 
         console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
 
         const reportPostedSuccessfully = await buildIntegration.updateIssue({
             issue: issue,
-            report: commentReportJSON,
+            report: commentReportADF,
             hostname: os.hostname(),
         });
 

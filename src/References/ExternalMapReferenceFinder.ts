@@ -55,7 +55,7 @@ export class ExternalMapReferenceFinder implements IReferenceFinder {
         const referenceList: Array<ReferencedFileInfo> = [];
 
         this._importMap.forEach(importData => {
-            if (importData.imports.includes(fileNameOrPath)) {
+            if (importData.imports.includes(fileNameOrPath) && !referenceList.some(reference => reference.filename === importData.file)) {
                 referenceList.push({
                     filename: importData.file,
                     unused: false,

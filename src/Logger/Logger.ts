@@ -30,6 +30,7 @@ export type ConfigurationMap = Map<ConfigurationProperty, string>;
 export type IssueLog = {
     key: string,
     commitInfos: CommitLog[],
+    errors: string[],
 };
 
 export type CommitLog = {
@@ -73,6 +74,7 @@ export class Logger {
     public static pushIssueInfo(issueKey: string, commits: Commit[]) {
         Logger._issues.push(({
             key: issueKey,
+            errors: [],
             commitInfos: commits.map(commit => ({
                 hash: commit.sha(),
                 fileLogs: [],
@@ -80,7 +82,21 @@ export class Logger {
                 summary: commit.summary(),
                 hasRelevancy: Logger._relevancyManager.doesCommitMessageHaveRelevancyData(commit.message()),
             })),
-        } as IssueLog));
+        } as unknown as IssueLog));
+    }
+
+    static pushErrorMessage(issue: string, error: any) {
+        let matchingIssue = Logger._issues.find(issueLog => issueLog.key === issue);
+
+        if (!matchingIssue) {
+            matchingIssue = this._getDetachedIssueLogs();
+            return;
+        }
+
+        const justText = error.toString().replace(
+            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+
+        matchingIssue.errors.push(justText);
     }
 
     static pushFileInfo(fileData: FileData, fileInfo: FileInfo) {
@@ -94,7 +110,7 @@ export class Logger {
             });
         });
 
-        matchingCommitFileLogs = matchingCommitFileLogs || this._getDetachedFileLogs();
+        matchingCommitFileLogs = matchingCommitFileLogs || this._getDetachedIssueLogs().commitInfos[0].fileLogs;
 
         const newFileLog: FileLog = {
             path: fileData.oldPath,
@@ -111,14 +127,15 @@ export class Logger {
         matchingCommitFileLogs.push(newFileLog);
     }
 
-    private static _getDetachedFileLogs(): FileLog[] {
+    private static _getDetachedIssueLogs(): IssueLog {
         const currentDetachedIssueLog = Logger._issues.find(issueInfo => issueInfo.key === Logger._DETACHED_ID);
         if (currentDetachedIssueLog) {
-            return currentDetachedIssueLog.commitInfos[0].fileLogs;
+            return currentDetachedIssueLog;
         }
 
         const newDetachedIssueLog: IssueLog = {
             key: Logger._DETACHED_ID,
+            errors: [],
             commitInfos: [{
                 hash: Logger._DETACHED_ID,
                 fileLogs: [],
@@ -129,7 +146,7 @@ export class Logger {
         };
 
         Logger._issues.push(newDetachedIssueLog);
-        return newDetachedIssueLog.commitInfos[0].fileLogs;
+        return newDetachedIssueLog;
     }
 
     public static exportLogsToHTML(configFile: ConfigFile): string {

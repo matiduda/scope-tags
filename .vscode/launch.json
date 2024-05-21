@@ -11,7 +11,7 @@
             "type": "node-terminal"
         },
         {
-            "command": "npm run build && scope --report-for-commit 0417cc011a9c53b308584e2cc79e47d5568cf99b",
+            "command": "npm run build && scope --report-for-commit 161671d540ffe9de3b1480efb4e2dff35ee677e5",
             "name": "Run test of --report-for-commit",
             "request": "launch",
             "type": "node-terminal"

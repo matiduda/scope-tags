@@ -9,6 +9,7 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { ADFValidator } from "../Report/ADFValidator";
 
 export function runReportForCommitCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
@@ -54,6 +55,16 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
             console.log("Report is empty (no tags were found in modified files).");
             return;
         }
-        generator.getReportAsJiraComment(report, true);
-    });
+
+        return generator.getReportAsJiraComment(report, true);
+    }).then(async commentReport => {
+        if (!commentReport) {
+            return;
+        }
+
+        const validator = new ADFValidator();
+
+        await validator.loadSchema();
+        validator.validateADF(commentReport.adfDocument);
+    })
 }

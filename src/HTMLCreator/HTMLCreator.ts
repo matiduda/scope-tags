@@ -188,7 +188,29 @@ export class HTMLCreator {
                 ]
             });
             issue.commitInfos.forEach(commitLog => this._appendCommitTable(commitLog, issue.key, seeCommitURL, repositoryURL));
+            if (issue.errors.length) {
+                this._html.document.addElementToId(issue.key, {
+                    type: "h3",
+                    content: "Error messages"
+                });
+
+                issue.errors.forEach(errorMessage => {
+                    this._appendErrorMessage(issue.key, errorMessage);
+                })
+
+            }
             this._html.document.addElementToId(issue.key, { type: "hr" });
+        });
+    }
+
+    private _appendErrorMessage(key: string, errorMessage: string) {
+        this._html.document.addElementToId(key, {
+            type: "pre",
+            content: [{
+                type: "code",
+                content: errorMessage
+            }
+            ]
         });
     }
 

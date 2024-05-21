@@ -337,7 +337,7 @@ export class ReportGenerator {
         }
     };
 
-    public getReportAsJiraComment(report: Report, printToConsole = false): string {
+    public getReportAsJiraComment(report: Report, printToConsole = false) {
         const finalReportTableData: Array<ReportTableRow> = report.allModules
             .map(moduleReport => {
                 const modulesAndTagsInfo = this._getReferencedTags(moduleReport);

@@ -1,6 +1,6 @@
 {
   "name": "scope-tags",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Output human readable test scope report for QA",
   "main": "dist/scope.js",
   "types": "dist/scope.d.ts",
@@ -54,11 +54,14 @@
     "uuid": "^9.0.1"
   },
   "dependencies": {
+    "@stoplight/better-ajv-errors": "^1.0.3",
     "enquirer": "^2.4.1",
     "html-creator": "^0.6.3",
     "node-fetch": "^2.7.0",
     "nodegit": "^0.27.0",
-    "ts-morph": "^18.0.0"
+    "ts-morph": "^18.0.0",
+    "ajv": "^4.11.8",
+    "better-ajv-errors": "^0.6.7"
   },
   "bin": {
     "scope": "./dist/scope.js"
