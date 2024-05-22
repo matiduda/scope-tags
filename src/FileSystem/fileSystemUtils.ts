@@ -1,5 +1,5 @@
 import fs from "fs";
-import path from "path";
+import path, { join } from "path";
 
 export function scopeFolderExists(root: string): boolean {
 	const scopeFolderPath = path.join(root, ".scope");
@@ -27,8 +27,14 @@ export function getFileDirectoryPath(filePath: string): string {
 	return filePath.substring(0, filePath.lastIndexOf("/"));
 }
 
-export function fileExists(filePath: string): boolean {
-	return fs.existsSync(filePath);
+export function fileExists(filePath: string, relativeTo?: string): boolean {
+	let path = filePath;
+
+	if (relativeTo) {
+		path = join(relativeTo, filePath);
+	}
+
+	return fs.existsSync(path);
 }
 
 export function isDirectory(filePath: string): boolean {

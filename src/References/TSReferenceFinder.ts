@@ -30,10 +30,13 @@ export class TSReferenceFinder implements IReferenceFinder {
         const referenceList: Array<ReferencedFileInfo> = [];
         const languageService = this._project.getLanguageService();
 
-        const sourceFile = this._project.getSourceFile(fileNameOrPath);
+        const allSourceFiles = this._project.getSourceFiles();
+
+        const pathRelativeToRoot = path.join(this._root, fileNameOrPath);
+        const sourceFile = this._project.getSourceFile(pathRelativeToRoot);
 
         if (!sourceFile) {
-            console.log(`[TSReferenceFinder] File '${fileNameOrPath}' is not in scope of tsconfig.json of the project.`);
+            console.log(`[TSReferenceFinder] File '${pathRelativeToRoot}' is not in scope of tsconfig.json of the project.`);
             return [];
         }
 

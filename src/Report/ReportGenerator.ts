@@ -188,7 +188,8 @@ export class ReportGenerator {
     private _getFileReferences(file: string, relevancy: Relevancy | null): Array<FileReference> {
         const references: Array<FileReference> = [];
 
-        if (!fileExists(file)) {
+        // Command should be run outside of repo, so check path relative to repo
+        if (!fileExists(file, this._repository.root)) {
             return references;
         }
 
@@ -196,6 +197,7 @@ export class ReportGenerator {
             if (!referenceFinder.getSupportedFilesExtension().includes(getExtension(file))) {
                 return;
             }
+
             const foundReferences = referenceFinder.findReferences(file, relevancy);
 
             foundReferences.forEach(reference => {

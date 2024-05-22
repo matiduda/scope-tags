@@ -6,6 +6,7 @@ import { TagsDefinitionFile } from "../../src/Scope/TagsDefinitionFile";
 import { TSReferenceFinder } from "../../src/References/TSReferenceFinder";
 import { ReportGenerator } from "../../src/Report/ReportGenerator";
 import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
+import { Relevancy } from "../../src/Relevancy/Relevancy";
 
 // Testing only ReportGenerator class, which is responsible for gathering data for each commit
 
@@ -50,9 +51,7 @@ describe("Report generation works as expected", async () => {
 
         expect(report).toBeDefined();
 
-        // { "path": "src/tagged-file.js",
-        //   "tags": [
-        //     { "tag": "Tag", "module": "Default module" }]}],
+        // src/tagged-file.js has 1 tag -> Default module / Tag
 
         expect(report.allModules.length).toBe(1);
         expect(report.untaggedFilesAsModule.files.length).toBe(0);
@@ -136,7 +135,6 @@ describe("Report generation works as expected", async () => {
         });
     });
 
-
     it("Correctly separates tagged and untagged files in the report", async () => {
         const FOLDER_PATH = makeUniqueFolderForTest();
         const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
@@ -177,13 +175,12 @@ describe("Report generation works as expected", async () => {
          * src/
          * ├─ ts/
          * │  ├─ controllers/
-         * │  │  ├─ Controller.ts   2 dependencies: View.ts and Model.ts,   1 tag: Controllers / AController
+         * │  │  ├─ Controller.ts   3 dependencies: View.ts and Model.ts,       1 tag: Controllers / AController
          * │  ├─ models/
-         * │  │  ├─ Model.ts        No dependencies,                        1 tag: Models / AModel
+         * │  │  ├─ Model.ts        1 dependency: View.ts,                      1 tag: Models / AModel
          * │  ├─ views/
-         * │  │  ├─ View.ts         1 dependency: Modal,                    1 tag: Views / AView
-         * │  │  ├─ ModalWindow.ts  No dependencies,                        no tags
-         * 
+         * │  │  ├─ View.ts         1 dependency: ModalWindow.ts,               1 tag: Views / AView
+         * │  │  ├─ ModalWindow.ts  No dependencies,                            no tags
          */
 
         const filesToModify = [
@@ -251,14 +248,210 @@ describe("Report generation works as expected", async () => {
         // View.ts checks
         const viewFileInfo = viewsModule.files[0];
 
-        expect(viewFileInfo.file).toBe("src/ts/view/View.ts");
+        expect(viewFileInfo.file).toBe("src/ts/views/View.ts");
+        expect(viewFileInfo.ignored).toBe(false);
+        expect(viewFileInfo.tagIdentifiers.length).toBeGreaterThan(0);
+        expect(viewFileInfo.tagIdentifiers.some(identifier => identifier.module === "Views" && identifier.tag === "AView")).toBe(true);
+
+        expect(viewFileInfo.usedIn.length).toBe(2);
+
+        const controllerDependency = viewFileInfo.usedIn.find(file => file.fileInfo.filename === "src/ts/controllers/Controller.ts");
+        const modelDependency = viewFileInfo.usedIn.find(file => file.fileInfo.filename === "src/ts/models/Model.ts");
+
+        expect(controllerDependency).toBeDefined();
+        expect(modelDependency).toBeDefined();
+
+        if (!controllerDependency || !modelDependency) {
+            return;
+        }
+
+        expect(controllerDependency.fileInfo.filename).toBe("src/ts/controllers/Controller.ts");
+        expect(controllerDependency.fileInfo.unused).toBe(false);
+
+        expect(modelDependency.fileInfo.filename).toBe("src/ts/models/Model.ts");
+        expect(modelDependency.fileInfo.unused).toBe(false);
 
         // Check if ModalWindow is marked as untagged
         expect(report.untaggedFilesAsModule.files.length).toBe(1);
-        expect(report.untaggedFilesAsModule.files[0].file).toBe("src/ts/view/ModalWindow.ts");
+        expect(report.untaggedFilesAsModule.files[0].file).toBe("src/ts/views/ModalWindow.ts");
+        expect(report.untaggedFilesAsModule.files[0].ignored).toBe(false);
+        expect(report.untaggedFilesAsModule.files[0].tagIdentifiers.length).toBe(0);
 
-        // Check references
+        expect(report.untaggedFilesAsModule.files[0].usedIn.length).toBe(1);
+
+        const viewDependency = report.untaggedFilesAsModule.files[0].usedIn[0];
+
+        expect(viewDependency.fileInfo.filename).toBe("src/ts/views/View.ts");
+        expect(viewDependency.fileInfo.unused).toBe(false);
+        expect(viewDependency.tagIdentifiers.some(identifier => identifier.module === "Views" && identifier.tag === "AView")).toBe(true);
+    });
+
+    it("Circular dependencies are reported correctly", async () => {
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        /**
+         * File structure description
+         *  
+         * src/
+         * ├─ ts/
+         * │  ├─ circularDependency/
+         * │  │  ├─ ModuleA.ts   1 dependency: ModuleB.ts,       1 tag: Circular Dependency Test (Module A) / Module A
+         * │  │  ├─ ModuleB.ts   1 dependency: ModuleA.ts,       1 tag: Circular Dependency Test (Module B) / Module B
+         */
+
+        const filesToModify = [
+            "src/ts/circularDependency/ModuleA.ts",
+            "src/ts/circularDependency/ModuleB.ts",
+        ];
+
+        const repository = await commitModitication(filesToModify, REPO_PATH);
+
+        const unpushedCommits = await repository.getUnpushedCommits();
+        expect(unpushedCommits.length).toBe(1);
+
+        const commit = unpushedCommits[0];
+
+        const generator = initReportGenerator(REPO_PATH);
+
+        const relevancy = new RelevancyManager();
+        const relevancyMap = relevancy.loadRelevancyMapFromCommits([commit]);
+
+        const report = await generator.generateReportForCommit(commit, "Project", relevancyMap, true);
+
+        expect(report).toBeDefined();
+
+        expect(report.allModules.length).toBe(2);
+
+        const circularTestModuleA = report.allModules.find(reportModule => reportModule.module === "Circular Dependency Test (Module A)");
+        const circularTestModuleB = report.allModules.find(reportModule => reportModule.module === "Circular Dependency Test (Module B)");
+
+        expect(circularTestModuleA).toBeDefined();
+        expect(circularTestModuleB).toBeDefined();
+
+        if (!circularTestModuleA || !circularTestModuleB) {
+            return;
+        }
+
+        expect(circularTestModuleA.files.length).toBe(1);
+        expect(circularTestModuleA.files[0].file).toBe("src/ts/circularDependency/ModuleA.ts");
+        expect(circularTestModuleA.files[0].ignored).toBe(false);
+        expect(circularTestModuleA.files[0].tagIdentifiers.length).toBe(1);
+        expect(circularTestModuleA.files[0].tagIdentifiers.some(identifier => identifier.tag === "Module A" && identifier.module === "Circular Dependency Test (Module A)")).toBe(true);
+        expect(circularTestModuleA.files[0].usedIn.length).toBe(1);
+        expect(circularTestModuleA.files[0].usedIn[0].fileInfo.filename).toBe("src/ts/circularDependency/ModuleB.ts");
+        expect(circularTestModuleA.files[0].usedIn[0].fileInfo.unused).toBe(false);
+
+        expect(circularTestModuleB.files.length).toBe(1);
+        expect(circularTestModuleB.files[0].file).toBe("src/ts/circularDependency/ModuleB.ts");
+        expect(circularTestModuleB.files[0].ignored).toBe(false);
+        expect(circularTestModuleB.files[0].tagIdentifiers.length).toBe(1);
+        expect(circularTestModuleB.files[0].tagIdentifiers.some(identifier => identifier.tag === "Module B" && identifier.module === "Circular Dependency Test (Module B)")).toBe(true);
+        expect(circularTestModuleB.files[0].usedIn.length).toBe(1);
+        expect(circularTestModuleB.files[0].usedIn[0].fileInfo.filename).toBe("src/ts/circularDependency/ModuleA.ts");
+        expect(circularTestModuleB.files[0].usedIn[0].fileInfo.unused).toBe(false);
+
+        // Same for module B
+    });
+
+    it("Correctly reports files with multiple tags", async () => {
+
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        /**
+            Has following tags:
+            - Default module / Second
+            - Default module / Tag
+            - Default module 2 / Tag of default module 2
+         */
+
+        const fileToModify = "src/tagged-file-with-multiple-modules.js";
+
+        const repository = await commitModitication([fileToModify], REPO_PATH);
+
+        const unpushedCommits = await repository.getUnpushedCommits();
+        expect(unpushedCommits.length).toBe(1);
+
+        const commit = unpushedCommits[0];
+
+        const generator = initReportGenerator(REPO_PATH);
+
+        const relevancy = new RelevancyManager();
+        const relevancyMap = relevancy.loadRelevancyMapFromCommits([commit]);
+
+        const report = await generator.generateReportForCommit(commit, "Project", relevancyMap, true);
+
+        expect(report).toBeDefined();
+        expect(report.allModules.length).toBe(2);
+        expect(report.untaggedFilesAsModule.files.length).toBe(0);
+
+        const defaultModule = report.allModules.find(reportModule => reportModule.module === "Default module");
+        const defaultModule2 = report.allModules.find(reportModule => reportModule.module === "Default module 2");
+
+        expect(defaultModule).toBeDefined();
+        expect(defaultModule2).toBeDefined();
+
+        if (!defaultModule || !defaultModule2) {
+            return;
+        }
+
+        expect(defaultModule.files.length).toBe(1);
+        expect(defaultModule.files[0].file).toBe("src/tagged-file-with-multiple-modules.js");
+        expect(defaultModule.files[0].ignored).toBe(false);
+        expect(defaultModule.files[0].usedIn.length).toBe(0);
+        // 3, because same FileInfo is shared between modules
+        expect(defaultModule.files[0].tagIdentifiers.length).toBe(3);
+        expect(defaultModule.files[0].tagIdentifiers.some(identifier => identifier.tag === "Tag" && identifier.module === "Default module")).toBe(true);
+        expect(defaultModule.files[0].tagIdentifiers.some(identifier => identifier.tag === "Second" && identifier.module === "Default module")).toBe(true);
+
+        expect(defaultModule2.files.length).toBe(1);
+        expect(defaultModule2.files[0].file).toBe("src/tagged-file-with-multiple-modules.js");
+        expect(defaultModule2.files[0].ignored).toBe(false);
+        expect(defaultModule2.files[0].usedIn.length).toBe(0);
+        // 3, because same FileInfo is shared between modules
+        expect(defaultModule2.files[0].tagIdentifiers.length).toBe(3);
+        expect(defaultModule2.files[0].tagIdentifiers.some(identifier => identifier.tag === "Tag of default module 2" && identifier.module === "Default module 2")).toBe(true);
+    });
+
+    it("After making a change with defined relevancy, the relevancy is present in generated report", async () => {
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        const repository = await commitModitication(
+            [
+                "src/tagged-file.js",
+                "src/untagged-file.js"
+            ],
+            REPO_PATH,
+            `Automatic commit
+
+    __relevancy__[{"path":"src/tagged-file.js","relevancy":"HIGH","commit":"__current__"},{"path":"src/untagged-file.js","relevancy":"LOW","commit":"__current__"}]__relevancy__
+    `);
+
+        const unpushedCommits = await repository.getUnpushedCommits();
+        expect(unpushedCommits.length).toBe(1);
+
+        const commit = unpushedCommits[0];
+
+        const generator = initReportGenerator(REPO_PATH);
+
+        const relevancy = new RelevancyManager();
+        const relevancyMap = relevancy.loadRelevancyMapFromCommits([commit]);
+
+        const report = await generator.generateReportForCommit(commit, "Project", relevancyMap, true);
+
+        expect(report).toBeDefined();
+        expect(report.allModules.length).toBe(1);
+
+        const taggedModule = report.allModules[0];
+        expect(taggedModule.files.length).toBe(1);
+        expect(taggedModule.files[0].file).toBe("src/tagged-file.js");
+        expect(taggedModule.files[0].relevancy).toBe(Relevancy.HIGH);
+
+        expect(report.untaggedFilesAsModule.files.length).toBe(1);
+        expect(report.untaggedFilesAsModule.files[0].file).toBe("src/untagged-file.js");
+        expect(report.untaggedFilesAsModule.files[0].relevancy).toBe(Relevancy.LOW);
     });
 });
-
 

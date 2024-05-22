@@ -440,4 +440,8 @@ export class GitRepository {
             return false;
         }
     }
+
+    public get root() {
+        return this._root;
+    }
 }
