@@ -16,14 +16,6 @@
         "@typescript-eslint"
     ],
     "rules": {
-        "indent": [
-            "error",
-            "tab"
-        ],
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
         "quotes": [
             "error",
             "double"
@@ -32,7 +24,7 @@
             "error",
             "always"
         ],
-           "import/extensions": [
+        "import/extensions": [
             "error",
             "ignorePackages",
             {

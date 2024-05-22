@@ -125,3 +125,7 @@ The mock repo can be updated automatically by running `./pushTestRepo.sh`
 - [ ] Add unit tests for even the basic stuff - reading and parsing JSON files, synchronization between the database and repository, etc.
 - [ ] Add unit tests for the basic actions which can be performed on files - adding, deleting, modifying, renaming. After initial database entry the script should automatically handle all cases.
 - [ ] Add [adf-validator](https://github.com/torifat/adf-validator/tree/master) which would give more specific errors (right now comments are just not being posted)
+
+### Special thanks
+
+- [adf-validator](https://github.com/torifat/adf-validator) for showing how to validate Jira's ADF
