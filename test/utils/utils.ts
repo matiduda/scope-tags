@@ -1,10 +1,11 @@
 import { resolve, join, sep, posix } from "path";
 import { appendFileSync, existsSync, mkdirSync } from "fs";
-
 import { MOCK_REMOTE_URL, MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
 
 import { v4 as uuidv4 } from 'uuid';
 import { GitRepository } from "../../src/Git/GitRepository";
+import rimraf from "rimraf";
+import { execSync } from "child_process";
 
 // Mocked repository
 
@@ -29,7 +30,6 @@ export const assertTemporaryFolderExists = () => {
  * @returns {string} Generated repository path
  */
 export const makeUniqueFolderForTest = (): string => {
-
     const testID = uuidv4();
     const tempFolderPath = join(TEST_DATA_FOLDER, testID);
     mkdirSync(join(TEST_DATA_FOLDER, testID));
@@ -125,3 +125,41 @@ export const commitModitication = async (
 
     return repository;
 };
+
+export const deleteFiles = (
+    fileNames: string[],
+    repositoryPath: string,
+): void => {
+    for (const fileName of fileNames) {
+        const filePath = join(repositoryPath, fileName);
+        if (existsSync(filePath)) {
+            rimraf.sync(filePath);
+        } else {
+            console.debug(`[Delete files] File ${filePath} does not exist`)
+        }
+    }
+};
+
+export const renameFiles = (
+    fileNames: string[][],
+    repositoryPath: string,
+): void => {
+    for (const fileName of fileNames) {
+        const filePathBefore = join(repositoryPath, fileName[0]);
+        const filePathAfter = join(repositoryPath, fileName[1]);
+        if (existsSync(filePathBefore)) {
+            execSync(`cd ${repositoryPath} && git mv ${fileName[0]} ${fileName[1]}`);
+        } else {
+            console.debug(`[Rename files] File ${filePathBefore} does not exist`);
+        }
+    }
+};
+
+// Nodegit does not work well in Jest with deletion / renaming
+export const commitFilesUsingGitNatively = (
+    fileNames: string[],
+    repositoryPath: string,
+    commitMessage = "test commit"
+) => {
+    execSync(`cd ${repositoryPath} && git add ${fileNames.join(' ')} && git commit -m "${commitMessage}"`);
+}

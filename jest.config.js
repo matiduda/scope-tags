@@ -2,9 +2,9 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  transformIgnorePatterns: ['<rootDir>/node_modules/'],
+  transformIgnorePatterns: ['<rootDir>/node_modules/', '<rootDir>/__temporaryTestData__/'],
   roots: ["<rootDir>/test/", "<rootDir>/src/"],
-  collectCoverage: true,
+  collectCoverage: false,
   collectCoverageFrom: ["src/**", "!**/node_modules/**"],
   coverageDirectory: './coverage',
   coverageReporters: ['json', 'lcovonly', 'text', 'clover'],
