@@ -453,5 +453,6 @@ describe("Report generation works as expected", async () => {
         expect(report.untaggedFilesAsModule.files[0].file).toBe("src/untagged-file.js");
         expect(report.untaggedFilesAsModule.files[0].relevancy).toBe(Relevancy.LOW);
     });
+
 });
 
