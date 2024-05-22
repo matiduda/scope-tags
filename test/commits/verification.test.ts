@@ -6,6 +6,7 @@ import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
 import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { Utils } from "../../src/Scope/Utils";
 import { join } from "path";
+import { FileData } from "../../src/Git/Types";
 
 const fs = require('fs');
 
@@ -172,8 +173,8 @@ describe("Commit verification by scope tags script", () => {
         expect(mergeCommit).toBeDefined();
         expect(realCommit).toBeDefined();
 
-        const mergeCommitInfo = await repository.verifyCommit(mergeCommit, config, database, relevancy, true);
-        const realCommitInfo = await repository.verifyCommit(realCommit, config, database, relevancy, true);
+        const mergeCommitInfo = await repository.verifyCommit(mergeCommit, config, database, relevancy, undefined, true);
+        const realCommitInfo = await repository.verifyCommit(realCommit, config, database, relevancy, undefined, true);
 
         expect(mergeCommitInfo.isMergeCommit).toBe(true);
 
@@ -217,7 +218,7 @@ describe("Commit verification by scope tags script", () => {
         expect(unpushedCommits.length).toBe(commonMergeCommitMessages.length);
 
         for (const commit of unpushedCommits) {
-            const commitInfo = await repository.verifyCommit(commit, config, database, relevancy, true);
+            const commitInfo = await repository.verifyCommit(commit, config, database, relevancy, undefined, true);
             expect(commitInfo.isMergeCommit).toBe(true);
         }
         const verificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
@@ -226,4 +227,47 @@ describe("Commit verification by scope tags script", () => {
 
         expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
     });
+
+    it("When multiple commits modifies the same file, but only the last one includes relevancy, all commits are marked as verified", async () => {
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        const filesToModify = [
+            "src/tagged-file.js",
+            "src/tagged-file-with-multiple-modules.js",
+            "src/file-ignored-by-database.js"
+        ];
+
+        const relevancy = new RelevancyManager();
+
+        await commitModitication(filesToModify, REPO_PATH);
+
+        const repository = await commitModitication(filesToModify, REPO_PATH, `test commit
+
+        __relevancy__[{"path":"src/tagged-file.js","relevancy":"LOW","commit":"__current__"},{"path":"src/tagged-file-with-multiple-modules.js","relevancy":"HIGH","commit":"__current__"}]__relevancy__
+        `);
+
+        const unpushedCommits = await repository.getUnpushedCommits();
+
+        expect(unpushedCommits.length).toBe(2);
+
+        const commitWithRelevancy = unpushedCommits[0];
+        const commitWithoutRelevancy = unpushedCommits[1];
+
+        expect(relevancy.doesCommitMessageHaveRelevancyData(commitWithRelevancy.message())).toBe(true);
+        expect(relevancy.doesCommitMessageHaveRelevancyData(commitWithoutRelevancy.message())).toBe(false);
+
+        const commitWithRelevancyfileDataArray: FileData[] = repository.getFileDataUsingNativeGitCommand(commitWithRelevancy);
+        const commitWithoutRelevancyfileDataArray: FileData[] = repository.getFileDataUsingNativeGitCommand(commitWithoutRelevancy);
+
+        expect(commitWithRelevancyfileDataArray.length).toBe(3);
+        expect(commitWithoutRelevancyfileDataArray.length).toBe(3);
+
+        const verificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
+
+        console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, verificationStatus)}`)
+
+        expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
+    });
+
 });

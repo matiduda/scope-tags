@@ -18,7 +18,7 @@ describe("Tesing if file data is retrieved correctly", () => {
 
         const fileDataArray: FileData[] = repo.getFileDataUsingNativeGitCommand(commit);
 
-        expect(fileDataArray.length === 1).toBeDefined();
+        expect(fileDataArray.length).toBe(1);
 
         const ourFileData = fileDataArray[0];
 

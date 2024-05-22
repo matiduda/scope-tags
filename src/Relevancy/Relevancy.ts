@@ -1,5 +1,3 @@
-import { FilePath } from "../Git/Types";
-
 export enum Relevancy {
     LOW = "LOW",        // Does not search for references
     HIGH = "HIGH",      // Searches for references
@@ -14,7 +12,7 @@ export type CommitMessageRelevancyInfo = {
     commit: string
 };
 
-export type RelevancyMap = Map<FilePath, Array<CommitMessageRelevancyInfo>>;
+export type RelevancyMap = Map<string, Array<CommitMessageRelevancyInfo>>; // Maps commit SHA to relevancies
 
 // Descriptions
 

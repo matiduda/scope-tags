@@ -18,9 +18,12 @@ export function runVerifyCommand(args: Array<string>, root: string) {
     const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(commitHash).then(async (commit: Commit) => {
+        console.log(`Loading relevancy map...'`);
+        const relevancyMap = relevancyManager.loadRelevancyMapFromCommits([commit]);
+
         console.log(`Checking commit '${commit.summary()}'`);
 
-        const commitInfo = await repository.verifyCommit(commit, config, fileTagsDatabase, relevancyManager);
+        const commitInfo = await repository.verifyCommit(commit, config, fileTagsDatabase, relevancyManager, relevancyMap);
 
         console.log(commitInfo);
     });

@@ -5,6 +5,7 @@ import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabas
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { execSync } from "child_process";
+import { RelevancyMap } from "../Relevancy/Relevancy";
 
 export class GitRepository {
 
@@ -298,7 +299,14 @@ export class GitRepository {
         await index.write();
     }
 
-    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager, useGitNatively = false): Promise<VerificationInfo> {
+    public async verifyCommit(
+        commit: Commit,
+        config: ConfigFile,
+        database: FileTagsDatabase,
+        relevancyManager: RelevancyManager,
+        relevancyMap?: RelevancyMap,
+        useGitNatively = false
+    ): Promise<VerificationInfo> {
         const commitInfo: VerificationInfo = {
             isVerified: false,
             filesToTag: [],
@@ -342,13 +350,24 @@ export class GitRepository {
         commitInfo.filesToBeRelevancyTagged = fileDataArray.filter(fileData => {
             const fileStatus = statusMap.get(fileData);
             return fileStatus !== FileStatusInDatabase.IGNORED;
+        }).filter(fileData => {
+            if (!relevancyMap) {
+                return true;
+            }
+
+            const mapHasRelevancy = [...relevancyMap.values()].some(relevancyInfo => relevancyInfo.some(info => info.path === fileData.oldPath || info.path === fileData.newPath))
+
+            if (mapHasRelevancy) {
+                return false;
+            }
+
+            return true;
         });
 
         if (!commitInfo.filesToTag.length) {
             commitInfo.isVerified = true;
         }
 
-        // Check relevancy
         commitInfo.hasRelevancy = relevancyManager.doesCommitMessageHaveRelevancyData(commit.message());
 
         if (commitInfo.hasRelevancy) {
