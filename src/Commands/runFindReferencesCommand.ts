@@ -10,8 +10,6 @@ export function runFindReferencesCommand(args: Array<string>, root: string) {
 
     const tsReferenceFinder = new TSReferenceFinder(root, "tsconfig.json");
 
-    debugger;
-
     const references = tsReferenceFinder.findReferences(filePath, Relevancy.HIGH);
 
     if (!references.length) {

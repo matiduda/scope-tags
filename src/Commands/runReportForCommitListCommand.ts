@@ -11,6 +11,7 @@ import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigurationProperty, Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { ADFValidator } from "../Report/ADFValidator";
+import { JiraBuilder } from "../Report/JiraBuilder";
 
 const os = require("os");
 
@@ -100,7 +101,9 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
             continue;
         }
 
-        const commentReport = generator.getReportAsJiraComment(report, false);
+        const jiraBuilder = new JiraBuilder();
+
+        const commentReport = generator.getReportAsJiraComment(report, jiraBuilder, false);
         const commentReportADF = `{adf:display=block}${commentReport.comment}{adf}`;
 
         console.log(`[Scope tags]: Validating ADF of report for issue '${issue}'...'`);

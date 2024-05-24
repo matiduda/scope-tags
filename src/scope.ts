@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-import { runUntagCommand } from "./Commands/runUntagCommand";
+#!/usr/bin/env nodeimport { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
 import { runVerifyCommand } from "./Commands/runVerifyCommand";
@@ -14,7 +13,7 @@ import { getGitProjectRoot } from "./Git/Project";
 import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
 import { runSeeCommand } from "./Commands/runSeeCommand";
-import { Utils } from "./Scope/Utils";
+import { runUntagCommand } from "./Commands/runUntagCommand";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -30,7 +29,7 @@ if (!root) {
 
 switch (args[0]) {
     case "--version": {
-        console.log(Utils.getScriptVersion());
+        console.log(getScriptVersion());
         break;
     }
     case "--tag": {
@@ -89,4 +88,8 @@ switch (args[0]) {
         runStartCommandLineInterfaceCommand(args, root);
         break;
     }
+}
+
+export function getScriptVersion(): string {
+    return require('../package.json').version;
 }

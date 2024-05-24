@@ -346,7 +346,7 @@ export class ReportGenerator {
         }
     };
 
-    public getReportAsJiraComment(report: Report, printToConsole = false) {
+    public getReportAsJiraComment(report: Report, jiraBuilder: JiraBuilder, printToConsole = false) {
         const finalReportTableData: Array<ReportTableRow> = report.allModules
             .map(moduleReport => {
                 const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
@@ -375,7 +375,6 @@ export class ReportGenerator {
             unusedReferences: untaggedFilesTableRowInfo.unusedReferences,
         };
 
-        const jiraBuilder = new JiraBuilder();
         return jiraBuilder.parseReport(
             finalReportTableData,
             untaggedFilesTableRow,

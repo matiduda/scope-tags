@@ -10,6 +10,7 @@ import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ADFValidator } from "../Report/ADFValidator";
+import { JiraBuilder } from "../Report/JiraBuilder";
 
 export function runReportForCommitCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
@@ -56,7 +57,9 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
             return;
         }
 
-        return generator.getReportAsJiraComment(report, true);
+        const jiraBuilder = new JiraBuilder();
+
+        return generator.getReportAsJiraComment(report, jiraBuilder, true);
     }).then(async commentReport => {
         if (!commentReport) {
             return;
