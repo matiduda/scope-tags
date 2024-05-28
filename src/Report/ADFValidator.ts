@@ -1,16 +1,16 @@
 const nodeFetch = require("node-fetch");
-const betterAjvErrors = require('better-ajv-errors');
-import Ajv from 'ajv';
-import { Logger } from '../Logger/Logger';
+const betterAjvErrors = require("better-ajv-errors");
+import Ajv from "ajv";
+import { Logger } from "../Logger/Logger";
 
 export class ADFValidator {
     private static SCHEMA_URL = "https://unpkg.com/@atlaskit/adf-schema@36.8.5/dist/json-schema/v1/full.json";
 
-    private _schema: Object;
+    private _schema: unknown;
 
     public constructor() { }
 
-    public async loadSchema(): Promise<any> {
+    public async loadSchema(): Promise<void> {
         console.log("[ADFValidator] Fetching latest JSON schema");
 
         const response = await nodeFetch(ADFValidator.SCHEMA_URL);
@@ -29,7 +29,7 @@ export class ADFValidator {
         console.log("[ADFValidator] Validating ADF...");
 
         if (!this._schema) {
-            throw new Error(`[ADFValidator] Schema is not loaded yet, call await loadSchema() before validation`);
+            throw new Error("[ADFValidator] Schema is not loaded yet, call await loadSchema() before validation");
         }
 
         const ajv = new Ajv({ jsonPointers: true });

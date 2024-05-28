@@ -56,7 +56,6 @@
     "html-creator": "^0.7.2",
     "nodegit": "^0.28.0-alpha.26",
     "ts-morph": "^22.0.0",
-    "@stoplight/better-ajv-errors": "^1.0.3",
     "node-fetch": "^2.7.0",
     "ajv": "^4.11.8",
     "better-ajv-errors": "^0.6.7"

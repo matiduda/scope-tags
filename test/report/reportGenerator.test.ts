@@ -25,10 +25,9 @@ const initReportGenerator = (root: string) => {
     tags.load();
 
     return new ReportGenerator(repository, tags, database, config, [tsReferenceFinder], PRINT_DEBUG_INFO);
-}
+};
 
-
-describe("Report generation works as expected", async () => {
+describe("Report generation works as expected", () => {
     it("After making a change in a tagged file, the change is correctly described by generated report", async () => {
         const FOLDER_PATH = makeUniqueFolderForTest();
         const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);

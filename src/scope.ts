@@ -1,4 +1,4 @@
-#!/usr/bin/env nodeimport { runUntagCommand } from "./Commands/runUntagCommand";
+#!/usr/bin/env node
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
 import { runVerifyCommand } from "./Commands/runVerifyCommand";
@@ -91,5 +91,5 @@ switch (args[0]) {
 }
 
 export function getScriptVersion(): string {
-    return require('../package.json').version;
+    return require("../package.json").version;
 }

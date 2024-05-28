@@ -4,8 +4,10 @@ import { MOCK_REMOTE_URL, MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
 
 import * as uuid from "uuid";
 import { GitRepository } from "../../src/Git/GitRepository";
-import rimraf from "rimraf";
 import { execSync } from "child_process";
+import * as rimraf from "rimraf";
+import fs from "fs";
+import readline from "readline";
 
 // Mocked repository
 
@@ -163,3 +165,17 @@ export const commitFilesUsingGitNatively = (
 ) => {
     execSync(`cd ${repositoryPath} && git add ${fileNames.join(" ")} && git commit -m "${commitMessage}"`);
 };
+
+// https://stackoverflow.com/questions/28747719/what-is-the-most-efficient-way-to-read-only-the-first-line-of-a-file-in-node-js
+export async function getFirstLine(pathToFile: string): Promise<string> {
+    const readable = fs.createReadStream(pathToFile);
+    const reader = readline.createInterface({ input: readable });
+    const line: string = await new Promise((resolve) => {
+        reader.on("line", (line) => {
+            reader.close();
+            resolve(line);
+        });
+    });
+    readable.close();
+    return line;
+}
