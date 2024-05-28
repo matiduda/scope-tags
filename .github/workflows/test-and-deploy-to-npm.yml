@@ -49,9 +49,13 @@ jobs:
     if: ${{ needs.run-tests.outputs.version == '1' }}
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Install packages
+      run: sudo apt-get install -y libkrb5-dev
+
     - uses: actions/setup-node@v4
       with:
-        node-version: '18.17.1'
+        node-version: '18.19.0'
         registry-url: 'https://registry.npmjs.org'
     - run: npm ci
     - name: Create scope-tags build
