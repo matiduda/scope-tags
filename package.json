@@ -8,8 +8,8 @@
     "/dist"
   ],
   "engines": {
-    "node": ">=18.17.1",
-    "npm": ">=9.6.7"
+    "node": ">=18.19.0",
+    "npm": ">=10.2.3"
   },
   "scripts": {
     "build": "npx tsc",
