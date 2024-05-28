@@ -1,4 +1,4 @@
-import { cloneMockRepositoryToFolder, makeUniqueFolderForTest } from "../_utils/utils";
+import { cloneMockRepositoryToFolder, makeUniqueFolderForTest } from "../utils/utils";
 import { join } from "path";
 import { TagsDatabaseType, TagsDefinitionFile } from "../../src/Scope/TagsDefinitionFile";
 import { JSONFile } from "../../src/FileSystem/JSONFile";

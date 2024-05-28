@@ -339,6 +339,15 @@ export class FileTagsDatabase implements IJSONFileDatabase<LoadedDatabaseType> {
         this._fileTagsDatabaseData.ignoredFiles[ignoredFileIndex] = newPath;
     }
 
+    private _deleteFileFromDatabase(filePath: string) {
+        delete this._fileTagsDatabaseData.files[filePath];
+    }
+
+    private _deleteIgnoredFileFromDatabase(filePath: string) {
+        const index = this._fileTagsDatabaseData.ignoredFiles.indexOf(filePath);
+        this._fileTagsDatabaseData.ignoredFiles.splice(index, 1);
+    }
+
     // Returns files to be tagged
     public updateDatabaseBasedOnChanges(fileDataArray: FileData[]): FileData[] {
         fileDataArray.forEach(fileData => {
@@ -352,7 +361,11 @@ export class FileTagsDatabase implements IJSONFileDatabase<LoadedDatabaseType> {
             }
             // If file deleted - remove from database
             if (fileData.change === GitDeltaType.DELETED) {
-                // TODO: Add
+                if (this.isFileInDatabase(fileData.oldPath)) {
+                    this._deleteFileFromDatabase(fileData.oldPath);
+                } else if (this.isIgnored(fileData.oldPath)) {
+                    this._deleteIgnoredFileFromDatabase(fileData.oldPath);
+                }
             }
         });
         return fileDataArray.filter(fileData => fileData.change !== GitDeltaType.DELETED);
@@ -360,5 +373,13 @@ export class FileTagsDatabase implements IJSONFileDatabase<LoadedDatabaseType> {
 
     public getPath(): string {
         return FileTagsDatabase.PATH;
+    }
+
+    public get fileCount(): number {
+        return Object.keys(this._fileTagsDatabaseData.files).length;
+    }
+
+    public get ignoredFilesCount(): number {
+        return this._fileTagsDatabaseData.ignoredFiles.length;
     }
 }

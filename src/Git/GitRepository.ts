@@ -5,6 +5,7 @@ import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabas
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { execSync } from "child_process";
+import { RelevancyMap } from "../Relevancy/Relevancy";
 
 export class GitRepository {
 
@@ -106,7 +107,6 @@ export class GitRepository {
     }
 
     public getFileDataUsingNativeGitCommand(commit: Commit): FileData[] {
-
         /**
          * Has the following format:
          * M       src/Git/GitRepository.ts
@@ -134,8 +134,14 @@ export class GitRepository {
             `cd ${this._root} && git update-index && git diff-tree --no-commit-id --numstat -r ${commit.sha()}`
         ).toString().trim().split('\n');
 
-        if (nameStatusOutput.length !== numstatOutput.length) {
-            throw new Error(`Output of git-diff --name-status does not match one for --no-commit-id for commit ${commit.sha()}`);
+        if (nameStatusOutput.length === 0) {
+            console.debug(nameStatusOutput);
+            throw new Error(`Output of git-diff --name-status is empty for commit ${commit.sha()}`);
+        }
+
+        if (numstatOutput.length === 0) {
+            console.debug(numstatOutput);
+            throw new Error(`Output of git-diff --numstat is empty for commit ${commit.sha()}`);
         }
 
         const statusesToGitDeltaTypeMap = new Map<string, GitDeltaType>([
@@ -154,19 +160,27 @@ export class GitRepository {
 
         const fileDataArray: FileData[] = [];
 
-        numstatOutput.forEach((numStatLine: string, i: number) => {
+        nameStatusOutput.forEach((nameStatusLine: string, i: number) => {
+            const [changeType, relatedFilePath, optionalRenamedPath] = nameStatusLine.split('\t');
+
+            const numStatLine = numstatOutput.find(output => output.includes(relatedFilePath));
+
+            if (!numStatLine) {
+                throw new Error(`No matching git-diff --name-status for file ${relatedFilePath}, output is ${nameStatusOutput}`);
+            }
+
             const [linesAdded, linesRemoved, filePath] = numStatLine.split('\t');
 
-            const [changeType, relatedFilePath, optionalRenamedPath] = nameStatusOutput[i].split('\t');
+            let ourChangeType = statusesToGitDeltaTypeMap.get(changeType[0]) || GitDeltaType.UNREADABLE;
 
-            if (filePath !== relatedFilePath) {
-                throw new Error(`Error while processing git-diff: File path '${filePath}' does not match one of '${relatedFilePath}'`);
+            if (optionalRenamedPath) {
+                ourChangeType = GitDeltaType.RENAMED;
             }
 
             fileDataArray.push({
                 oldPath: filePath,
                 newPath: optionalRenamedPath || filePath,
-                change: statusesToGitDeltaTypeMap.get(changeType[0]) || GitDeltaType.UNREADABLE,
+                change: ourChangeType,
                 linesAdded: parseInt(linesAdded),
                 linesRemoved: parseInt(linesRemoved),
                 commitedIn: commit
@@ -176,11 +190,14 @@ export class GitRepository {
         return fileDataArray;
     }
 
-    public async getFileDataForCommits(commits: Array<Commit>): Promise<FileData[]> {
+    public async getFileDataForCommits(commits: Array<Commit>, useGitNatively = false): Promise<FileData[]> {
         const fileDataForCommits: Array<FileData> = [];
 
         for (const commit of commits) {
-            const fileDataForCommit = await this.getFileDataForCommit(commit);
+            const fileDataForCommit = useGitNatively
+                ? this.getFileDataUsingNativeGitCommand(commit)
+                : await this.getFileDataForCommit(commit);
+
             fileDataForCommit.forEach(fileData => fileDataForCommits.push(fileData));
         }
 
@@ -248,26 +265,11 @@ export class GitRepository {
 
     // Mostly from https://github.com/nodegit/nodegit/blob/master/examples/add-and-commit.js
     public async commitFiles(commitMessage: string, filePaths: string[]): Promise<Oid> {
-        const { execSync } = require('child_process');
-
         const repository = await this._getRepository();
-        // const index = await repository.refreshIndex();
-
-        // for (const filePath of filePaths) {
-        //     await index.addByPath(filePath);
-        // }
-
-        // await index.write();
-
-        // const oid = await index.writeTree();
-
-        // const parent = await repository.getHeadCommit();
         const author = Signature.now("Scott Chacon", "schacon@gmail.com");
         const committer = Signature.now("Scott A Chacon", "scott@github.com");
 
         const commitId = await repository.createCommitOnHead(filePaths, author, committer, commitMessage);
-
-        repository.createCommitOnHead
 
         return commitId;
     }
@@ -297,7 +299,14 @@ export class GitRepository {
         await index.write();
     }
 
-    public async verifyCommit(commit: Commit, config: ConfigFile, database: FileTagsDatabase, relevancyManager: RelevancyManager, useGitNatively = false): Promise<VerificationInfo> {
+    public async verifyCommit(
+        commit: Commit,
+        config: ConfigFile,
+        database: FileTagsDatabase,
+        relevancyManager: RelevancyManager,
+        relevancyMap?: RelevancyMap,
+        useGitNatively = false
+    ): Promise<VerificationInfo> {
         const commitInfo: VerificationInfo = {
             isVerified: false,
             filesToTag: [],
@@ -341,13 +350,24 @@ export class GitRepository {
         commitInfo.filesToBeRelevancyTagged = fileDataArray.filter(fileData => {
             const fileStatus = statusMap.get(fileData);
             return fileStatus !== FileStatusInDatabase.IGNORED;
+        }).filter(fileData => {
+            if (!relevancyMap) {
+                return true;
+            }
+
+            const mapHasRelevancy = [...relevancyMap.values()].some(relevancyInfo => relevancyInfo.some(info => info.path === fileData.oldPath || info.path === fileData.newPath))
+
+            if (mapHasRelevancy) {
+                return false;
+            }
+
+            return true;
         });
 
         if (!commitInfo.filesToTag.length) {
             commitInfo.isVerified = true;
         }
 
-        // Check relevancy
         commitInfo.hasRelevancy = relevancyManager.doesCommitMessageHaveRelevancyData(commit.message());
 
         if (commitInfo.hasRelevancy) {
@@ -376,7 +396,18 @@ export class GitRepository {
     }
 
     public isMergeCommit(commit: Commit): boolean {
-        return commit.parentcount() > 1;
+        if (commit.parentcount() > 1) {
+            return true;
+        }
+
+        const trimmedCommitMessage = commit.summary();
+
+        // Ugly, but works
+        if (trimmedCommitMessage.includes("Merge")) {
+            return true;
+        }
+
+        return false;
     }
 
     private async _getRepository(): Promise<Repository> {
@@ -425,5 +456,9 @@ export class GitRepository {
         } catch (e) {
             return false;
         }
+    }
+
+    public get root() {
+        return this._root;
     }
 }

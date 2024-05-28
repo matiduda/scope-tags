@@ -48,20 +48,21 @@ export class ReportGenerator {
         private _fileTagsDatabase: FileTagsDatabase,
         private _configFile: ConfigFile,
         private _referenceFinders: Array<IReferenceFinder>,
+        private _printDebugInfo: boolean = false
     ) { }
 
-    public async generateReportForCommit(commit: Commit, projectName: string, relevancyMap: RelevancyMap): Promise<Report> {
-        return this.generateReportForCommits([commit], projectName, "-", true, relevancyMap);
+    public async generateReportForCommit(commit: Commit, projectName: string, relevancyMap: RelevancyMap, useGitNatively = false): Promise<Report> {
+        return this.generateReportForCommits([commit], projectName, "-", relevancyMap, useGitNatively);
     }
 
     public async generateReportForCommits(
         commits: Array<Commit>,
         projectName: string = "undefined",
         jobName: string = "undefined",
-        printDebugInfo: boolean = false,
         relevancyMap?: RelevancyMap,
+        useGitNatively = false
     ): Promise<Report> {
-        const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits);
+        const filesAffectedByCommits: Array<FileData> = await this._repository.getFileDataForCommits(commits, useGitNatively);
 
         return new Promise<Report>(async (resolve, reject) => {
 
@@ -70,7 +71,7 @@ export class ReportGenerator {
 
             const affectedModules = this._getAffectedModules(fileInfoArray);
 
-            if (printDebugInfo) {
+            if (this._printDebugInfo) {
                 console.log("---- File Info ----")
                 console.log(fileInfoArray);
                 console.log("---- Affected Modules ----")
@@ -125,14 +126,18 @@ export class ReportGenerator {
         const commitRelevancyArray = relevancyMap.get(fileData.commitedIn.sha());
 
         if (!commitRelevancyArray) {
-            console.log(`[ReportGenerator]: No relevancy data for commit '${fileData.commitedIn}'`);
+            if (this._printDebugInfo) {
+                console.log(`[ReportGenerator]: No relevancy data for commit '${fileData.commitedIn}'`);
+            }
             return null;
         }
 
         const fileRelevancy = commitRelevancyArray.find(entry => entry.path === fileData.newPath);
 
         if (!fileRelevancy) {
-            console.log(`[ReportGenerator]: No relevancy found for file '${fileData.newPath}'`);
+            if (this._printDebugInfo) {
+                console.log(`[ReportGenerator]: No relevancy found for file '${fileData.newPath}'`);
+            }
             return null;
         }
 
@@ -153,7 +158,7 @@ export class ReportGenerator {
                 linesRemoved: fileData.linesRemoved,
                 usedIn: this._getUsedIn(fileData, relevancy),
                 relevancy: relevancy,
-                ignored: this._configFile.isFileExtensionIgnored(fileData.newPath),
+                ignored: this._fileTagsDatabase.isIgnored(fileData.newPath, this._configFile.getIgnoredFileExtenstions()),
             };
 
             Logger.pushFileInfo(fileData, fileInfo);
@@ -183,7 +188,8 @@ export class ReportGenerator {
     private _getFileReferences(file: string, relevancy: Relevancy | null): Array<FileReference> {
         const references: Array<FileReference> = [];
 
-        if (!fileExists(file)) {
+        // Command should be run outside of repo, so check path relative to repo
+        if (!fileExists(file, this._repository.root)) {
             return references;
         }
 
@@ -191,6 +197,7 @@ export class ReportGenerator {
             if (!referenceFinder.getSupportedFilesExtension().includes(getExtension(file))) {
                 return;
             }
+
             const foundReferences = referenceFinder.findReferences(file, relevancy);
 
             foundReferences.forEach(reference => {
@@ -204,7 +211,9 @@ export class ReportGenerator {
                     }
                 };
 
-                console.log(fileReference.toString());
+                if (this._printDebugInfo) {
+                    console.log(fileReference.toString());
+                }
 
                 references.push(fileReference);
             });
@@ -337,7 +346,7 @@ export class ReportGenerator {
         }
     };
 
-    public getReportAsJiraComment(report: Report, printToConsole = false): string {
+    public getReportAsJiraComment(report: Report, jiraBuilder: JiraBuilder, printToConsole = false) {
         const finalReportTableData: Array<ReportTableRow> = report.allModules
             .map(moduleReport => {
                 const modulesAndTagsInfo = this._getReferencedTags(moduleReport);
@@ -366,7 +375,6 @@ export class ReportGenerator {
             unusedReferences: untaggedFilesTableRowInfo.unusedReferences,
         };
 
-        const jiraBuilder = new JiraBuilder();
         return jiraBuilder.parseReport(
             finalReportTableData,
             untaggedFilesTableRow,
@@ -379,6 +387,6 @@ export class ReportGenerator {
     }
 
     public isReportEmpty(report: Report): boolean {
-        return report.allModules.length === 0;
+        return report.allModules.length === 0 && report.untaggedFilesAsModule.files.length === 0;
     }
 }

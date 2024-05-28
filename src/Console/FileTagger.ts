@@ -160,7 +160,7 @@ export class FileTagger {
     private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
         const prompt = new MultiSelect({
             name: 'value',
-            message: 'Select files to apply the same tags',
+            message: 'Select files to apply the same tags and use ENTER to confirm',
             footer: 'CTRL+C to go to next step, G to select whole group',
             limit: 10,
             choices: this._mapFileDataToOptions(fileData),

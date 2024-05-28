@@ -61,9 +61,9 @@ export const p = (...content: any) => ({
 });
 
 export const text = (text: any) => {
-    if (!text.length) {
-        throw new Error("[AdfUtils] Text node cannot be empty");
-    }
+    // if (!text.length) {
+    //     throw new Error("[AdfUtils] Text node cannot be empty");
+    // }
 
     return {
         type: 'text',

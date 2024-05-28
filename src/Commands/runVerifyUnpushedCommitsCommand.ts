@@ -39,6 +39,9 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
 
     const unpushedCommits: Commit[] = await repository.getUnpushedCommits();
 
+    console.log(`[Scope tags]: Loading relevancy map...'`);
+    const relevancyMap = relevancyManager.loadRelevancyMapFromCommits(unpushedCommits);
+
     if (!unpushedCommits.length) {
         console.log("No commits found that can be verified");
         return VerificationStatus.VERIFIED;
@@ -46,7 +49,7 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
 
     for (const commit of unpushedCommits) {
         console.log(`[Scope tags] Checking: '${commit.message().trim()}'`)
-        const verificationInfo = await repository.verifyCommit(commit, config, fileTagsDatabase, relevancyManager, useGitNatively);
+        const verificationInfo = await repository.verifyCommit(commit, config, fileTagsDatabase, relevancyManager, relevancyMap, useGitNatively);
 
         if (verificationInfo.isSkipped) {
             console.log(`[Scope Tags] Skipped check for '${commit.summary()}'`);
@@ -79,7 +82,7 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
             const filesWhichShouldHaveRelevancyAdded: string[] = [];
 
             info.filesToBeRelevancyTagged.forEach(fileData => {
-                const fileHasRelevancy = info.relevancy.some(relevancy => relevancy.path === fileData.newPath);
+                const fileHasRelevancy = relevancyMap.get(fileData.newPath);
 
                 if (!fileHasRelevancy) {
                     filesWhichShouldHaveRelevancyAdded.push(fileData.newPath);

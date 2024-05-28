@@ -10,6 +10,8 @@ import { fileExists, getExtension, removeFile, resolvePath, saveHTMLLogs } from 
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigurationProperty, Logger } from "../Logger/Logger";
 import { ConfigFile } from "../Scope/ConfigFile";
+import { ADFValidator } from "../Report/ADFValidator";
+import { JiraBuilder } from "../Report/JiraBuilder";
 
 const os = require("os");
 
@@ -92,20 +94,35 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits(commits);
 
         console.log(`[Scope tags]: Generating report for issue '${issue}'...'`);
-        const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, false, relevancyMap);
+        const report = await generator.generateReportForCommits(commits, projects[0].name, buildTag, relevancyMap);
 
         if (generator.isReportEmpty(report)) {
-            console.log("[Scope tags]: Report ommited because no tags for modified files were found'");
+            console.log("[Scope tags]: Report ommited because no tags for modified files were found");
             continue;
         }
 
-        const commentReportJSON = generator.getReportAsJiraComment(report, false);
+        const jiraBuilder = new JiraBuilder();
+
+        const commentReport = generator.getReportAsJiraComment(report, jiraBuilder, false);
+        const commentReportADF = `{adf:display=block}${commentReport.comment}{adf}`;
+
+        console.log(`[Scope tags]: Validating ADF of report for issue '${issue}'...'`);
+
+        const validator = new ADFValidator();
+
+        await validator.loadSchema();
+        const reportIsValid = validator.validateADF(commentReport.adfDocument, issue);
+
+        if (!reportIsValid) {
+            console.log(`[Scope tags]: Ommiting report for issue ${issue} as it have not passed ADF validation`);
+            continue;
+        }
 
         console.log(`[Scope tags]: Posting report as comment for issue '${issue}'...'`);
 
         const reportPostedSuccessfully = await buildIntegration.updateIssue({
             issue: issue,
-            report: commentReportJSON,
+            report: commentReportADF,
             hostname: os.hostname(),
         });
 

@@ -1,5 +1,4 @@
-#!/usr/bin/env node
-import { runUntagCommand } from "./Commands/runUntagCommand";
+#!/usr/bin/env nodeimport { runUntagCommand } from "./Commands/runUntagCommand";
 import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
 import { runVerifyCommand } from "./Commands/runVerifyCommand";
@@ -14,6 +13,7 @@ import { getGitProjectRoot } from "./Git/Project";
 import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
 import { runSeeCommand } from "./Commands/runSeeCommand";
+import { runUntagCommand } from "./Commands/runUntagCommand";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;
@@ -24,6 +24,8 @@ if (!root) {
     console.error("Git repository not found.");
     process.exit(1);
 }
+
+// IMPORTANT: Do not export anything from here, is breaks tests
 
 switch (args[0]) {
     case "--version": {
@@ -66,7 +68,7 @@ switch (args[0]) {
         runReportForCommitListCommand(args, root);
         break;
     }
-    case "--find-references": {
+    case "--find-refs": {
         runFindReferencesCommand(args, root);
         break;
     }

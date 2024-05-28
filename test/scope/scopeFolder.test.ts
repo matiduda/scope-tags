@@ -1,5 +1,5 @@
-import { TEST_DATA_FOLDER } from "../_utils/globals";
-import { createFolder } from "../_utils/utils";
+import { TEST_DATA_FOLDER } from "../utils/globals";
+import { createFolder } from "../utils/utils";
 import { ensureScopeFolderExists, scopeFolderExists } from "../../src/FileSystem/fileSystemUtils";
 import { existsSync, mkdirSync } from "fs";
 import { join } from "path";

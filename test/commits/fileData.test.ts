@@ -1,4 +1,4 @@
-import { cloneMockRepositoryToFolder, commitEmptyFiles, makeUniqueFolderForTest } from "../_utils/utils";
+import { cloneMockRepositoryToFolder, commitEmptyFiles, makeUniqueFolderForTest } from "../utils/utils";
 import { FileData, GitDeltaType } from "../../src/Git/Types";
 
 describe("Tesing if file data is retrieved correctly", () => {
@@ -18,7 +18,7 @@ describe("Tesing if file data is retrieved correctly", () => {
 
         const fileDataArray: FileData[] = repo.getFileDataUsingNativeGitCommand(commit);
 
-        expect(fileDataArray.length === 1).toBeDefined();
+        expect(fileDataArray.length).toBe(1);
 
         const ourFileData = fileDataArray[0];
 

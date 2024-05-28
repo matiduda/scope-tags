@@ -23,6 +23,11 @@ From the repository you want to test the package run
 npm i scope-tags -D
 ```
 
+Make sure your Git configuration has case-sensitivity enabled
+```
+git config --global core.ignorecase false
+```
+
 ### How to run
 
 From the repository you want to test the package run
@@ -112,19 +117,18 @@ Publishing is made automatically by pushing a commit to the main branch, see [gi
 
 The mock repo can be updated automatically by running `./pushTestRepo.sh`
 
-### Features to do
+### Features to do in order of importance
 
-- [ ] Add keyboard shortcut hints when selecting tags and files -> https://github.com/enquirer/enquirer#select-choices
-- [ ] Add groups on select prompt:
-    - [ ] Group files based on common path (files from same directory sould be grouped)
-    - [ ] Group tags based on parent modules
-- [ ] Add remove hanging tags option to tag manager - search for tags not assigned to any module and ask the user if they want to delete them
-- [ ] Unit tests for common actions:
+- [ ] Find a way to clone test repository locally - this will make unit testing much quicker
+- [ ] Unit tests for:
+    - [ ] The basic actions which can be performed on files - adding, deleting, modifying, renaming. After initial database entry the script should automatically handle all cases.
     - [ ] Testing if files are correstly updated in database depending on changes in git
     - [ ] On loading `tags.json` assert that all parents exist in database, if not then these modules won't be displayed
 - [ ] Add unit tests for even the basic stuff - reading and parsing JSON files, synchronization between the database and repository, etc.
 - [ ] Add unit tests for the basic actions which can be performed on files - adding, deleting, modifying, renaming. After initial database entry the script should automatically handle all cases.
 - [ ] Add [adf-validator](https://github.com/torifat/adf-validator/tree/master) which would give more specific errors (right now comments are just not being posted)
+- [ ] Add remove hanging tags option to tag manager - search for tags not assigned to any module and ask the user if they want to delete them
+- [ ] Add keyboard shortcut hints when selecting tags and files -> https://github.com/enquirer/enquirer#select-choices
 
 ### Special thanks
 

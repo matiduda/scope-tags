@@ -76,7 +76,7 @@ export class BuildIntegration {
             return false;
         }
 
-        process.stdout.write(`Sending report to issue '${request.issue}' ... `);
+        process.stdout.write(`[BuildIntegration] Sending report to issue '${request.issue}' ... `);
 
         const rawResponse = await fetch(updateURL, {
             method: "POST",
@@ -87,10 +87,15 @@ export class BuildIntegration {
             body: JSON.stringify(request)
         });
 
-        const content = await rawResponse.json();
-        console.log(content);
-
-        return rawResponse.ok;
+        try {
+            const content = await rawResponse.json();
+            console.log(content);
+            process.stdout.write(`[BuildIntegration] Response '${content}', OK: ${rawResponse.ok}`);
+            return rawResponse.ok;
+        } catch (error) {
+            process.stdout.write(`[BuildIntegration] Could not parse response.`);
+            return false;
+        }
     }
 
     public getBuildTag() {

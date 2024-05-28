@@ -9,6 +9,8 @@ import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { fileExists } from "../FileSystem/fileSystemUtils";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { ADFValidator } from "../Report/ADFValidator";
+import { JiraBuilder } from "../Report/JiraBuilder";
 
 export function runReportForCommitCommand(args: Array<string>, root: string) {
     // Checks if all files from the commit are present in database (or excluded)
@@ -44,16 +46,28 @@ export function runReportForCommitCommand(args: Array<string>, root: string) {
         }
     });
 
-    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders);
+    const generator = new ReportGenerator(repository, tagsDefinitionFile, fileTagsDatabase, configFile, referenceFinders, true);
     const relevancyManager = new RelevancyManager();
 
     repository.getCommitByHash(hash).then(async (commit: Commit) => {
         const relevancyMap = relevancyManager.loadRelevancyMapFromCommits([commit]);
-        const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap);
+        const report = await generator.generateReportForCommit(commit, projects[0].name, relevancyMap, false);
         if (generator.isReportEmpty(report)) {
             console.log("Report is empty (no tags were found in modified files).");
             return;
         }
-        generator.getReportAsJiraComment(report, true);
-    });
+
+        const jiraBuilder = new JiraBuilder();
+
+        return generator.getReportAsJiraComment(report, jiraBuilder, true);
+    }).then(async commentReport => {
+        if (!commentReport) {
+            return;
+        }
+
+        const validator = new ADFValidator();
+
+        await validator.loadSchema();
+        validator.validateADF(commentReport.adfDocument);
+    })
 }

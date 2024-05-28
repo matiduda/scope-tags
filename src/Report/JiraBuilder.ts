@@ -1,10 +1,10 @@
 import { formatDate } from "./TimeUtils";
 import { expand, table, doc, tableRow, tableHeader, p, strong, text, link, nestedExpand } from "./AdfUtils";
-import { getScriptVersion } from "../scope";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
 import { TagIdentifier } from "../Scope/FileTagsDatabase";
 import { FileInfo } from "./ReportGenerator";
 import { Relevancy } from "../Relevancy/Relevancy";
+import { getScriptVersion } from "../scope";
 
 export type TagIdentifierWithRelevancy = TagIdentifier & {
     relevancy: Relevancy;
@@ -56,7 +56,10 @@ export class JiraBuilder {
         buildTag: string,
         printToConsole = false,
         logURL?: string,
-    ): string {
+    ): {
+        adfDocument: string,
+        comment: string
+    } {
         let tableTitle = `'${projectName}' scope tags v${getScriptVersion()} │ ${formatDate(date, "Europe/Warsaw")}`;
         tableTitle += buildTag ? ` │ ${buildTag}` : "";
 
@@ -83,9 +86,10 @@ export class JiraBuilder {
             this.debugPrintADF(adfDocument);
         }
 
-        const jsonReply = JSON.stringify(expandTable)
-
-        return `{adf:display=block}${jsonReply}{adf}`;
+        return {
+            adfDocument: JSON.stringify(adfDocument),
+            comment: JSON.stringify(expandTable)
+        }
     }
 
     private _getHeaderRow(): any {
