@@ -54,7 +54,7 @@ export class BuildIntegration {
     public getUniqueIssues(): Array<string> {
         const commits = this._getCommits();
         if (!commits || !commits.length) {
-            throw new Error("Commit list cannot be empty!");
+            return [];
         }
 
         const allIssues = commits.map(commit => commit.issue);
@@ -93,7 +93,7 @@ export class BuildIntegration {
             process.stdout.write(`[BuildIntegration] Response '${content}', OK: ${rawResponse.ok}`);
             return rawResponse.ok;
         } catch (error) {
-            process.stdout.write(`[BuildIntegration] Could not parse response.`);
+            process.stdout.write("[BuildIntegration] Could not parse response.");
             return false;
         }
     }

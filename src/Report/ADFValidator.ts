@@ -45,7 +45,7 @@ export class ADFValidator {
             console.log(errors);
 
             if (issue) {
-                Logger.pushErrorMessage(issue, errors);
+                Logger.pushAjvErrorMessage(errors, issue);
             }
             console.log(`[ADFValidator] Error while validating ${commentJSON}`);
             return false;

@@ -63,6 +63,8 @@ export class Logger {
     private static _issues: IssueLog[] = [];
     private static _DETACHED_ID = "__detached__";
 
+    private static _globalErrors: string[] = [];
+
     private static _relevancyManager = new RelevancyManager();
 
     private constructor() { }
@@ -85,18 +87,24 @@ export class Logger {
         } as unknown as IssueLog));
     }
 
-    static pushErrorMessage(issue: string, error: any) {
-        let matchingIssue = Logger._issues.find(issueLog => issueLog.key === issue);
+    static pushAjvErrorMessage(error: any, issue?: string) {
+        const justText = error.toString().replace(
+            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, "");
 
-        if (!matchingIssue) {
-            matchingIssue = this._getDetachedIssueLogs();
-            return;
+        if (issue) {
+            const matchingIssue = Logger._issues.find(issueLog => issueLog.key === issue);
+
+            if (matchingIssue) {
+                matchingIssue.errors.push(justText);
+                return;
+            }
         }
 
-        const justText = error.toString().replace(
-            /[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+        this._globalErrors.push(justText);
+    }
 
-        matchingIssue.errors.push(justText);
+    static pushGlobalError(errorMessage: string) {
+        this._globalErrors.push(errorMessage);
     }
 
     static pushFileInfo(fileData: FileData, fileInfo: FileInfo) {
@@ -122,7 +130,7 @@ export class Logger {
             databaseContent: fileInfo.tagIdentifiers,
             referencedFiles: fileInfo.usedIn,
             ignored: fileInfo.ignored,
-        }
+        };
 
         matchingCommitFileLogs.push(newFileLog);
     }
@@ -155,6 +163,7 @@ export class Logger {
         // ... add HTML content here
 
         htmlCreator.appendConfiguration(Logger._configuration);
+        htmlCreator.appendGlobalErrors(Logger._globalErrors);
         htmlCreator.appendIssueTableOfContents(Logger._issues);
         htmlCreator.appendIssueLogs(Logger._issues, configFile.getViewIssueUrl(), configFile.getRepositoryURL(), configFile.getSeeCommitURL());
         htmlCreator.appendInstructions();

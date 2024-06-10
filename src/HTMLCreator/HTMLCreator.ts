@@ -40,7 +40,7 @@ export class HTMLCreator {
                     attributes: {
                         id: "page-title",
                     },
-                    content: 'Scope tags report logs'
+                    content: "Scope tags report logs"
                 },
                 {
                     type: "hr"
@@ -48,7 +48,7 @@ export class HTMLCreator {
             ]
         }]).withBoilerplate();
 
-        this._html.document.addElementToType('head', {
+        this._html.document.addElementToType("head", {
             type: "link",
             attributes: {
                 rel: "stylesheet",
@@ -57,7 +57,7 @@ export class HTMLCreator {
         });
 
         // Add style overrides
-        this._html.document.addElementToType('head', {
+        this._html.document.addElementToType("head", {
             type: "style",
             content: CSSOverrides,
         });
@@ -196,22 +196,30 @@ export class HTMLCreator {
 
                 issue.errors.forEach(errorMessage => {
                     this._appendErrorMessage(issue.key, errorMessage);
-                })
+                });
 
             }
             this._html.document.addElementToId(issue.key, { type: "hr" });
         });
     }
 
-    private _appendErrorMessage(key: string, errorMessage: string) {
-        this._html.document.addElementToId(key, {
-            type: "pre",
-            content: [{
-                type: "code",
-                content: errorMessage
-            }
-            ]
-        });
+    private _appendErrorMessage(elementId: string, errorMessage: string) {
+        const sanitizedErrorMessage = errorMessage.replaceAll("<", "[").replaceAll(">", "]");
+
+        this._html.document.addElementToId(elementId,
+            {
+                type: "div",
+                content: [
+                    {
+                        type: "pre",
+                        content: [{
+                            type: "code",
+                            content: sanitizedErrorMessage
+                        }
+                        ]
+                    }
+                ]
+            });
     }
 
     public appendInstructions() {
@@ -242,7 +250,7 @@ export class HTMLCreator {
                                 title: "Some extra data!!",
                                 class: "addotional-data-on-hover"
                             },
-                            content: `additional data on hover`
+                            content: "additional data on hover"
                         },
                         {
                             type: "span",
@@ -376,7 +384,7 @@ export class HTMLCreator {
                                                 title: this._getRelevancyDescriptions(),
                                                 class: "addotional-data-on-hover-light"
                                             },
-                                            content: `Relevancy`
+                                            content: "Relevancy"
                                         }
                                     ]
                                 },
@@ -400,8 +408,9 @@ export class HTMLCreator {
             ]
         });
     }
+
     private _getRelevancyDescriptions() {
-        return [...RelevancyDescriptions.entries()].map(([relevancy, description]) => `${relevancy} - ${description.message}`).join('\n');
+        return [...RelevancyDescriptions.entries()].map(([relevancy, description]) => `${relevancy} - ${description.message}`).join("\n");
     }
 
     private _renderReferencedFiles(fileReferences: FileReference[]): any {
@@ -415,13 +424,13 @@ export class HTMLCreator {
                 title: this._renderTagIdentifiersToString(fileReference.tagIdentifiers),
                 class: fileReference.tagIdentifiers.length ? "addotional-data-on-hover" : undefined
             },
-            content: `${fileReference.fileInfo.filename + (fileReference.fileInfo.unused ? '- unused' : '')}`
+            content: `${fileReference.fileInfo.filename + (fileReference.fileInfo.unused ? "- unused" : "")}`
         }));
     }
 
     private _renderLinedAddedRemoved(linesAdded: number, linesRemoved: number) {
         if (linesAdded === 0 && linesRemoved === 0) {
-            return '-';
+            return "-";
         }
 
         let linesAddedRemovedText = "";
@@ -429,7 +438,7 @@ export class HTMLCreator {
         if (linesAdded > 0) {
             linesAddedRemovedText += `++${linesAdded}`;
             if (linesRemoved > 0) {
-                linesAddedRemovedText += `  `;
+                linesAddedRemovedText += "  ";
             }
         }
 
@@ -443,15 +452,48 @@ export class HTMLCreator {
     private _renderTagIdentifiers(tagIdentifiers: TagIdentifier[]) {
         return [{
             type: "p",
-            content: tagIdentifiers.map(tagIdentifier => `<strong>${tagIdentifier.module}</strong> / <strong>${tagIdentifier.tag}</strong>`).join('<br>')
-        }]
+            content: tagIdentifiers.map(tagIdentifier => `<strong>${tagIdentifier.module}</strong> / <strong>${tagIdentifier.tag}</strong>`).join("<br>")
+        }];
     }
 
     private _renderTagIdentifiersToString(tagIdentifiers: TagIdentifier[]): string {
         if (!tagIdentifiers.length) {
-            return 'Untagged'
+            return "Untagged";
         }
 
-        return tagIdentifiers.map(tagIdentifier => `- '${tagIdentifier.tag}' from module '${tagIdentifier.module}'`).join('\n');
+        return tagIdentifiers.map(tagIdentifier => `- '${tagIdentifier.tag}' from module '${tagIdentifier.module}'`).join("\n");
+    }
+
+
+    public appendGlobalErrors(errors: string[]) {
+        if (!errors.length) {
+            return;
+        }
+
+        const divId = "errors-global";
+
+        this._html.document.addElementToType("main", {
+            type: "div",
+            attributes: {
+                id: divId
+            },
+            content: [
+                {
+                    type: "h2",
+                    content: "Errors"
+                },
+                {
+                    type: "hr"
+                }
+            ]
+        });
+
+        errors.forEach(error => {
+            this._appendErrorMessage(divId, error);
+        });
+
+        this._html.document.addElementToId(divId, {
+            type: "hr"
+        });
     }
 }

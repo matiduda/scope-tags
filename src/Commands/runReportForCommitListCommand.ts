@@ -35,6 +35,17 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         return;
     }
 
+    try {
+        await generateReportForCommitList(root, buildDataFile, logFilePath);
+    } catch (e: any) {
+        Logger.pushGlobalError(e.stack);
+    }
+
+    saveLogs(root, logFilePath);
+}
+
+async function generateReportForCommitList(root: string, buildDataFile: string, logFilePath: string) {
+
     const repository = new GitRepository(root);
     const configFile = new ConfigFile(root);
     const tagsDefinitionFile = new TagsDefinitionFile(root);
@@ -135,6 +146,13 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
 
     Logger.setConfigurationProperty(ConfigurationProperty.POSTED_REPORTS, `${reportsPosted} of ${reportsGenerated} generated`);
 
+    console.log(`[Scope tags]: Posted comments: ${reportsPosted}`);
+    console.log(`[Scope tags]: Commits processed: ${totalCommitCount}`);
+}
+
+function saveLogs(root: string, logFilePath: string) {
+    const configFile = new ConfigFile(root);
+
     if (logFilePath) {
         if (fileExists(logFilePath)) {
             console.log(`Deleting existing HTML logs from '${logFilePath}' to create new log file`);
@@ -144,7 +162,4 @@ export async function runReportForCommitListCommand(args: Array<string>, root: s
         saveHTMLLogs(logFilePath, Logger.exportLogsToHTML(configFile));
         console.log(`[Scope tags]: Saved HTML logs to '${logFilePath}'...'`);
     }
-
-    console.log(`[Scope tags]: Posted comments: ${reportsPosted}`);
-    console.log(`[Scope tags]: Commits processed: ${totalCommitCount}`);
 }
