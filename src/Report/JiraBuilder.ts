@@ -1,10 +1,10 @@
-import { formatDate } from "./TimeUtils";
-import { expand, table, doc, tableRow, tableHeader, p, strong, text, link, nestedExpand } from "./AdfUtils";
 import { ReferencedFileInfo } from "../References/IReferenceFinder";
-import { TagIdentifier } from "../Scope/FileTagsDatabase";
-import { FileInfo } from "./ReportGenerator";
 import { Relevancy } from "../Relevancy/Relevancy";
 import { getScriptVersion } from "../scope";
+import { TagIdentifier } from "../Scope/FileTagsDatabase";
+import { doc, expand, link, nestedExpand, p, strong, table, tableHeader, tableRow, text } from "./AdfUtils";
+import { FileInfo } from "./ReportGenerator";
+import { formatDate } from "./TimeUtils";
 
 export type TagIdentifierWithRelevancy = TagIdentifier & {
     relevancy: Relevancy;

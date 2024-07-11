@@ -1,11 +1,11 @@
+import { execSync } from "child_process";
 import { Commit, Note, Oid, Repository, Revwalk, Signature } from "nodegit";
-import { FileData, GitDeltaType, VerificationInfo } from "./Types";
 import path from "path";
-import { FileTagsDatabase, FileStatusInDatabase } from "../Scope/FileTagsDatabase";
+import { RelevancyMap } from "../Relevancy/Relevancy";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
-import { execSync } from "child_process";
-import { RelevancyMap } from "../Relevancy/Relevancy";
+import { FileStatusInDatabase, FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { FileData, GitDeltaType, VerificationInfo } from "./Types";
 
 export class GitRepository {
 
@@ -16,6 +16,10 @@ export class GitRepository {
 
     constructor(root: string) {
         this._root = root;
+    }
+
+    public get root() {
+        return this._root;
     }
 
     public async getFileDataForUnpushedCommits(maxCommitCount: number = 20): Promise<FileData[]> {
@@ -274,7 +278,11 @@ export class GitRepository {
         return commitId;
     }
 
-    public async amendMostRecentCommit(files: string[], newCommitMessage: string) {
+    public async amendMostRecentCommit(files: string[], newCommitMessage: string, useGitNatively = false) {
+        if(useGitNatively) {
+            this._amendFilesUsingNativeGitCommand(files, newCommitMessage);
+            return;
+        }
 
         const repository = await this._getRepository();
         const index = await repository.refreshIndex();
@@ -458,7 +466,16 @@ export class GitRepository {
         }
     }
 
-    public get root() {
-        return this._root;
+    /**
+     * Used for tests only, because nodeGit's commit.amend blocks them
+     */
+    private _amendFilesUsingNativeGitCommand(files: string[], newCommitMessage: string) {
+        const normalizedCommitMessage = newCommitMessage.replace(/(\r\n|\n|\r)/gm, "");
+
+        files.forEach(file => {
+            execSync(`cd ${this._root} && git add ${file}`);
+        })
+        
+        execSync(`cd ${this._root} && git commit --amend -m ${JSON.stringify(normalizedCommitMessage)}`);
     }
 }

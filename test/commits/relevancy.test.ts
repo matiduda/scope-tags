@@ -1,7 +1,10 @@
-import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
+import { Commit } from "nodegit";
 import { FileData, GitDeltaType } from "../../src/Git/Types";
 import { CommitMessageRelevancyInfo, Relevancy } from "../../src/Relevancy/Relevancy";
-import { Commit } from "nodegit";
+import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
+import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
+import { TagsDefinitionFile } from "../../src/Scope/TagsDefinitionFile";
+import { cloneMockRepositoryToFolder, commitModitication, makeUniqueFolderForTest } from "../utils/utils";
 
 const fs = require('fs');
 
@@ -173,5 +176,146 @@ describe("Relevancy manager tests", () => {
         checkRelevancyAndFileData(generatedRelevancyData[0], mockFileData1, mockRelevancyData.get(mockFileData1), "sha");
         checkRelevancyAndFileData(generatedRelevancyData[1], mockFileData2, mockRelevancyData.get(mockFileData2), "sha");
         checkRelevancyAndFileData(generatedRelevancyData[2], mockFileData3, mockRelevancyData.get(mockFileData3), "sha");
-    })
+    });
+
+    it("Correctly replaces existing relevancy in a commit message (low -> high relevancy)", async () => {
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        // Assume relevancy is already added
+
+        const repository = await commitModitication(
+            ["src/tagged-file.js"],
+            REPO_PATH,
+            `[TEST - 1234] There is correct relevancy data in this commit message
+
+            __relevancy__[{"path":"src/tagged-file.js","relevancy":"LOW","commit":"__current__"}]__relevancy__
+        `);
+
+        const relevancyManager = new RelevancyManager();
+        
+        const headCommit = (await repository.getUnpushedCommits())[0];
+        
+        expect(headCommit).toBeDefined();
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(headCommit.message())).toBe(true);
+
+        // And user selects new relevancy using npx scope --add
+
+        const userSelectedRelevancy = new Map<FileData, Relevancy>([
+            [{
+                oldPath: "src/tagged-file.js",
+                newPath: "src/tagged-file.js",
+                change: GitDeltaType.MODIFIED,
+                linesAdded: 100,
+                linesRemoved: 200,
+            } as FileData,
+            Relevancy.HIGH]
+        ]);
+
+        const newCommitMessage = relevancyManager.convertRelevancyDataToCommitMessage(userSelectedRelevancy, headCommit);
+        
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(newCommitMessage)).toBe(true);
+
+        const extractedRelevancy = relevancyManager.convertCommitMessageToRelevancyData({
+            message: () => newCommitMessage,
+            sha: () => "sha",
+        } as Commit);
+
+        expect(extractedRelevancy[0]).toBeDefined();
+        expect(extractedRelevancy[0].path).toBe("src/tagged-file.js");
+        expect(extractedRelevancy[0].relevancy).toBe(Relevancy.HIGH);
+
+        const tagsDefinitionFile = new TagsDefinitionFile(REPO_PATH);
+        const fileTagsDatabase = new FileTagsDatabase(REPO_PATH);
+
+        await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage, true);
+
+        const headCommitAfterChange = (await repository.getUnpushedCommits())[0];
+
+        expect(headCommitAfterChange).toBeDefined();
+        const msg = headCommitAfterChange.message();
+        
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(headCommitAfterChange.message())).toBe(true);
+
+
+        const newExtractedRelevancy = relevancyManager.convertCommitMessageToRelevancyData({
+            message: () => headCommitAfterChange.message(),
+            sha: () => "sha",
+        } as Commit);
+
+        expect(newExtractedRelevancy[0]).toBeDefined();
+        expect(newExtractedRelevancy[0].path).toBe("src/tagged-file.js");
+        expect(newExtractedRelevancy[0].relevancy).toBe(Relevancy.HIGH);
+    });
+
+    
+    it("Correctly replaces existing relevancy in a commit message (high -> low relevancy)", async () => {
+        const FOLDER_PATH = makeUniqueFolderForTest();
+        const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+        // Assume relevancy is already added
+
+        const repository = await commitModitication(
+            ["src/tagged-file.js"],
+            REPO_PATH,
+            `[TEST - 1234] There is correct relevancy data in this commit message
+
+            __relevancy__[{"path":"src/tagged-file.js","relevancy":"HIGH","commit":"__current__"}]__relevancy__
+        `);
+
+        const relevancyManager = new RelevancyManager();
+        
+        const headCommit = (await repository.getUnpushedCommits())[0];
+        
+        expect(headCommit).toBeDefined();
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(headCommit.message())).toBe(true);
+
+        // And user selects new relevancy using npx scope --add
+
+        const userSelectedRelevancy = new Map<FileData, Relevancy>([
+            [{
+                oldPath: "src/tagged-file.js",
+                newPath: "src/tagged-file.js",
+                change: GitDeltaType.MODIFIED,
+                linesAdded: 100,
+                linesRemoved: 200,
+            } as FileData,
+            Relevancy.LOW]
+        ]);
+
+        const newCommitMessage = relevancyManager.convertRelevancyDataToCommitMessage(userSelectedRelevancy, headCommit);
+        
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(newCommitMessage)).toBe(true);
+
+        const extractedRelevancy = relevancyManager.convertCommitMessageToRelevancyData({
+            message: () => newCommitMessage,
+            sha: () => "sha",
+        } as Commit);
+
+        expect(extractedRelevancy[0]).toBeDefined();
+        expect(extractedRelevancy[0].path).toBe("src/tagged-file.js");
+        expect(extractedRelevancy[0].relevancy).toBe(Relevancy.LOW);
+
+        const tagsDefinitionFile = new TagsDefinitionFile(REPO_PATH);
+        const fileTagsDatabase = new FileTagsDatabase(REPO_PATH);
+
+        await repository.amendMostRecentCommit([fileTagsDatabase.getPath(), tagsDefinitionFile.getPath()], newCommitMessage, true);
+
+        const headCommitAfterChange = (await repository.getUnpushedCommits())[0];
+
+        expect(headCommitAfterChange).toBeDefined();
+        const msg = headCommitAfterChange.message();
+        
+        expect(relevancyManager.doesCommitMessageHaveRelevancyData(headCommitAfterChange.message())).toBe(true);
+
+
+        const newExtractedRelevancy = relevancyManager.convertCommitMessageToRelevancyData({
+            message: () => headCommitAfterChange.message(),
+            sha: () => "sha",
+        } as Commit);
+
+        expect(newExtractedRelevancy[0]).toBeDefined();
+        expect(newExtractedRelevancy[0].path).toBe("src/tagged-file.js");
+        expect(newExtractedRelevancy[0].relevancy).toBe(Relevancy.LOW);
+    });
 });

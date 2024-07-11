@@ -5,6 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "command": "npm run build && npm run test",
+            "name": "Build & run tests",
+            "request": "launch",
+            "type": "node-terminal"
+        },
+        {
             "command": "npm run build && scope --report-for-commit-list buildData.json log.html",
             "name": "Run test of --report-for-commit-list",
             "request": "launch",

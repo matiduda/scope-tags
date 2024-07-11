@@ -1,7 +1,7 @@
 import { Commit } from "nodegit";
 import { FileData } from "../Git/Types";
-import { CommitMessageRelevancyInfo, Relevancy, RelevancyDescriptions, RelevancyMap } from "./Relevancy";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { CommitMessageRelevancyInfo, Relevancy, RelevancyDescriptions, RelevancyMap } from "./Relevancy";
 
 const { Scale } = require('enquirer');
 
@@ -82,37 +82,19 @@ export class RelevancyManager {
             } as CommitMessageRelevancyInfo;
         });
 
-        // Merge relevancies - if some are duplicates, select those with higher relevancy - TODO: This should be testable -> add test
-        const allRelevancies: CommitMessageRelevancyInfo[] = relevancyArray.concat(relevancyArrayFromCurrentCommit);
-        const mergedRelevancies: CommitMessageRelevancyInfo[] = [];
+        // Merge relevancies - if some are duplicates, overwrite them
+        relevancyArray.forEach(relevancyEntry => {
+            const matchingRelevancyFromCurrentCommit = relevancyArrayFromCurrentCommit.find(relevancy => relevancy.path === relevancyEntry.path);
 
-        relevancyArray.concat(relevancyArrayFromCurrentCommit).forEach(relevancy => {
-
-            if (mergedRelevancies.some(mergedRelevancy => mergedRelevancy.path === relevancy.path)) {
-                return;
-            }
-
-            const relevanciesForThisFileData = allRelevancies.filter(mergedRelevancy => mergedRelevancy.path === relevancy.path);
-
-            if (relevanciesForThisFileData.length === 0) {
-                throw new Error("[RelevancyManager] Could not merge relevancy data to current head commit");
-            } else if (relevanciesForThisFileData.length === 1) {
-                mergedRelevancies.push(relevancy);
-                return;
+            if(matchingRelevancyFromCurrentCommit) {
+                matchingRelevancyFromCurrentCommit.relevancy = relevancyEntry.relevancy;
+                matchingRelevancyFromCurrentCommit.commit = relevancyEntry.commit;
             } else {
-                // Find highest relevancy for this file
-                let highestPossibleRelevancyData = relevanciesForThisFileData[0];
-
-                for (let i = 1; i < relevanciesForThisFileData.length; i++) {
-                    if (this._getIndexByRelevancy(relevanciesForThisFileData[i].relevancy) > this._getIndexByRelevancy(highestPossibleRelevancyData.relevancy)) {
-                        highestPossibleRelevancyData = relevanciesForThisFileData[i];
-                    }
-                }
-                mergedRelevancies.push(highestPossibleRelevancyData);
+                relevancyArrayFromCurrentCommit.push(relevancyEntry);
             }
         });
 
-        const outputRelevancyArray = JSON.stringify(mergedRelevancies);
+        const outputRelevancyArray = JSON.stringify(relevancyArray);
 
         const commitMessageWithoutRelevancy = headCommit.message().replace(/__relevancy__.+__relevancy__/gs, "");
 

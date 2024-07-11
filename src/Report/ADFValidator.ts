@@ -4,7 +4,8 @@ import Ajv from "ajv";
 import { Logger } from "../Logger/Logger";
 
 export class ADFValidator {
-    private static SCHEMA_URL = "https://unpkg.com/@atlaskit/adf-schema@36.8.5/dist/json-schema/v1/full.json";
+    private static SCHEMA_URL = "http://go.atlassian.com/adf-json-schema";
+    private static JIRA_COMMENT_MAX_LENGTH = 32_767;
 
     private _schema: unknown;
 
@@ -33,6 +34,11 @@ export class ADFValidator {
         }
 
         const ajv = new Ajv({ jsonPointers: true });
+
+        if(commentJSON.length > ADFValidator.JIRA_COMMENT_MAX_LENGTH) {
+            console.log(`[ADFValidator] Maximum length of Jira comment (${ADFValidator.JIRA_COMMENT_MAX_LENGTH}) exceeded`);
+            return false;
+        }
 
         const data = JSON.parse(commentJSON);
 

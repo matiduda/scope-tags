@@ -1,13 +1,13 @@
-import { resolve, join, sep, posix } from "path";
 import { appendFileSync, existsSync, mkdirSync } from "fs";
+import { join, posix, resolve, sep } from "path";
 import { MOCK_REMOTE_URL, MOCK_REPOSITORY, TEST_DATA_FOLDER } from "./globals";
 
-import * as uuid from "uuid";
-import { GitRepository } from "../../src/Git/GitRepository";
 import { execSync } from "child_process";
-import * as rimraf from "rimraf";
 import fs from "fs";
 import readline from "readline";
+import * as rimraf from "rimraf";
+import * as uuid from "uuid";
+import { GitRepository } from "../../src/Git/GitRepository";
 
 // Mocked repository
 
