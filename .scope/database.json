@@ -7,6 +7,10 @@
         { "path": ".scope/tags.json",
           "tags": [
             { "tag": "Tag", "module": "Default module" }]},
+        { "path": "new_file.js",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" },
+            { "tag": "Some new tag", "module": "Third module" }]},
         { "path": "package-lock.json",
           "tags": [
             { "tag": "Tag", "module": "Default module" },
