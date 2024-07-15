@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { Commit, Note, Oid, Repository, Revwalk, Signature } from "nodegit";
+import { Commit, Graph, Note, Oid, Repository, Revwalk, Signature } from "nodegit";
 import path from "path";
 import { RelevancyMap } from "../Relevancy/Relevancy";
 import { RelevancyManager } from "../Relevancy/RelevancyManager";
@@ -417,6 +417,39 @@ export class GitRepository {
 
         return false;
     }
+
+    public async branchesContainingCommit(commit: Commit): Promise<string[]> {
+
+        // Open the repository
+        const repo = await this._getRepository();
+    
+        // Get all references (branches)
+        const references = await repo.getReferences();
+    
+        const branchesContainingCommit = [];
+    
+        for (const ref of references) {
+            const branchCommit = await repo.getBranchCommit(ref);
+        
+            // Check if the commit is in the branch history
+
+
+            // for branch_name in self._repository.listall_branches(self._flag):
+            // if self._commit is None or self.get(branch_name) is not None:
+            //     yield branch_name
+            if(branchCommit.sha() === commit.sha()) {
+                branchesContainingCommit.push(ref.shorthand());
+                continue;
+            }
+
+            const isDescendant = await Graph.descendantOf(repo, branchCommit.id(), commit.id());
+            if (isDescendant) {
+                branchesContainingCommit.push(ref.shorthand());
+            }
+        }
+
+        return branchesContainingCommit;
+      }
 
     private async _getRepository(): Promise<Repository> {
         if (this._repository === null) {

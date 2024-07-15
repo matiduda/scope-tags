@@ -1,19 +1,19 @@
 #!/usr/bin/env node
-import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runAddCommand } from "./Commands/runAddCommand";
-import { runVerifyCommand } from "./Commands/runVerifyCommand";
-import { runVerifyUnpushedCommitsCommand } from "./Commands/runVerifyUnpushedCommitsCommand";
-import { runReportForCommitCommand } from "./Commands/runReportForCommitCommand";
-import { runReportForCommitListCommand } from "./Commands/runReportForCommitListCommand";
+import { runCommitCommand } from "./Commands/runCommitCommand";
 import { runFindReferencesCommand } from "./Commands/runFindReferencesCommand";
 import { runHelpCommand } from "./Commands/runHelpCommand";
+import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
+import { runReportForCommitCommand } from "./Commands/runReportForCommitCommand";
+import { runReportForCommitListCommand } from "./Commands/runReportForCommitListCommand";
+import { runSeeCommand } from "./Commands/runSeeCommand";
+import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
 import { runStartCommandLineInterfaceCommand } from "./Commands/runStartCommandLineInterfaceCommand";
 import { runTagCommitCommand } from "./Commands/runTagCommand";
-import { getGitProjectRoot } from "./Git/Project";
-import { runSkipVerificationForCommits } from "./Commands/runSkipVerificationAndPushCommand";
-import { runLogCommitCommand } from "./Commands/runLogCommitCommand";
-import { runSeeCommand } from "./Commands/runSeeCommand";
 import { runUntagCommand } from "./Commands/runUntagCommand";
+import { runVerifyCommand } from "./Commands/runVerifyCommand";
+import { runVerifyUnpushedCommitsCommand } from "./Commands/runVerifyUnpushedCommitsCommand";
+import { getGitProjectRoot } from "./Git/Project";
 
 // Will be needed to get output from script
 const [, , ...args] = process.argv;

@@ -1,8 +1,8 @@
-import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { GitRepository } from "../Git/GitRepository";
-import { Utils } from "../Scope/Utils";
 import { GitDeltaType } from "../Git/Types";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { Utils } from "../Scope/Utils";
 
 export function runLogCommitCommand(args: Array<string>, root: string) {
     // Logs files associated with a commit
@@ -22,9 +22,11 @@ export function runLogCommitCommand(args: Array<string>, root: string) {
 
         const commitHasRelevancy = relevancyTagger.doesCommitMessageHaveRelevancyData(commit.message());
 
-        console.log(`Commit summary: '${commit.summary()}`);
-        console.log(`Relevancy info?: '${commitHasRelevancy ? "yes" : "no"}`);
+        const branches = await repository.branchesContainingCommit(commit);
 
+        console.log(`Commit summary: ${commit.summary()}`);
+        console.log(`Relevancy info?: '${commitHasRelevancy ? "yes" : "no"}`);
+        console.log(`Branches: ${branches.join(', ')}`);
 
         if (commitHasRelevancy) {
             const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits([commit]);
@@ -57,7 +59,7 @@ export function runLogCommitCommand(args: Array<string>, root: string) {
                 console.log("File is IGNORED by scope database.");
             }
             else {
-                console.log("Not in NOT in scope database.");
+                console.log("Not found in scope database.");
             }
         }
         printLineBreak();
