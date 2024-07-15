@@ -49,6 +49,7 @@ export type VerificationInfo = {
     isSkipped: boolean,
     hasRelevancy: boolean,
     isMergeCommit: boolean,
+    isFromAnotherBranch: boolean,
     includesOnlyIgnoredFiles: boolean,
     relevancy: Array<CommitMessageRelevancyInfo>,
 }

@@ -26,7 +26,7 @@ export function runLogCommitCommand(args: Array<string>, root: string) {
 
         console.log(`Commit summary: ${commit.summary()}`);
         console.log(`Relevancy info?: '${commitHasRelevancy ? "yes" : "no"}`);
-        console.log(`Branches: ${branches.join(', ')}`);
+        console.log(`Branches: ${branches.length ? branches.join(', ') : "-"}`);
 
         if (commitHasRelevancy) {
             const relevancyMap = relevancyTagger.loadRelevancyMapFromCommits([commit]);

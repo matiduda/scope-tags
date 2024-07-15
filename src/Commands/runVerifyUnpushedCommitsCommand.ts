@@ -1,10 +1,10 @@
 import { Commit } from "nodegit";
+import { exitIfScopeTagsNotInitialized } from "../Console/ExitIfScopeTagsNotInitialized";
 import { GitRepository } from "../Git/GitRepository";
+import { VerificationInfo } from "../Git/Types";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
 import { ConfigFile } from "../Scope/ConfigFile";
 import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
-import { exitIfScopeTagsNotInitialized } from "../Console/ExitIfScopeTagsNotInitialized";
-import { RelevancyManager } from "../Relevancy/RelevancyManager";
-import { VerificationInfo } from "../Git/Types";
 
 export enum VerificationStatus {
     VERIFIED = "VERIFIED",
@@ -53,9 +53,9 @@ export async function verifyUnpushedCommits(args: Array<string>, root: string, u
 
         if (verificationInfo.isSkipped) {
             console.log(`[Scope Tags] Skipped check for '${commit.summary()}'`);
-        }
-
-        if (verificationInfo.isMergeCommit) {
+        } else if(verificationInfo.isFromAnotherBranch) {
+            console.log(`[Scope Tags] Skipped check for '${commit.summary()}' because some other branches contain it`);
+        } else if (verificationInfo.isMergeCommit) {
             console.log(`[Scope Tags] Skipped check for '${commit.summary()}' because it's a merge commit`);
         }
 

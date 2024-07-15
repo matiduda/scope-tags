@@ -63,6 +63,7 @@ export class GitRepository {
         if (commits.length === maxCommitCount) {
             console.warn(`Found ${maxCommitCount} commits, which is the limit. Some commits may have been ommited. To remove this warning set higher gitCommitCountLimit in .scope/config.json`);
         }
+
         return commits;
     }
 
@@ -322,6 +323,7 @@ export class GitRepository {
             isSkipped: false,
             includesOnlyIgnoredFiles: false,
             isMergeCommit: false,
+            isFromAnotherBranch: false,
             hasRelevancy: false,
             relevancy: [],
         };
@@ -334,6 +336,14 @@ export class GitRepository {
             return commitInfo;
         } else if (this.isMergeCommit(commit)) {
             commitInfo.isMergeCommit = true;
+            return commitInfo;
+        }
+
+        const branchesContainingCommit = await this.branchesContainingCommit(commit);
+
+        if(branchesContainingCommit.length !== 1) {
+            commitInfo.isFromAnotherBranch = true;
+            commitInfo.isSkipped = true;
             return commitInfo;
         }
 
@@ -419,8 +429,6 @@ export class GitRepository {
     }
 
     public async branchesContainingCommit(commit: Commit): Promise<string[]> {
-
-        // Open the repository
         const repo = await this._getRepository();
     
         // Get all references (branches)
@@ -430,13 +438,8 @@ export class GitRepository {
     
         for (const ref of references) {
             const branchCommit = await repo.getBranchCommit(ref);
-        
+
             // Check if the commit is in the branch history
-
-
-            // for branch_name in self._repository.listall_branches(self._flag):
-            // if self._commit is None or self.get(branch_name) is not None:
-            //     yield branch_name
             if(branchCommit.sha() === commit.sha()) {
                 branchesContainingCommit.push(ref.shorthand());
                 continue;

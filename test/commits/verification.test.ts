@@ -1,13 +1,13 @@
-import { appendSomeTextToFile, cloneMockRepositoryToFolder, commitEmptyFiles, commitFiles, commitModitication, createEmptyFiles, makeUniqueFolderForTest, mergeBranchToCurrent } from "../utils/utils";
+import { readdirSync } from "fs-extra";
+import { join } from "path";
 import { VerificationStatus, verifyUnpushedCommits } from "../../src/Commands/runVerifyUnpushedCommitsCommand";
 import { GitRepository } from "../../src/Git/GitRepository";
+import { FileData } from "../../src/Git/Types";
+import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { ConfigFile } from "../../src/Scope/ConfigFile";
 import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
-import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { Utils } from "../../src/Scope/Utils";
-import { join } from "path";
-import { readdirSync } from "fs-extra";
-import { FileData } from "../../src/Git/Types";
+import { appendSomeTextToFile, cloneMockRepositoryToFolder, commitEmptyFiles, commitFiles, commitModitication, createEmptyFiles, makeUniqueFolderForTest, mergeBranchToCurrent } from "../utils/utils";
 
 describe("Commit verification by scope tags script", () => {
 
@@ -175,11 +175,12 @@ describe("Commit verification by scope tags script", () => {
 		expect(mergeCommitInfo.isMergeCommit).toBe(true);
 
 		expect(realCommitInfo.isMergeCommit).toBe(false);
-		expect(realCommitInfo.isSkipped).toBe(false);
+		expect(realCommitInfo.isSkipped).toBe(true);
+		expect(realCommitInfo.isFromAnotherBranch).toBe(true);
 
 		const verificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
 
-		expect(verificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
+		expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
 	});
 
 	// Not pretty fix for squashed commits, at least in BitBucket
@@ -266,4 +267,71 @@ describe("Commit verification by scope tags script", () => {
 		expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
 	});
 
+	it("When another branch is merged into current branch, commits from this branch are ommited from verification", async () => {
+		const FOLDER_PATH = makeUniqueFolderForTest();
+		const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+		// Contains 3 commits each with some new file
+		const branchToMergeName = "branch-with-multiple-new-commits";
+
+		mergeBranchToCurrent(REPO_PATH, branchToMergeName);
+
+		const repository = new GitRepository(REPO_PATH);
+		const config = new ConfigFile(REPO_PATH);
+		const database = new FileTagsDatabase(REPO_PATH);
+		const relevancy = new RelevancyManager();
+
+		const [mergeCommit, ...commitsFronAnotherBranch] = await repository.getUnpushedCommits();
+
+		expect(mergeCommit).toBeDefined();
+		expect(commitsFronAnotherBranch).toBeDefined();
+		expect(commitsFronAnotherBranch.length).toBe(3);
+
+		const mergeCommitInfo = await repository.verifyCommit(mergeCommit, config, database, relevancy, undefined, true);
+
+		expect(mergeCommitInfo.isMergeCommit).toBe(true);
+
+		for(const commit of commitsFronAnotherBranch) {
+			const commitInfo = await repository.verifyCommit(commit, config, database, relevancy, undefined, true);
+
+			expect(commitInfo.isMergeCommit).toBe(false);
+			expect(commitInfo.isSkipped).toBe(true);
+			expect(commitInfo.isFromAnotherBranch).toBe(true);
+		}
+
+		const verificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
+
+		expect(verificationStatus).toBe(VerificationStatus.VERIFIED);
+
+		// Check if adding new commit works as expected, just to be 100% sure
+
+		const newFiles = [
+			"src/newly-added-file1.js",
+			"src/newly-added-file2.js",
+			"src/newly-added-file3.js",
+		];
+
+		newFiles.forEach(newFile => {
+			expect(database.isFileInDatabase(newFile)).toBe(false);
+			expect(database.isIgnored(newFile, config.getIgnoredFileExtenstions())).toBe(false);
+		});
+
+		await commitEmptyFiles(newFiles, REPO_PATH);
+
+		const unpushedCommits = await repository.getUnpushedCommits();
+
+		expect(unpushedCommits.length).toBe(5);
+		
+		const newCommitInfo = await repository.verifyCommit(unpushedCommits[0], config, database, relevancy, undefined, true);
+		
+		expect(newCommitInfo.isVerified).toBe(false);
+		expect(newCommitInfo.isMergeCommit).toBe(false);
+		expect(newCommitInfo.isFromAnotherBranch).toBe(false);
+
+		const newVerificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
+
+		console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, newVerificationStatus)}`);
+
+		expect(newVerificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
+	});
 });
