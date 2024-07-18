@@ -229,7 +229,7 @@ export class TagManager {
         const prompt = new Select({
             name: 'Tag manager started from module',
             message: `Manage tags of ${module.name}`,
-            initial: 0,
+            initial: tagsMappedToOptions.length + 1,
             choices: [
                 ...tagsMappedToOptions,
                 { role: "separator" },
