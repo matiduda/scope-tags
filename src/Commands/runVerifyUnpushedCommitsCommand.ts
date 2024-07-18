@@ -16,6 +16,10 @@ export function runVerifyUnpushedCommitsCommand(args: Array<string>, root: strin
         process.exit(verificationStatus === VerificationStatus.VERIFIED ? 0 : 1);
     }).catch((reason: any) => {
         console.log("An error occured while verifying unpushed commits, reason: ", reason);
+        if(reason.stack) {
+            console.log("Stack trace:");
+            console.log(reason.stack);
+        }
         process.exit(1);
     })
 

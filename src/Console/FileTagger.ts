@@ -1,11 +1,11 @@
 import { Commit } from "nodegit";
+import { getFileDirectoryPath } from "../FileSystem/fileSystemUtils";
 import { GitRepository } from "../Git/GitRepository";
 import { FileData } from "../Git/Types";
 import { FileTagsDatabase, TagIdentifier } from "../Scope/FileTagsDatabase";
 import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 import { TagManager } from "./TagManager";
 import { YesNoMenu } from "./YesNoMenu";
-import { getFileDirectoryPath } from "../FileSystem/fileSystemUtils";
 
 const { MultiSelect } = require('enquirer');
 
@@ -160,7 +160,7 @@ export class FileTagger {
     private async _selectFiles(fileData: Array<FileData>): Promise<FileData[]> {
         const prompt = new MultiSelect({
             name: 'value',
-            message: 'Select files to apply the same tags and use ENTER to confirm',
+            message: 'Select files with SPACE to apply the same tags, use ENTER to confirm',
             footer: 'CTRL+C to go to next step, G to select whole group',
             limit: 10,
             choices: this._mapFileDataToOptions(fileData),
