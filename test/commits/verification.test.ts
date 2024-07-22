@@ -5,9 +5,20 @@ import { GitRepository } from "../../src/Git/GitRepository";
 import { FileData } from "../../src/Git/Types";
 import { RelevancyManager } from "../../src/Relevancy/RelevancyManager";
 import { ConfigFile } from "../../src/Scope/ConfigFile";
-import { FileTagsDatabase } from "../../src/Scope/FileTagsDatabase";
+import { FileTagsDatabase, TagIdentifier } from "../../src/Scope/FileTagsDatabase";
+import { TagsDefinitionFile } from "../../src/Scope/TagsDefinitionFile";
 import { Utils } from "../../src/Scope/Utils";
-import { appendSomeTextToFile, cloneMockRepositoryToFolder, commitEmptyFiles, commitFiles, commitModitication, createEmptyFiles, makeUniqueFolderForTest, mergeBranchToCurrent } from "../utils/utils";
+import {
+	appendSomeTextToFile,
+	cloneMockRepositoryToFolder,
+	commitEmptyFiles,
+	commitFiles,
+	commitModitication,
+	createEmptyFiles,
+	deleteFiles,
+	makeUniqueFolderForTest,
+	mergeBranchToCurrent,
+} from "../utils/utils";
 
 describe("Commit verification by scope tags script", () => {
 
@@ -333,5 +344,65 @@ describe("Commit verification by scope tags script", () => {
 		console.debug(`Verification status: ${Utils.getEnumKeyByEnumValue(VerificationStatus, newVerificationStatus)}`);
 
 		expect(newVerificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
+	});
+
+	
+	it("When a tagged file is deleted and some other file is modified in the same commit, after tagging the modified the commit is marked as verified", async () => {
+		const FOLDER_PATH = makeUniqueFolderForTest();
+		const REPO_PATH = cloneMockRepositoryToFolder(FOLDER_PATH);
+
+		const taggedFile = "src/tagged-file.js"; // to be deleted
+		const untaggedFile = "src/index.js"; // to be tagged
+
+		const database = new FileTagsDatabase(REPO_PATH);
+		const config = new ConfigFile(REPO_PATH);
+		const tags = new TagsDefinitionFile(REPO_PATH);
+
+		const repository = new GitRepository(REPO_PATH);
+
+		deleteFiles([taggedFile], REPO_PATH);
+		appendSomeTextToFile(join(REPO_PATH, untaggedFile));
+
+		repository.commitAllUsingNativeGitCommand("[TESTING] automatic message");
+
+		const unpushedCommits = await repository.getUnpushedCommits();
+		expect(unpushedCommits.length).toBe(1);
+
+		const verificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
+
+		expect(verificationStatus).toBe(VerificationStatus.NOT_VERIFIED);
+
+		// Update database.json based on commit changes
+
+		const fileData: FileData[] = repository.getFileDataUsingNativeGitCommand(unpushedCommits[0]);
+
+		let fileDataToTag = database.updateDatabaseBasedOnChanges(fileData).filter(file => !config.isFileExtensionIgnored(file.newPath));
+
+		expect(fileDataToTag.length).toBe(1);
+
+		// Tag the untagged file and add relevancy
+
+		database.addSingleTagToFile({ tag: "Tag", module: "Default module" } as TagIdentifier, fileDataToTag[0].oldPath);
+		database.save();
+
+		// Amend these changes
+		
+		const simulatedCommitMessage = `updated commit message with relevancy
+		
+		__relevancy__[{"path":"src/index.js","relevancy":"HIGH","commit":"__current__"}]__relevancy__
+		`;
+
+        await repository.amendMostRecentCommit([database.getPath()], simulatedCommitMessage, true);
+
+		// Database should be up to date and commit should be verified
+
+		const newUnpushedCommits = await repository.getUnpushedCommits();
+		expect(newUnpushedCommits.length).toBe(1);
+
+		const newVerificationStatus = await verifyUnpushedCommits([], REPO_PATH, true);
+
+		// Verified, because 1) deleted file should not be checked 2) modified file is correctly tagged
+
+		expect(newVerificationStatus).toBe(VerificationStatus.VERIFIED);
 	});
 });

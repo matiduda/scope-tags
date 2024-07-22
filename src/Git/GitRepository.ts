@@ -347,7 +347,10 @@ export class GitRepository {
             return commitInfo;
         }
 
-        const fileDataArray = useGitNatively ? this.getFileDataUsingNativeGitCommand(commit) : await this.getFileDataForCommit(commit);
+        const allfileDataArray = useGitNatively ? this.getFileDataUsingNativeGitCommand(commit) : await this.getFileDataForCommit(commit);
+        
+        const fileDataArray = allfileDataArray.filter(fileData => fileData.change !== GitDeltaType.DELETED);
+        
         const statusMap = database.checkMultipleFileStatusInDatabase(fileDataArray, config);
 
         const allFilesAreIgnored = fileDataArray.every(fileData => {
@@ -513,5 +516,14 @@ export class GitRepository {
         })
         
         execSync(`cd ${this._root} && git commit --amend -m ${JSON.stringify(normalizedCommitMessage)}`);
+    }
+
+    /**
+     * Used for tests only, because deleted file can't be commited using nodegit
+     */
+    public commitAllUsingNativeGitCommand(commitMessage: string) {
+        const normalizedCommitMessage = commitMessage.replace(/(\r\n|\n|\r)/gm, "");
+
+        execSync(`cd ${this._root} && git add . && git commit -m ${JSON.stringify(normalizedCommitMessage)}`);
     }
 }

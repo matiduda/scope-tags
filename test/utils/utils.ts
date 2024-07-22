@@ -134,7 +134,7 @@ export const deleteFiles = (
 ): void => {
     for (const fileName of fileNames) {
         const filePath = join(repositoryPath, fileName);
-        if (existsSync(filePath)) {
+        if (existsSync(resolve(filePath))) {
             rimraf.sync(filePath);
         } else {
             console.debug(`[Delete files] File ${filePath} does not exist`);
