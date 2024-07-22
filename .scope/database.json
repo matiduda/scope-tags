@@ -22,6 +22,9 @@
           "tags": [
             { "tag": "Tag", "module": "Default module" },
             { "tag": "asdflkj", "module": "Second module" }]},
+        { "path": "second_file.js",
+          "tags": [
+            { "tag": "Tag", "module": "Default module" }]},
         { "path": "src/Commands/runAddCommand.ts",
           "tags": [
             { "tag": "Tag", "module": "Default module" }]},
