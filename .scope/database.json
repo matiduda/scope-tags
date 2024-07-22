@@ -38,10 +38,9 @@
         { "path": "src/Commands/runReportForCommitListCommand.ts",
           "tags": [
             { "tag": "asdflkj", "module": "Second module" }]},
-        { "path": "src/Commands/testComman.ts",
+        { "path": "src/Commands/testcommand2.ts",
           "tags": [
-            { "tag": "Tag", "module": "Default module" },
-            { "tag": "Fourth tag", "module": "Fourth module" }]},
+            { "tag": "Tag", "module": "Default module" }]},
         { "path": "src/Console/FileTagger.ts",
           "tags": [
             { "tag": "Tag", "module": "Default module" },

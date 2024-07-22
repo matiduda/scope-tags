@@ -1,11 +1,11 @@
-import { GitRepository } from "../Git/GitRepository";
-import { ConfigFile } from "../Scope/ConfigFile";
-import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
 import { FileTagger } from "../Console/FileTagger";
-import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
-import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { GitRepository } from "../Git/GitRepository";
 import { FileData } from "../Git/Types";
 import { Relevancy } from "../Relevancy/Relevancy";
+import { RelevancyManager } from "../Relevancy/RelevancyManager";
+import { ConfigFile } from "../Scope/ConfigFile";
+import { FileTagsDatabase } from "../Scope/FileTagsDatabase";
+import { TagsDefinitionFile } from "../Scope/TagsDefinitionFile";
 
 export function runAddCommand(args: Array<string>, root: string) {
     const repository = new GitRepository(root);
@@ -27,6 +27,9 @@ export function runAddCommand(args: Array<string>, root: string) {
 
         const relevancyTagger = new RelevancyManager();
 
+
+
+        
         fileTagger.start(fileDataToTag).then(async (_taggedFileData) => {
 
             // Select relevancy for each file
